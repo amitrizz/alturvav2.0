@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import { ERC20_ABI, BTC_STAKING_SYSTEM_ABI } from "./abis";
 import addresses from "./addresses.json";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { useAccount, useWalletClient, useSwitchChain } from "wagmi";
 import "./App.css?v=2";
 
 const tokenSymbol = "BTC 3.0";
@@ -46,6 +48,10 @@ function decryptAddress(str) {
 
 
 function App() {
+  const { address, isConnected } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const { switchChain } = useSwitchChain();
+
   // Connection State
   const [provider, setProvider] = useState(null);
   const [signer, setSigner] = useState(null);
@@ -123,88 +129,40 @@ function App() {
   };
 
   useEffect(() => {
-    if (window.ethereum) {
-      connectWallet();
-      window.ethereum.on("accountsChanged", (accs) => {
-        if (accs.length > 0) connectWallet();
-        else resetConnection();
-      });
-      window.ethereum.on("chainChanged", () => {
-        window.location.reload();
-      });
-    }
-  }, []);
-
-  const resetConnection = () => {
-    setProvider(null);
-    setSigner(null);
-    setAccount("");
-    setNetwork("");
-  };
-
-  const connectWallet = async () => {
-    if (!window.ethereum) return;
-    try {
-      const tempProvider = new ethers.BrowserProvider(window.ethereum);
-      const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-      const tempSigner = await tempProvider.getSigner();
-      const networkInfo = await tempProvider.getNetwork();
-
-      setProvider(tempProvider);
-      setSigner(tempSigner);
-      setAccount(accounts[0]);
-      setNetwork(networkInfo.name);
-
-      const chainId = await window.ethereum.request({ method: "eth_chainId" });
-      setIsWrongNetwork(chainId.toLowerCase() !== addresses.chainId.toLowerCase());
-    } catch (err) {
-      console.error(err);
-      showToast("error", "Failed to connect wallet.");
-    }
-  };
-
-  const switchNetwork = async () => {
-    if (!window.ethereum) return;
-    const targetChainId = addresses.chainId;
-    try {
-      await window.ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: targetChainId }],
-      });
-    } catch (switchError) {
-      if (switchError.code === 4902) {
+    const initEthers = async () => {
+      if (isConnected && walletClient && address) {
+        const { chain, transport } = walletClient;
+        const networkName = chain ? chain.name : "BNB Smart Chain Testnet";
+        
         try {
-          let params = [];
-          if (targetChainId.toLowerCase() === "0x7a69") {
-            params = [{
-              chainId: "0x7a69",
-              chainName: "Hardhat Localhost",
-              nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-              rpcUrls: ["http://127.0.0.1:8545"],
-            }];
-          } else if (targetChainId.toLowerCase() === "0x61") {
-            params = [{
-              chainId: "0x61",
-              chainName: "BNB Smart Chain Testnet",
-              nativeCurrency: { name: "BNB", symbol: "tBNB", decimals: 18 },
-              rpcUrls: ["https://data-seed-prebsc-1-s1.binance.org:8545/"],
-              blockExplorerUrls: ["https://testnet.bscscan.com"],
-            }];
-          }
-          if (params.length > 0) {
-            await window.ethereum.request({
-              method: "wallet_addEthereumChain",
-              params: params,
-            });
-          }
-        } catch (addError) {
-          console.error("Failed to add network:", addError);
-          showToast("error", "Failed to add the network to MetaMask.");
+          const tempProvider = new ethers.BrowserProvider(transport);
+          const tempSigner = await tempProvider.getSigner();
+          
+          setProvider(tempProvider);
+          setSigner(tempSigner);
+          setAccount(address);
+          setNetwork(networkName);
+          setIsWrongNetwork(chain?.id !== 97);
+        } catch (e) {
+          console.error("Error setting browser provider:", e);
         }
       } else {
-        console.error("Failed to switch network:", switchError);
-        showToast("error", "Failed to switch network in MetaMask.");
+        setProvider(null);
+        setSigner(null);
+        setAccount("");
+        setNetwork("");
+        setIsWrongNetwork(false);
       }
+    };
+    initEthers();
+  }, [isConnected, walletClient, address]);
+
+  const switchNetwork = async () => {
+    try {
+      switchChain({ chainId: 97 });
+    } catch (err) {
+      console.error(err);
+      showToast("error", "Failed to switch network.");
     }
   };
 
@@ -894,13 +852,9 @@ function App() {
           </div>
         </div>
         
-        <div className="wallet-panel">
-          {account ? (
-            <div className="wallet-info" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span className="network-badge">{network || "Localhost"}</span>
-              <span className="account-address">
-                {account.substring(0, 6)}...{account.substring(account.length - 4)}
-              </span>
+        <div className="wallet-panel" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {account && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               {!(parseFloat(btcBalance) > 0 || localStorage.getItem(`added_token_${account.toLowerCase()}`) === 'true') && (
                 <button 
                   onClick={() => addTokenToWallet(addresses.token, tokenSymbol)}
@@ -944,11 +898,8 @@ function App() {
                 </button>
               )}
             </div>
-          ) : (
-            <button className="connect-btn" onClick={connectWallet}>
-              Connect Wallet
-            </button>
           )}
+          <ConnectButton />
         </div>
       </header>
 
