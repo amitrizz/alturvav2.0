@@ -4,16 +4,45 @@ import App from './App.jsx'
 import './index.css'
 
 import '@rainbow-me/rainbowkit/styles.css'
-import { getDefaultConfig, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'
-import { WagmiProvider } from 'wagmi'
+import { connectorsForWallets, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'
+import { 
+  metaMaskWallet, 
+  trustWallet, 
+  safepalWallet, 
+  bitgetWallet, 
+  coinbaseWallet 
+} from '@rainbow-me/rainbowkit/wallets'
+import { createConfig, WagmiProvider, http } from 'wagmi'
 import { bscTestnet } from 'wagmi/chains'
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query"
 
-const config = getDefaultConfig({
-  appName: 'BTC 3.0 DEX',
-  projectId: '88c9df409ffc9779df52c80333333333', // 32-character ProjectID
+const projectId = '88c9df409ffc9779df52c80333333333';
+
+const connectors = connectorsForWallets(
+  [
+    {
+      groupName: 'Recommended',
+      wallets: [
+        metaMaskWallet,
+        trustWallet,
+        safepalWallet,
+        bitgetWallet,
+        coinbaseWallet
+      ],
+    },
+  ],
+  {
+    appName: 'BTC 3.0 DEX',
+    projectId,
+  }
+)
+
+const config = createConfig({
+  connectors,
   chains: [bscTestnet],
-  ssr: false,
+  transports: {
+    [bscTestnet.id]: http(),
+  },
 })
 
 const queryClient = new QueryClient()
