@@ -396,7 +396,7 @@
 .sp-card-title {
   position: relative;
 
-  z-index: 1;
+  z-index: 100;
 
   display: flex;
 
@@ -432,6 +432,8 @@
 .sp-tooltip-trigger {
   position: relative;
 
+  z-index: 9998;
+
   display: inline-flex;
 
   align-items: center;
@@ -453,7 +455,7 @@
 .sp-tooltip-popup {
   position: absolute;
 
-  z-index: 100;
+  z-index: 9999;
 
   top:
     calc(100% + 8px);

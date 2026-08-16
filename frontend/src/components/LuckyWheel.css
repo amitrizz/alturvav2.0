@@ -256,7 +256,7 @@
 .lw-card-title .tooltip-popup {
   position: absolute;
 
-  z-index: 50;
+  z-index: 9999;
 
   top:
     calc(100% + 9px);

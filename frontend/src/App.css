@@ -326,10 +326,10 @@ input:checked + .switch-slider:before {
   overflow-y: auto;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .tab-pane-container {
     padding: 1rem;
-    padding-bottom: 80px; /* leaves room for mobile footer menu */
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); /* leaves room for mobile footer menu */
   }
 }
 
