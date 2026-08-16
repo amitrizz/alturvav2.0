@@ -1,0 +1,1343 @@
+/* =========================================================
+   BTC 3.0 DEX
+   LUCKY WHEEL
+   Fully Scoped CSS
+   No !important
+   No functionality changes
+   ========================================================= */
+
+
+/* =========================================================
+   ROOT
+   ========================================================= */
+
+.lw-tab-pane {
+  --lw-bg-primary: #030712;
+  --lw-bg-secondary: #070d1a;
+  --lw-bg-card: #0a1120;
+  --lw-bg-card-hover: #0e1729;
+  --lw-bg-soft: #0d1524;
+  --lw-bg-input: #050b16;
+
+  --lw-border: rgba(148, 163, 184, 0.1);
+  --lw-border-light: rgba(148, 163, 184, 0.07);
+  --lw-border-hover: rgba(139, 92, 246, 0.42);
+
+  --lw-text: #f8fafc;
+  --lw-text-secondary: #a8b3c7;
+  --lw-text-muted: #718096;
+
+  --lw-purple: #8b5cf6;
+  --lw-purple-light: #a78bfa;
+  --lw-purple-dark: #6d28d9;
+
+  --lw-gold: #fbbf24;
+  --lw-gold-light: #fcd34d;
+  --lw-gold-dark: #d97706;
+
+  --lw-green: #10b981;
+  --lw-red: #ef4444;
+  --lw-blue: #3b82f6;
+  --lw-amber: #f59e0b;
+
+  --lw-radius-lg: 20px;
+  --lw-radius-md: 14px;
+  --lw-radius-sm: 10px;
+
+  width: 100%;
+  min-width: 0;
+
+  color: var(--lw-text);
+}
+
+
+/* =========================================================
+   LOCAL BOX SIZING
+   ========================================================= */
+
+.lw-tab-pane *,
+.lw-tab-pane *::before,
+.lw-tab-pane *::after {
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   CONTAINER
+   ========================================================= */
+
+.lw-container {
+  width: 100%;
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  gap: 18px;
+}
+
+
+/* =========================================================
+   UTILITY CLASSES
+   ========================================================= */
+
+.lw-tab-pane .lw-text-center {
+  text-align: center;
+}
+
+.lw-tab-pane .lw-text-left {
+  text-align: left;
+}
+
+.lw-tab-pane .lw-text-amber {
+  color: var(--lw-amber);
+}
+
+.lw-tab-pane .lw-text-blue {
+  color: var(--lw-blue);
+}
+
+.lw-tab-pane .lw-text-purple {
+  color: var(--lw-purple-light);
+}
+
+.lw-tab-pane .lw-text-red {
+  color: #f87171;
+}
+
+.lw-tab-pane .mt-1 {
+  margin-top: 4px;
+}
+
+
+/* =========================================================
+   COMMON CARD
+   ========================================================= */
+
+.lw-card-box {
+  position: relative;
+
+  width: 100%;
+  max-width: 760px;
+
+  min-width: 0;
+
+  padding: 24px;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10, 17, 32, 0.98),
+      rgba(5, 10, 20, 0.98)
+    );
+
+  border:
+    1px solid var(--lw-border);
+
+  border-radius:
+    var(--lw-radius-lg);
+
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.18);
+}
+
+
+.lw-card-box::before {
+  content: "";
+
+  position: absolute;
+
+  width: 220px;
+  height: 220px;
+
+  left: -130px;
+  top: -130px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(139, 92, 246, 0.08);
+
+  filter:
+    blur(45px);
+
+  pointer-events: none;
+}
+
+
+.lw-card-box::after {
+  content: "";
+
+  position: absolute;
+
+  width: 190px;
+  height: 190px;
+
+  right: -120px;
+  bottom: -130px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(251, 191, 36, 0.045);
+
+  filter:
+    blur(45px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   CARD TITLE
+   ========================================================= */
+
+.lw-card-title {
+  position: relative;
+
+  z-index: 2;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  margin: 0 0 20px;
+
+  color:
+    var(--lw-text);
+
+  font-size: 19px;
+
+  line-height: 1.3;
+
+  font-weight: 750;
+
+  letter-spacing:
+    -0.025em;
+}
+
+
+.lw-title-flex {
+  justify-content: center;
+}
+
+
+/* =========================================================
+   TOOLTIP
+   ========================================================= */
+
+.lw-card-title .tooltip-trigger {
+  position: relative;
+
+  display: inline-flex;
+
+  align-items: center;
+  justify-content: center;
+
+  color:
+    var(--lw-text-muted);
+
+  cursor: help;
+}
+
+
+.lw-card-title .tooltip-trigger:hover {
+  color:
+    var(--lw-purple-light);
+}
+
+
+.lw-card-title .tooltip-popup {
+  position: absolute;
+
+  z-index: 50;
+
+  top:
+    calc(100% + 9px);
+
+  right:
+    -10px;
+
+  width:
+    245px;
+
+  padding:
+    11px 13px;
+
+  border:
+    1px solid var(--lw-border-hover);
+
+  border-radius:
+    9px;
+
+  background:
+    #0b1321;
+
+  color:
+    var(--lw-text-secondary);
+
+  font-size:
+    9px;
+
+  line-height:
+    1.5;
+
+  font-weight:
+    400;
+
+  text-align:
+    left;
+
+  opacity:
+    0;
+
+  visibility:
+    hidden;
+
+  transform:
+    translateY(-5px);
+
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease,
+    visibility 160ms ease;
+
+  box-shadow:
+    0 14px 35px rgba(0, 0, 0, 0.45);
+}
+
+
+.lw-card-title .tooltip-trigger:hover .tooltip-popup {
+  opacity:
+    1;
+
+  visibility:
+    visible;
+
+  transform:
+    translateY(0);
+}
+
+
+/* =========================================================
+   WHEEL AREA
+   ========================================================= */
+
+.lw-canvas-wrapper {
+  position: relative;
+
+  z-index: 2;
+
+  width:
+    340px;
+
+  height:
+    340px;
+
+  max-width:
+    100%;
+
+  margin:
+    4px auto 22px;
+
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    center;
+}
+
+
+/* =========================================================
+   WHEEL OUTER GLOW
+   ========================================================= */
+
+.lw-canvas-wrapper::before {
+  content: "";
+
+  position: absolute;
+
+  inset:
+    10px;
+
+  border-radius:
+    50%;
+
+  background:
+    radial-gradient(
+      circle,
+      rgba(139, 92, 246, 0.10) 0%,
+      rgba(251, 191, 36, 0.05) 42%,
+      transparent 70%
+    );
+
+  filter:
+    blur(18px);
+
+  pointer-events:
+    none;
+}
+
+
+/* =========================================================
+   WHEEL RING
+   ========================================================= */
+
+.lw-canvas-wrapper::after {
+  content: "";
+
+  position: absolute;
+
+  inset:
+    6px;
+
+  border-radius:
+    50%;
+
+  border:
+    1px solid rgba(251, 191, 36, 0.18);
+
+  box-shadow:
+    0 0 0 7px rgba(139, 92, 246, 0.035),
+    0 0 30px rgba(139, 92, 246, 0.08);
+
+  pointer-events:
+    none;
+}
+
+
+/* =========================================================
+   CANVAS
+   ========================================================= */
+
+.lw-canvas {
+  position: relative;
+
+  z-index: 3;
+
+  display: block;
+
+  width:
+    300px;
+
+  height:
+    300px;
+
+  max-width:
+    100%;
+
+  max-height:
+    100%;
+
+  border-radius:
+    50%;
+
+  background:
+    #070d1a;
+
+  border:
+    4px solid rgba(251, 191, 36, 0.20);
+
+  box-shadow:
+    0 0 0 4px rgba(139, 92, 246, 0.06),
+    0 15px 45px rgba(0, 0, 0, 0.42),
+    0 0 35px rgba(139, 92, 246, 0.10);
+}
+
+
+/* =========================================================
+   POINTER
+   ========================================================= */
+
+.lw-pointer-indicator {
+  position: absolute;
+
+  z-index: 10;
+
+  top:
+    -1px;
+
+  left:
+    50%;
+
+  width:
+    0;
+
+  height:
+    0;
+
+  transform:
+    translateX(-50%);
+
+  border-left:
+    13px solid transparent;
+
+  border-right:
+    13px solid transparent;
+
+  border-top:
+    25px solid var(--lw-gold);
+
+  filter:
+    drop-shadow(
+      0 4px 7px rgba(0, 0, 0, 0.5)
+    );
+}
+
+
+.lw-pointer-indicator::after {
+  content: "";
+
+  position: absolute;
+
+  top:
+    -25px;
+
+  left:
+    -7px;
+
+  width:
+    14px;
+
+  height:
+    5px;
+
+  border-radius:
+    8px;
+
+  background:
+    var(--lw-gold-light);
+
+  box-shadow:
+    0 0 12px rgba(251, 191, 36, 0.5);
+}
+
+
+/* =========================================================
+   PRIMARY CTA
+   ========================================================= */
+
+.lw-cta-gradient-btn {
+  position: relative;
+
+  z-index: 3;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  width:
+    100%;
+
+  min-height:
+    50px;
+
+  padding:
+    0 18px;
+
+  border:
+    0;
+
+  border-radius:
+    11px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--lw-purple),
+      var(--lw-purple-dark)
+    );
+
+  color:
+    #fff;
+
+  font-family:
+    inherit;
+
+  font-size:
+    12px;
+
+  font-weight:
+    750;
+
+  cursor:
+    pointer;
+
+  box-shadow:
+    0 9px 24px rgba(109, 40, 217, 0.20);
+
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+
+.lw-cta-gradient-btn:hover:not(:disabled) {
+  transform:
+    translateY(-2px);
+
+  box-shadow:
+    0 13px 30px rgba(109, 40, 217, 0.32);
+}
+
+
+.lw-cta-gradient-btn:active:not(:disabled) {
+  transform:
+    translateY(0);
+}
+
+
+.lw-cta-gradient-btn:disabled {
+  opacity:
+    0.42;
+
+  cursor:
+    not-allowed;
+
+  box-shadow:
+    none;
+}
+
+
+/* =========================================================
+   PRIZE RESULT
+   ========================================================= */
+
+.lw-prize-banner {
+  z-index: 2;
+
+  max-width:
+    100%;
+
+  margin:
+    16px 0 20px;
+
+  padding:
+    14px 16px;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(251, 191, 36, 0.10),
+      rgba(139, 92, 246, 0.07)
+    );
+
+  border:
+    1px solid rgba(251, 191, 36, 0.25);
+
+  border-radius:
+    11px;
+
+  box-shadow:
+    0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+
+.lw-prize-title {
+  position: relative;
+
+  z-index: 2;
+
+  margin:
+    0;
+
+  color:
+    var(--lw-gold);
+
+  font-size:
+    14px;
+
+  line-height:
+    1.4;
+
+  font-weight:
+    750;
+}
+
+
+/* =========================================================
+   PRIZES HEADING
+   ========================================================= */
+
+.lw-level-heading {
+  position: relative;
+
+  z-index: 2;
+
+  margin:
+    22px 0 11px;
+
+  color:
+    var(--lw-text);
+
+  font-size:
+    12px;
+
+  line-height:
+    1.3;
+
+  font-weight:
+    700;
+
+  text-align:
+    left;
+}
+
+
+/* =========================================================
+   PRIZES TABLE
+   ========================================================= */
+
+.lw-ranks-table {
+  position: relative;
+
+  z-index: 2;
+
+  width:
+    100%;
+
+  padding:
+    4px 12px;
+
+  background:
+    rgba(7, 13, 26, 0.72);
+
+  border:
+    1px solid var(--lw-border-light);
+
+  border-radius:
+    11px;
+}
+
+
+.lw-rank-row-item {
+  display:
+    flex;
+
+  align-items:
+    center;
+
+  justify-content:
+    space-between;
+
+  gap:
+    15px;
+
+  min-height:
+    42px;
+
+  border-bottom:
+    1px solid var(--lw-border-light);
+
+  color:
+    var(--lw-text-secondary);
+
+  font-size:
+    9px;
+
+  line-height:
+    1.35;
+}
+
+
+.lw-rank-row-item:last-child {
+  border-bottom:
+    0;
+}
+
+
+.lw-rank-row-item > span:first-child {
+  font-weight:
+    600;
+}
+
+
+.lw-rank-row-item > span:last-child {
+  color:
+    var(--lw-text-muted);
+
+  font-size:
+    8px;
+
+  font-weight:
+    650;
+
+  white-space:
+    nowrap;
+}
+
+
+/* =========================================================
+   PRIZE COLOR OVERRIDES
+   ========================================================= */
+
+.lw-rank-row-item .lw-text-amber {
+  color:
+    var(--lw-amber);
+}
+
+
+.lw-rank-row-item .lw-text-blue {
+  color:
+    #60a5fa;
+}
+
+
+.lw-rank-row-item .lw-text-purple {
+  color:
+    var(--lw-purple-light);
+}
+
+
+.lw-rank-row-item .lw-text-red {
+  color:
+    #f87171;
+}
+
+
+/* =========================================================
+   ADMIN CARD
+   ========================================================= */
+
+.lw-admin-card {
+  max-width:
+    760px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10, 17, 32, 0.98),
+      rgba(9, 14, 26, 0.98)
+    );
+}
+
+
+.lw-admin-title {
+  justify-content:
+    flex-start;
+
+  margin-bottom:
+    18px;
+
+  color:
+    var(--lw-gold);
+}
+
+
+/* =========================================================
+   INPUT BLOCK
+   ========================================================= */
+
+.lw-input-block {
+  position:
+    relative;
+
+  z-index:
+    2;
+
+  margin-bottom:
+    14px;
+}
+
+
+.lw-input-block label {
+  display:
+    block;
+
+  margin-bottom:
+    7px;
+
+  color:
+    var(--lw-text-secondary);
+
+  font-size:
+    9px;
+
+  line-height:
+    1.3;
+
+  font-weight:
+    600;
+}
+
+
+/* =========================================================
+   FIELD INPUT
+   ========================================================= */
+
+.lw-field-input {
+  display:
+    block;
+
+  width:
+    100%;
+
+  min-height:
+    48px;
+
+  padding:
+    0 13px;
+
+  border:
+    1px solid var(--lw-border);
+
+  border-radius:
+    10px;
+
+  outline:
+    none;
+
+  background:
+    var(--lw-bg-input);
+
+  color:
+    var(--lw-text);
+
+  font-family:
+    inherit;
+
+  font-size:
+    12px;
+
+  font-weight:
+    550;
+
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+
+.lw-field-input::placeholder {
+  color:
+    var(--lw-text-muted);
+
+  font-size:
+    10px;
+}
+
+
+.lw-field-input:hover {
+  border-color:
+    rgba(139, 92, 246, 0.22);
+}
+
+
+.lw-field-input:focus {
+  border-color:
+    rgba(139, 92, 246, 0.55);
+
+  background:
+    rgba(5, 11, 22, 0.95);
+
+  box-shadow:
+    0 0 0 3px rgba(139, 92, 246, 0.07);
+}
+
+
+.lw-field-input[type="number"] {
+  -moz-appearance:
+    textfield;
+}
+
+
+.lw-field-input[type="number"]::-webkit-inner-spin-button,
+.lw-field-input[type="number"]::-webkit-outer-spin-button {
+  margin:
+    0;
+
+  -webkit-appearance:
+    none;
+}
+
+
+/* =========================================================
+   ADMIN BUTTON
+   ========================================================= */
+
+.lw-admin-card .lw-cta-gradient-btn {
+  margin-top:
+    2px;
+}
+
+
+/* =========================================================
+   LARGE DESKTOP
+   ========================================================= */
+
+@media (min-width: 1400px) {
+
+  .lw-card-box {
+    max-width:
+      820px;
+
+    padding:
+      27px;
+  }
+
+
+  .lw-canvas-wrapper {
+    width:
+      365px;
+
+    height:
+      365px;
+  }
+
+
+  .lw-canvas {
+    width:
+      320px;
+
+    height:
+      320px;
+  }
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 768px) {
+
+  .lw-card-box {
+    max-width:
+      100%;
+
+    padding:
+      19px;
+  }
+
+
+  .lw-canvas-wrapper {
+    width:
+      325px;
+
+    height:
+      325px;
+  }
+
+
+  .lw-canvas {
+    width:
+      285px;
+
+    height:
+      285px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+
+  .lw-container {
+    gap:
+      12px;
+  }
+
+
+  .lw-card-box {
+    padding:
+      14px;
+
+    border-radius:
+      14px;
+  }
+
+
+  .lw-card-title {
+    margin-bottom:
+      15px;
+
+    font-size:
+      16px;
+  }
+
+
+  .lw-canvas-wrapper {
+    width:
+      290px;
+
+    height:
+      290px;
+
+    margin:
+      0 auto 18px;
+  }
+
+
+  .lw-canvas {
+    width:
+      250px;
+
+    height:
+      250px;
+
+    border-width:
+      3px;
+  }
+
+
+  .lw-pointer-indicator {
+    border-left-width:
+      11px;
+
+    border-right-width:
+      11px;
+
+    border-top-width:
+      21px;
+  }
+
+
+  .lw-pointer-indicator::after {
+    top:
+      -21px;
+
+    left:
+      -6px;
+
+    width:
+      12px;
+  }
+
+
+  .lw-cta-gradient-btn {
+    min-height:
+      46px;
+
+    font-size:
+      10px;
+  }
+
+
+  .lw-prize-banner {
+    margin:
+      13px 0 16px;
+
+    padding:
+      12px;
+  }
+
+
+  .lw-prize-title {
+    font-size:
+      12px;
+  }
+
+
+  .lw-level-heading {
+    margin-top:
+      18px;
+
+    font-size:
+      11px;
+  }
+
+
+  .lw-ranks-table {
+    padding:
+      3px 10px;
+  }
+
+
+  .lw-rank-row-item {
+    min-height:
+      38px;
+
+    gap:
+      10px;
+
+    font-size:
+      8px;
+  }
+
+
+  .lw-rank-row-item > span:last-child {
+    font-size:
+      7px;
+  }
+
+
+  .lw-admin-card {
+    margin-bottom:
+      10px;
+  }
+
+
+  .lw-admin-title {
+    margin-bottom:
+      14px;
+  }
+
+
+  .lw-field-input {
+    min-height:
+      45px;
+
+    font-size:
+      11px;
+  }
+
+
+  .lw-input-block label {
+    font-size:
+      8px;
+  }
+
+
+  .lw-card-title .tooltip-popup {
+    width:
+      205px;
+
+    right:
+      -4px;
+
+    font-size:
+      8px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 400px) {
+
+  .lw-card-box {
+    padding:
+      12px;
+  }
+
+
+  .lw-card-title {
+    font-size:
+      15px;
+  }
+
+
+  .lw-canvas-wrapper {
+    width:
+      260px;
+
+    height:
+      260px;
+  }
+
+
+  .lw-canvas {
+    width:
+      225px;
+
+    height:
+      225px;
+  }
+
+
+  .lw-pointer-indicator {
+    border-left-width:
+      10px;
+
+    border-right-width:
+      10px;
+
+    border-top-width:
+      19px;
+  }
+
+
+  .lw-rank-row-item {
+    min-height:
+      36px;
+
+    font-size:
+      7px;
+  }
+
+
+  .lw-rank-row-item > span:last-child {
+    font-size:
+      6.5px;
+  }
+
+
+  .lw-card-title .tooltip-popup {
+    position:
+      fixed;
+
+    top:
+      auto;
+
+    right:
+      12px;
+
+    bottom:
+      70px;
+
+    width:
+      min(240px, calc(100vw - 24px));
+  }
+}
+
+
+/* =========================================================
+   TOUCH DEVICES
+   ========================================================= */
+
+@media (hover: none) {
+
+  .lw-cta-gradient-btn:hover:not(:disabled) {
+    transform:
+      none;
+
+    box-shadow:
+      0 9px 24px rgba(109, 40, 217, 0.20);
+  }
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.lw-tab-pane .lw-cta-gradient-btn:focus-visible,
+.lw-tab-pane .lw-field-input:focus-visible {
+  outline:
+    2px solid var(--lw-purple-light);
+
+  outline-offset:
+    2px;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .lw-cta-gradient-btn,
+  .lw-field-input,
+  .lw-card-title .tooltip-popup {
+    transition:
+      none;
+  }
+}

@@ -11,6 +11,7 @@ export const ERC20_ABI = [
 ];
 
 export const BTC_STAKING_SYSTEM_ABI = [
+  "event Registered(address indexed user, address indexed referrer)",
   "function getCurrentPrice() view returns (uint256)",
   "function register(address _referrer)",
   "function mintTokens(uint256 _usdtAmount)",

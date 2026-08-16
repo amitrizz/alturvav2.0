@@ -1,0 +1,1678 @@
+/* =========================================================
+   BTC 3.0 DEX
+   RANKS & LEVELS
+   Fully Scoped CSS
+   No !important
+   No functionality changes
+   ========================================================= */
+
+
+/* =========================================================
+   ROOT
+   ========================================================= */
+
+.rl-tab-pane {
+  --rl-bg-primary: #030712;
+  --rl-bg-secondary: #070d1a;
+  --rl-bg-card: #0a1120;
+  --rl-bg-card-hover: #0e1729;
+  --rl-bg-soft: #0d1524;
+  --rl-bg-input: #050b16;
+
+  --rl-border: rgba(148, 163, 184, 0.10);
+  --rl-border-light: rgba(148, 163, 184, 0.07);
+  --rl-border-hover: rgba(139, 92, 246, 0.42);
+
+  --rl-text: #f8fafc;
+  --rl-text-secondary: #a8b3c7;
+  --rl-text-muted: #718096;
+
+  --rl-purple: #8b5cf6;
+  --rl-purple-light: #a78bfa;
+  --rl-purple-dark: #6d28d9;
+
+  --rl-gold: #fbbf24;
+  --rl-gold-light: #fcd34d;
+  --rl-gold-dark: #d97706;
+
+  --rl-green: #10b981;
+  --rl-red: #ef4444;
+
+  --rl-radius-lg: 18px;
+  --rl-radius-md: 14px;
+  --rl-radius-sm: 10px;
+
+  width: 100%;
+  min-width: 0;
+
+  color: var(--rl-text);
+}
+
+
+/* =========================================================
+   LOCAL BOX SIZING
+   ========================================================= */
+
+.rl-tab-pane *,
+.rl-tab-pane *::before,
+.rl-tab-pane *::after {
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   LOCAL UTILITY CLASSES
+   ========================================================= */
+
+.rl-tab-pane .gold-text,
+.rl-tab-pane .rl-gold-text {
+  color: var(--rl-gold);
+}
+
+.rl-tab-pane .text-xs {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.rl-tab-pane .font-bold {
+  font-weight: 700;
+}
+
+.rl-tab-pane .opacity-75 {
+  opacity: 0.75;
+}
+
+.rl-tab-pane .mt-1 {
+  margin-top: 4px;
+}
+
+.rl-tab-pane .mb-6 {
+  margin-bottom: 24px;
+}
+
+.rl-tab-pane .block {
+  display: block;
+}
+
+.rl-tab-pane .text-left {
+  text-align: left;
+}
+
+.rl-tab-pane .text-right {
+  text-align: right;
+}
+
+
+/* =========================================================
+   RANK PROGRESS BANNER
+   ========================================================= */
+
+.rl-rank-progress-banner-modern {
+  position: relative;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(280px, 0.75fr);
+
+  gap: 30px;
+
+  align-items: center;
+
+  width: 100%;
+
+  min-height: 150px;
+
+  margin-bottom: 18px;
+
+  padding: 23px 25px;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(139, 92, 246, 0.11) 0%,
+      rgba(10, 17, 32, 0.98) 45%,
+      rgba(5, 10, 20, 0.98) 100%
+    );
+
+  border:
+    1px solid rgba(139, 92, 246, 0.18);
+
+  border-radius:
+    var(--rl-radius-lg);
+
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.18);
+}
+
+
+/* Decorative glow */
+
+.rl-rank-progress-banner-modern::before {
+  content: "";
+
+  position: absolute;
+
+  width: 220px;
+  height: 220px;
+
+  left: -100px;
+  top: -120px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(139, 92, 246, 0.13);
+
+  filter:
+    blur(45px);
+
+  pointer-events: none;
+}
+
+
+.rl-rank-progress-banner-modern::after {
+  content: "";
+
+  position: absolute;
+
+  width: 220px;
+  height: 220px;
+
+  right: -130px;
+  bottom: -140px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(251, 191, 36, 0.07);
+
+  filter:
+    blur(45px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.rl-header-flex {
+  position: relative;
+
+  z-index: 1;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 15px;
+
+  min-width: 0;
+}
+
+
+/* =========================================================
+   CURRENT RANK ICON
+   ========================================================= */
+
+.rl-current-rank-icon-badge {
+  width: 62px;
+  height: 62px;
+
+  min-width: 62px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(251, 191, 36, 0.16),
+      rgba(217, 119, 6, 0.05)
+    );
+
+  border:
+    1px solid rgba(251, 191, 36, 0.28);
+
+  box-shadow:
+    0 0 25px rgba(251, 191, 36, 0.07);
+}
+
+
+.rl-current-rank-icon-badge svg {
+  width: 30px;
+  height: 30px;
+}
+
+
+/* =========================================================
+   RANK TITLE
+   ========================================================= */
+
+.rl-header-flex > div:last-child {
+  min-width: 0;
+}
+
+
+.rl-header-flex .stat-label {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color:
+    var(--rl-text-muted);
+
+  font-size: 9px;
+
+  line-height: 1.3;
+
+  font-weight: 600;
+
+  text-transform:
+    uppercase;
+
+  letter-spacing:
+    0.06em;
+}
+
+
+.rl-rank-title {
+  margin:
+    0 0 5px;
+
+  color:
+    var(--rl-text);
+
+  font-size: 24px;
+
+  line-height: 1.1;
+
+  font-weight: 800;
+
+  letter-spacing:
+    -0.035em;
+}
+
+
+.rl-header-flex .text-xs {
+  color:
+    var(--rl-text-secondary);
+
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   PROGRESS SECTION
+   ========================================================= */
+
+.rl-rank-progress-slider-wrapper {
+  position: relative;
+
+  z-index: 1;
+
+  min-width: 0;
+
+  padding:
+    15px 16px;
+
+  background:
+    rgba(3, 7, 18, 0.52);
+
+  border:
+    1px solid rgba(148, 163, 184, 0.08);
+
+  border-radius:
+    12px;
+}
+
+
+/* =========================================================
+   PROGRESS LABELS
+   ========================================================= */
+
+.rl-progress-labels {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  margin-bottom: 9px;
+
+  color:
+    var(--rl-text-secondary);
+
+  font-size: 9px;
+
+  line-height: 1.3;
+
+  font-weight: 600;
+}
+
+
+.rl-progress-labels span:last-child {
+  color:
+    var(--rl-gold);
+
+  font-weight: 750;
+}
+
+
+/* =========================================================
+   PROGRESS TRACK
+   ========================================================= */
+
+.rl-progress-track {
+  width: 100%;
+
+  height: 8px;
+
+  overflow: hidden;
+
+  border-radius:
+    20px;
+
+  background:
+    rgba(148, 163, 184, 0.10);
+
+  box-shadow:
+    inset 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+
+/* =========================================================
+   PROGRESS BAR
+   ========================================================= */
+
+.rl-progress-bar {
+  position: relative;
+
+  width: 0;
+
+  height: 100%;
+
+  min-width: 0;
+
+  border-radius:
+    inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--rl-purple),
+      var(--rl-gold)
+    );
+
+  box-shadow:
+    0 0 12px rgba(139, 92, 246, 0.22);
+
+  transition:
+    width 500ms ease;
+}
+
+
+.rl-progress-bar::after {
+  content: "";
+
+  position: absolute;
+
+  top: 1px;
+  right: 0;
+
+  width: 25px;
+  height: 3px;
+
+  border-radius: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.35);
+
+  filter:
+    blur(2px);
+}
+
+
+.rl-rank-progress-slider-wrapper > .text-xs {
+  color:
+    var(--rl-text-secondary);
+
+  font-size: 9px;
+}
+
+
+/* =========================================================
+   RANKS GRID
+   ========================================================= */
+
+.rl-ranks-grid {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.55fr)
+    minmax(300px, 0.85fr);
+
+  gap: 18px;
+
+  width: 100%;
+
+  margin-bottom: 18px;
+
+  align-items: stretch;
+}
+
+
+/* =========================================================
+   COMMON CARD
+   ========================================================= */
+
+.rl-card-box {
+  position: relative;
+
+  min-width: 0;
+
+  padding: 21px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10, 17, 32, 0.98),
+      rgba(5, 10, 20, 0.98)
+    );
+
+  border:
+    1px solid var(--rl-border);
+
+  border-radius:
+    var(--rl-radius-lg);
+
+  overflow: hidden;
+}
+
+
+.rl-card-box::after {
+  content: "";
+
+  position: absolute;
+
+  width: 170px;
+  height: 170px;
+
+  right: -120px;
+  top: -120px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(139, 92, 246, 0.035);
+
+  filter:
+    blur(35px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   CARD TITLE
+   ========================================================= */
+
+.rl-card-title {
+  position: relative;
+
+  z-index: 1;
+
+  margin:
+    0 0 18px;
+
+  color:
+    var(--rl-text);
+
+  font-size: 16px;
+
+  line-height: 1.3;
+
+  font-weight: 700;
+
+  letter-spacing:
+    -0.015em;
+}
+
+
+/* =========================================================
+   RANK MINI CARDS
+   ========================================================= */
+
+.rl-rank-cards-row {
+  position: relative;
+
+  z-index: 1;
+
+  display: flex;
+
+  gap: 12px;
+
+  margin-bottom: 16px;
+
+  overflow-x: auto;
+
+  padding-bottom: 10px;
+
+  scrollbar-width: thin;
+
+  scrollbar-color: rgba(139, 92, 246, 0.35) transparent;
+}
+
+.rl-rank-cards-row::-webkit-scrollbar {
+  height: 5px;
+}
+
+.rl-rank-cards-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.rl-rank-cards-row::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.35);
+  border-radius: 20px;
+}
+
+
+.rl-rank-mini-badge-card {
+  position: relative;
+
+  flex: 0 0 140px;
+
+  min-height: 105px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding:
+    12px 8px;
+
+  text-align: center;
+
+  background:
+    rgba(13, 21, 36, 0.78);
+
+  border:
+    1px solid var(--rl-border);
+
+  border-radius:
+    11px;
+
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+
+.rl-rank-mini-badge-card:hover {
+  transform:
+    translateY(-2px);
+
+  border-color:
+    rgba(139, 92, 246, 0.35);
+
+  background:
+    rgba(14, 23, 41, 0.95);
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.18);
+}
+
+
+/* Active rank */
+
+.rl-rank-mini-badge-card.active {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(251, 191, 36, 0.10),
+      rgba(13, 21, 36, 0.85)
+    );
+
+  border-color:
+    rgba(251, 191, 36, 0.35);
+
+  box-shadow:
+    inset 0 0 25px rgba(251, 191, 36, 0.025);
+}
+
+
+.rl-rank-mini-badge-card svg {
+  margin-bottom:
+    8px;
+
+  color:
+    var(--rl-gold);
+}
+
+
+.rl-rank-mini-badge-card h5 {
+  margin:
+    0 0 5px;
+
+  color:
+    var(--rl-text);
+
+  font-size:
+    10px;
+
+  line-height:
+    1.2;
+
+  font-weight:
+    750;
+}
+
+
+.rl-rank-mini-badge-card p {
+  margin:
+    0;
+
+  color:
+    var(--rl-text-muted);
+
+  font-size:
+    8px;
+
+  line-height:
+    1.4;
+}
+
+
+/* =========================================================
+   RANK CTA
+   ========================================================= */
+
+.rl-cta-gradient-btn {
+  position: relative;
+
+  z-index: 1;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  width: 100%;
+
+  min-height: 48px;
+
+  padding:
+    0 16px;
+
+  border:
+    0;
+
+  border-radius:
+    10px;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--rl-purple),
+      var(--rl-purple-dark)
+    );
+
+  color:
+    #fff;
+
+  font-family:
+    inherit;
+
+  font-size:
+    11px;
+
+  font-weight:
+    750;
+
+  cursor:
+    pointer;
+
+  box-shadow:
+    0 8px 22px rgba(109, 40, 217, 0.18);
+
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    opacity 180ms ease;
+}
+
+
+.rl-cta-gradient-btn:hover {
+  transform:
+    translateY(-1px);
+
+  box-shadow:
+    0 12px 28px rgba(109, 40, 217, 0.28);
+}
+
+
+.rl-cta-gradient-btn:active {
+  transform:
+    translateY(0);
+}
+
+
+.rl-cta-gradient-btn:disabled {
+  opacity:
+    0.45;
+
+  cursor:
+    not-allowed;
+
+  box-shadow:
+    none;
+
+  transform:
+    none;
+}
+
+
+/* =========================================================
+   RANK REQUIREMENTS
+   ========================================================= */
+
+.rl-details-panel {
+  position: relative;
+
+  z-index: 1;
+
+  padding:
+    8px 13px;
+
+  background:
+    rgba(7, 13, 26, 0.8);
+
+  border:
+    1px solid var(--rl-border-light);
+
+  border-radius:
+    10px;
+}
+
+
+.rl-detail-row {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 15px;
+
+  min-height:
+    43px;
+
+  border-bottom:
+    1px solid var(--rl-border-light);
+
+  color:
+    var(--rl-text-secondary);
+
+  font-size:
+    9px;
+
+  line-height:
+    1.4;
+}
+
+
+.rl-detail-row:last-child {
+  border-bottom:
+    0;
+}
+
+
+.rl-detail-row > span:last-child {
+  color:
+    var(--rl-text);
+
+  text-align:
+    right;
+
+  font-weight:
+    650;
+
+  white-space:
+    nowrap;
+}
+
+
+.rl-detail-row:first-child > span:last-child,
+.rl-detail-row:nth-child(2) > span:last-child {
+  color:
+    var(--rl-gold);
+}
+
+
+/* =========================================================
+   ACHIEVEMENTS CARD
+   ========================================================= */
+
+.rl-achievements-card {
+  width: 100%;
+
+  margin-bottom:
+    18px;
+}
+
+
+/* =========================================================
+   CARD DESCRIPTION
+   ========================================================= */
+
+.rl-tab-pane .card-desc {
+  position: relative;
+
+  z-index: 1;
+
+  margin-top:
+    -8px;
+
+  color:
+    var(--rl-text-secondary);
+
+  font-size:
+    10px;
+
+  line-height:
+    1.55;
+}
+
+
+/* =========================================================
+   ACHIEVEMENT LIST
+   ========================================================= */
+
+.rl-active-stakes-list {
+  position: relative;
+
+  z-index: 1;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap:
+    12px;
+}
+
+
+/* =========================================================
+   ACHIEVEMENT ITEM
+   ========================================================= */
+
+.rl-stake-item {
+  min-width: 0;
+
+  padding:
+    15px;
+
+  background:
+    rgba(13, 21, 36, 0.72);
+
+  border:
+    1px solid var(--rl-border);
+
+  border-radius:
+    12px;
+
+  transition:
+    border-color 180ms ease,
+    background 180ms ease,
+    transform 180ms ease;
+}
+
+
+.rl-stake-item:hover {
+  transform:
+    translateY(-2px);
+
+  background:
+    rgba(14, 23, 41, 0.92);
+
+  border-color:
+    rgba(139, 92, 246, 0.30);
+}
+
+
+/* =========================================================
+   ACHIEVEMENT HEADER
+   ========================================================= */
+
+.rl-stake-item-header {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap:
+    10px;
+
+  margin-bottom:
+    12px;
+}
+
+
+.rl-stake-badge {
+  display: inline-flex;
+
+  align-items: center;
+
+  min-height:
+    25px;
+
+  padding:
+    0 9px;
+
+  border-radius:
+    7px;
+
+  background:
+    rgba(251, 191, 36, 0.09);
+
+  border:
+    1px solid rgba(251, 191, 36, 0.20);
+
+  color:
+    var(--rl-gold);
+
+  font-size:
+    8px;
+
+  line-height:
+    1;
+
+  font-weight:
+    750;
+
+  white-space:
+    nowrap;
+}
+
+
+.rl-stake-amount {
+  color:
+    var(--rl-text-secondary);
+
+  font-size:
+    8px;
+
+  line-height:
+    1.3;
+
+  font-weight:
+    600;
+
+  text-align:
+    right;
+
+  white-space:
+    nowrap;
+}
+
+
+/* =========================================================
+   ACHIEVEMENT DETAILS
+   ========================================================= */
+
+.rl-stake-item-details {
+  min-width:
+    0;
+}
+
+
+.rl-stake-item-details p {
+  margin:
+    0 0 10px;
+
+  color:
+    var(--rl-text-secondary);
+
+  font-size:
+    9px;
+
+  line-height:
+    1.45;
+}
+
+
+/* =========================================================
+   MILESTONE PROGRESS
+   ========================================================= */
+
+.rl-milestone-progress-track {
+  width:
+    100%;
+
+  height:
+    6px;
+
+  overflow:
+    hidden;
+
+  border-radius:
+    20px;
+
+  background:
+    rgba(148, 163, 184, 0.10);
+}
+
+
+.rl-milestone-progress-track + span {
+  color:
+    var(--rl-text-secondary);
+
+  font-size:
+    8px;
+}
+
+
+/* =========================================================
+   LOADER
+   ========================================================= */
+
+.rl-tab-pane .animate-spin {
+  animation:
+    rl-spin 0.9s linear infinite;
+}
+
+
+@keyframes rl-spin {
+  from {
+    transform:
+      rotate(0deg);
+  }
+
+  to {
+    transform:
+      rotate(360deg);
+  }
+}
+
+
+/* =========================================================
+   LARGE DESKTOP
+   ========================================================= */
+
+@media (min-width: 1400px) {
+
+  .rl-rank-progress-banner-modern {
+    min-height:
+      165px;
+
+    padding:
+      26px 28px;
+  }
+
+
+  .rl-rank-title {
+    font-size:
+      27px;
+  }
+
+
+  .rl-ranks-grid {
+    grid-template-columns:
+      minmax(0, 1.6fr)
+      minmax(330px, 0.85fr);
+  }
+
+
+  .rl-rank-mini-badge-card {
+    min-height:
+      115px;
+  }
+}
+
+
+/* =========================================================
+   LAPTOP
+   ========================================================= */
+
+@media (max-width: 1200px) {
+
+  .rl-rank-progress-banner-modern {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(250px, 0.8fr);
+
+    gap:
+      20px;
+  }
+
+
+  .rl-ranks-grid {
+    grid-template-columns:
+      minmax(0, 1.3fr)
+      minmax(280px, 0.85fr);
+  }
+
+
+  .rl-active-stakes-list {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .rl-rank-progress-banner-modern {
+    grid-template-columns:
+      1fr;
+
+    gap:
+      16px;
+
+    padding:
+      19px;
+  }
+
+
+  .rl-ranks-grid {
+    grid-template-columns:
+      1fr;
+
+    gap:
+      14px;
+  }
+
+
+  .rl-active-stakes-list {
+    grid-template-columns:
+      1fr;
+  }
+
+
+  .rl-rank-mini-badge-card {
+    min-height:
+      100px;
+  }
+
+
+  .rl-card-box {
+    padding:
+      18px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+
+  .rl-rank-progress-banner-modern {
+    gap:
+      14px;
+
+    min-height:
+      auto;
+
+    margin-bottom:
+      12px;
+
+    padding:
+      15px;
+
+    border-radius:
+      14px;
+  }
+
+
+  .rl-header-flex {
+    gap:
+      11px;
+  }
+
+
+  .rl-current-rank-icon-badge {
+    width:
+      48px;
+
+    height:
+      48px;
+
+    min-width:
+      48px;
+
+    border-radius:
+      12px;
+  }
+
+
+  .rl-current-rank-icon-badge svg {
+    width:
+      24px;
+
+    height:
+      24px;
+  }
+
+
+  .rl-header-flex .stat-label {
+    font-size:
+      8px;
+  }
+
+
+  .rl-rank-title {
+    margin-bottom:
+      4px;
+
+    font-size:
+      19px;
+  }
+
+
+  .rl-header-flex .text-xs {
+    font-size:
+      8px;
+  }
+
+
+  .rl-rank-progress-slider-wrapper {
+    padding:
+      12px;
+  }
+
+
+  .rl-progress-labels {
+    margin-bottom:
+      7px;
+
+    font-size:
+      8px;
+  }
+
+
+  .rl-progress-track {
+    height:
+      7px;
+  }
+
+
+  .rl-rank-progress-slider-wrapper > .text-xs {
+    font-size:
+      8px;
+  }
+
+
+  /* Cards */
+
+  .rl-ranks-grid {
+    gap:
+      12px;
+
+    margin-bottom:
+      12px;
+  }
+
+
+  .rl-card-box {
+    padding:
+      14px;
+
+    border-radius:
+      14px;
+  }
+
+
+  .rl-card-title {
+    margin-bottom:
+      13px;
+
+    font-size:
+      14px;
+  }
+
+
+  /* Rank cards */
+
+  .rl-rank-cards-row {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap:
+      7px;
+
+    margin-bottom:
+      12px;
+  }
+
+
+  .rl-rank-mini-badge-card {
+    min-height:
+      91px;
+
+    padding:
+      10px 7px;
+  }
+
+
+  .rl-rank-mini-badge-card svg {
+    width:
+      18px;
+
+    height:
+      18px;
+
+    margin-bottom:
+      6px;
+  }
+
+
+  .rl-rank-mini-badge-card h5 {
+    font-size:
+      9px;
+  }
+
+
+  .rl-rank-mini-badge-card p {
+    font-size:
+      7px;
+  }
+
+
+  /* CTA */
+
+  .rl-cta-gradient-btn {
+    min-height:
+      45px;
+
+    font-size:
+      10px;
+  }
+
+
+  /* Requirements */
+
+  .rl-details-panel {
+    padding:
+      6px 10px;
+  }
+
+
+  .rl-detail-row {
+    min-height:
+      36px;
+
+    gap:
+      10px;
+
+    font-size:
+      8px;
+  }
+
+
+  /* Achievement */
+
+  .rl-achievements-card {
+    margin-bottom:
+      12px;
+  }
+
+
+  .rl-tab-pane .card-desc {
+    margin-top:
+      -5px;
+
+    margin-bottom:
+      16px;
+
+    font-size:
+      9px;
+  }
+
+
+  .rl-active-stakes-list {
+    gap:
+      9px;
+  }
+
+
+  .rl-stake-item {
+    padding:
+      12px;
+  }
+
+
+  .rl-stake-item-header {
+    margin-bottom:
+      10px;
+  }
+
+
+  .rl-stake-badge {
+    min-height:
+      23px;
+
+    padding:
+      0 8px;
+
+    font-size:
+      7px;
+  }
+
+
+  .rl-stake-amount {
+    font-size:
+      7px;
+  }
+
+
+  .rl-stake-item-details p {
+    margin-bottom:
+      8px;
+
+    font-size:
+      8px;
+  }
+
+
+  .rl-milestone-progress-track {
+    height:
+      5px;
+  }
+
+
+  .rl-milestone-progress-track + span {
+    font-size:
+      7px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 400px) {
+
+  .rl-rank-progress-banner-modern {
+    padding:
+      12px;
+  }
+
+
+  .rl-current-rank-icon-badge {
+    width:
+      42px;
+
+    height:
+      42px;
+
+    min-width:
+      42px;
+  }
+
+
+  .rl-current-rank-icon-badge svg {
+    width:
+      21px;
+
+    height:
+      21px;
+  }
+
+
+  .rl-rank-title {
+    font-size:
+      17px;
+  }
+
+
+  .rl-rank-cards-row {
+    display: flex;
+  }
+
+
+  .rl-rank-mini-badge-card {
+    min-height:
+      75px;
+
+    flex-direction:
+      row;
+
+    justify-content:
+      flex-start;
+
+    gap:
+      10px;
+
+    text-align:
+      left;
+  }
+
+
+  .rl-rank-mini-badge-card svg {
+    margin:
+      0;
+  }
+
+
+  .rl-rank-mini-badge-card h5 {
+    margin:
+      0 0 2px;
+  }
+
+
+  .rl-rank-mini-badge-card p {
+    margin:
+      0;
+  }
+
+
+  .rl-detail-row {
+    min-height:
+      34px;
+  }
+
+
+  .rl-stake-item-header {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+
+    gap:
+      6px;
+  }
+
+
+  .rl-stake-amount {
+    text-align:
+      left;
+  }
+}
+
+
+/* =========================================================
+   TOUCH DEVICES
+   ========================================================= */
+
+@media (hover: none) {
+
+  .rl-stat-card:hover,
+  .rl-rank-mini-badge-card:hover,
+  .rl-stake-item:hover {
+    transform:
+      none;
+  }
+
+
+  .rl-cta-gradient-btn:hover {
+    transform:
+      none;
+
+    box-shadow:
+      0 8px 22px rgba(109, 40, 217, 0.18);
+  }
+}
+
+
+/* =========================================================
+   FOCUS STATES
+   ========================================================= */
+
+.rl-tab-pane .rl-cta-gradient-btn:focus-visible {
+  outline:
+    2px solid var(--rl-purple-light);
+
+  outline-offset:
+    2px;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .rl-stat-card,
+  .rl-rank-mini-badge-card,
+  .rl-stake-item,
+  .rl-cta-gradient-btn,
+  .rl-progress-bar {
+    transition:
+      none;
+  }
+
+
+  .rl-tab-pane .animate-spin {
+    animation:
+      none;
+  }
+}

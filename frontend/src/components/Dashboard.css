@@ -1,0 +1,1354 @@
+/* =========================================================
+   BTC 3.0 DEX — DASHBOARD
+   Scoped Dashboard Styles
+   No global overrides
+   No !important
+   ========================================================= */
+
+
+/* =========================================================
+   DASHBOARD ROOT
+   ========================================================= */
+
+.db-tab-pane {
+  --db-bg-primary: #030712;
+  --db-bg-secondary: #070d1a;
+  --db-bg-card: #0a1120;
+  --db-bg-card-hover: #0e1729;
+  --db-bg-soft: #0d1524;
+
+  --db-border: rgba(148, 163, 184, 0.1);
+  --db-border-hover: rgba(139, 92, 246, 0.4);
+
+  --db-text-primary: #f8fafc;
+  --db-text-secondary: #a8b3c7;
+  --db-text-muted: #718096;
+
+  --db-purple: #8b5cf6;
+  --db-purple-light: #a78bfa;
+
+  --db-gold: #fbbf24;
+  --db-gold-light: #fcd34d;
+
+  --db-green: #10b981;
+  --db-red: #ef4444;
+  --db-blue: #3b82f6;
+
+  --db-radius-lg: 18px;
+  --db-radius-md: 14px;
+  --db-radius-sm: 10px;
+
+  width: 100%;
+  min-width: 0;
+
+  color: var(--db-text-primary);
+}
+
+
+/* =========================================================
+   COMMON RESET INSIDE DASHBOARD
+   ========================================================= */
+
+.db-tab-pane *,
+.db-tab-pane *::before,
+.db-tab-pane *::after {
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   TEXT HELPERS
+   ========================================================= */
+
+.db-tab-pane .text-green {
+  color: var(--db-green);
+}
+
+
+/* =========================================================
+   HERO STATS
+   ========================================================= */
+
+.db-stats-strip {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 14px;
+
+  width: 100%;
+
+  margin-bottom: 20px;
+}
+
+
+/* =========================================================
+   STAT CARD
+   ========================================================= */
+
+.db-stat-card {
+  position: relative;
+
+  min-width: 0;
+  min-height: 118px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 18px 19px;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10, 17, 32, 0.98),
+      rgba(5, 10, 20, 0.98)
+    );
+
+  border: 1px solid var(--db-border);
+
+  border-radius: var(--db-radius-md);
+
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+
+.db-stat-card:hover {
+  transform: translateY(-2px);
+
+  border-color: var(--db-border-hover);
+
+  box-shadow:
+    0 14px 35px rgba(0, 0, 0, 0.24);
+}
+
+
+/* =========================================================
+   STAT CARD ACCENT
+   ========================================================= */
+
+.db-stat-card::before {
+  content: "";
+
+  position: absolute;
+
+  top: 17px;
+  bottom: 17px;
+  left: 0;
+
+  width: 3px;
+
+  border-radius:
+    0 5px 5px 0;
+
+  background: var(--db-stat-accent);
+}
+
+
+/* =========================================================
+   STAT CARD GLOW
+   ========================================================= */
+
+.db-stat-card::after {
+  content: "";
+
+  position: absolute;
+
+  width: 130px;
+  height: 130px;
+
+  right: -80px;
+  bottom: -80px;
+
+  border-radius: 50%;
+
+  background: var(--db-stat-glow);
+
+  filter: blur(35px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   INDIVIDUAL STAT COLORS
+   ========================================================= */
+
+.db-card-price {
+  --db-stat-accent: #3b82f6;
+  --db-stat-glow: rgba(59, 130, 246, 0.13);
+}
+
+
+.db-card-minted {
+  --db-stat-accent: #8b5cf6;
+  --db-stat-glow: rgba(139, 92, 246, 0.13);
+}
+
+
+.db-card-remaining {
+  --db-stat-accent: #10b981;
+  --db-stat-glow: rgba(16, 185, 129, 0.13);
+}
+
+
+.db-card-supply {
+  --db-stat-accent: #f59e0b;
+  --db-stat-glow: rgba(245, 158, 11, 0.13);
+}
+
+
+.db-card-max {
+  --db-stat-accent: #6366f1;
+  --db-stat-glow: rgba(99, 102, 241, 0.13);
+}
+
+
+.db-card-balance {
+  --db-stat-accent: #fbbf24;
+  --db-stat-glow: rgba(251, 191, 36, 0.13);
+}
+
+
+/* =========================================================
+   STAT TEXT
+   ========================================================= */
+
+.db-stat-label {
+  position: relative;
+
+  z-index: 1;
+
+  display: block;
+
+  margin-bottom: 8px;
+
+  color: var(--db-text-secondary);
+
+  font-size: 11px;
+  line-height: 1.3;
+
+  font-weight: 500;
+}
+
+
+.db-stat-value {
+  position: relative;
+
+  z-index: 1;
+
+  margin: 0;
+
+  color: var(--db-text-primary);
+
+  font-size: 21px;
+  line-height: 1.2;
+
+  font-weight: 750;
+
+  letter-spacing: -0.025em;
+
+  overflow-wrap: anywhere;
+}
+
+
+.db-stat-change {
+  position: relative;
+
+  z-index: 1;
+
+  display: inline-block;
+
+  margin-top: 7px;
+
+  font-size: 10px;
+
+  line-height: 1.3;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   MAIN DASHBOARD SPLIT
+   ========================================================= */
+
+.db-dashboard-row-split {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1.45fr)
+    minmax(330px, 0.9fr);
+
+  gap: 18px;
+
+  width: 100%;
+
+  align-items: stretch;
+
+  margin-bottom: 18px;
+}
+
+
+/* =========================================================
+   DASHBOARD CARD
+   ========================================================= */
+
+.db-card-box {
+  position: relative;
+
+  min-width: 0;
+
+  padding: 20px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(10, 17, 32, 0.98),
+      rgba(5, 10, 20, 0.98)
+    );
+
+  border: 1px solid var(--db-border);
+
+  border-radius: var(--db-radius-lg);
+
+  overflow: hidden;
+}
+
+
+.db-card-box::after {
+  content: "";
+
+  position: absolute;
+
+  width: 180px;
+  height: 180px;
+
+  right: -120px;
+  top: -120px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(139, 92, 246, 0.04);
+
+  filter: blur(30px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   CARD TITLE
+   ========================================================= */
+
+.db-card-title {
+  position: relative;
+
+  z-index: 1;
+
+  margin: 0 0 18px;
+
+  color: var(--db-text-primary);
+
+  font-size: 16px;
+  line-height: 1.3;
+
+  font-weight: 700;
+
+  letter-spacing: -0.015em;
+}
+
+
+/* =========================================================
+   QUICK ACTION GRID
+   ========================================================= */
+
+.db-quick-actions-grid {
+  position: relative;
+
+  z-index: 1;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+
+/* =========================================================
+   ACTION CARD
+   ========================================================= */
+
+.db-action-card {
+  position: relative;
+
+  min-width: 0;
+  min-height: 150px;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 15px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(13, 21, 36, 0.95),
+      rgba(7, 13, 26, 0.95)
+    );
+
+  border: 1px solid var(--db-border);
+
+  border-radius: 13px;
+
+  cursor: pointer;
+
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    box-shadow 180ms ease;
+}
+
+
+.db-action-card:hover {
+  transform: translateY(-2px);
+
+  border-color:
+    rgba(139, 92, 246, 0.35);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(18, 27, 46, 0.98),
+      rgba(9, 16, 30, 0.98)
+    );
+
+  box-shadow:
+    0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+
+/* =========================================================
+   ACTION HEADER
+   ========================================================= */
+
+.db-action-card-header {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  margin-bottom: 9px;
+}
+
+
+.db-action-card-header h4 {
+  margin: 0;
+
+  color: var(--db-text-primary);
+
+  font-size: 12px;
+  line-height: 1.3;
+
+  font-weight: 700;
+}
+
+
+/* =========================================================
+   ACTION ICON
+   ========================================================= */
+
+.db-gold-icon {
+  flex-shrink: 0;
+
+  color: var(--db-gold);
+
+  transition:
+    transform 180ms ease,
+    color 180ms ease;
+}
+
+
+.db-action-card:hover .db-gold-icon {
+  transform: scale(1.08);
+
+  color: var(--db-gold-light);
+}
+
+
+/* =========================================================
+   ACTION DESCRIPTION
+   ========================================================= */
+
+.db-action-card p {
+  margin: 0;
+
+  color: var(--db-text-secondary);
+
+  font-size: 10px;
+  line-height: 1.55;
+
+  flex: 1;
+}
+
+
+/* =========================================================
+   ACTION LINK
+   ========================================================= */
+
+.db-action-link {
+  display: inline-flex;
+
+  align-items: center;
+
+  margin-top: 12px;
+
+  color: var(--db-purple-light);
+
+  font-size: 10px;
+  line-height: 1.2;
+
+  font-weight: 700;
+
+  transition:
+    color 180ms ease,
+    transform 180ms ease;
+}
+
+
+.db-action-card:hover .db-action-link {
+  color: var(--db-gold-light);
+
+  transform: translateX(2px);
+}
+
+
+/* =========================================================
+   PLATFORM OVERVIEW
+   ========================================================= */
+
+.db-chart-stats-row {
+  position: relative;
+
+  z-index: 1;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 10px;
+
+  margin-bottom: 20px;
+}
+
+
+.db-chart-col {
+  min-width: 0;
+
+  padding: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.018);
+
+  border:
+    1px solid rgba(148, 163, 184, 0.07);
+
+  border-radius: 10px;
+}
+
+
+.db-chart-stat-label {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: var(--db-text-muted);
+
+  font-size: 9px;
+
+  line-height: 1.3;
+
+  white-space: nowrap;
+}
+
+
+.db-chart-stat-val {
+  margin: 0;
+
+  color: var(--db-text-primary);
+
+  font-size: 14px;
+
+  line-height: 1.25;
+
+  font-weight: 700;
+
+  overflow-wrap: anywhere;
+}
+
+
+.db-chart-stat-change {
+  display: inline-block;
+
+  margin-top: 4px;
+
+  font-size: 9px;
+
+  line-height: 1.2;
+
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   CHART
+   ========================================================= */
+
+.db-mock-chart-container {
+  position: relative;
+
+  z-index: 1;
+
+  width: 100%;
+
+  min-height: 180px;
+
+  padding: 12px 8px 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(139, 92, 246, 0.035),
+      rgba(3, 7, 18, 0)
+    );
+
+  border:
+    1px solid rgba(148, 163, 184, 0.06);
+
+  border-radius: 12px;
+}
+
+
+.db-mock-svg-line {
+  display: block;
+
+  width: 100%;
+
+  height: 135px;
+
+  overflow: visible;
+}
+
+
+.db-mock-svg-line path {
+  filter:
+    drop-shadow(
+      0 0 5px rgba(251, 191, 36, 0.25)
+    );
+}
+
+
+.db-mock-svg-line circle {
+  filter:
+    drop-shadow(
+      0 0 7px rgba(251, 191, 36, 0.35)
+    );
+}
+
+
+/* =========================================================
+   CHART LABELS
+   ========================================================= */
+
+.db-mock-chart-labels {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 8px;
+
+  padding:
+    7px 5px 8px;
+
+  color: var(--db-text-muted);
+
+  font-size: 8px;
+
+  line-height: 1.2;
+}
+
+
+/* =========================================================
+   REWARD BANNER
+   ========================================================= */
+
+.db-unlock-rewards-banner {
+  position: relative;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  width: 100%;
+
+  min-height: 94px;
+
+  padding: 18px 20px;
+
+  margin-top: 18px;
+
+  overflow: hidden;
+
+  background:
+    linear-gradient(
+      105deg,
+      rgba(139, 92, 246, 0.12),
+      rgba(251, 191, 36, 0.045),
+      rgba(7, 13, 26, 0.96)
+    );
+
+  border:
+    1px solid rgba(139, 92, 246, 0.18);
+
+  border-radius: var(--db-radius-lg);
+}
+
+
+.db-unlock-rewards-banner::before {
+  content: "";
+
+  position: absolute;
+
+  width: 180px;
+  height: 180px;
+
+  left: -90px;
+  top: -110px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(139, 92, 246, 0.12);
+
+  filter: blur(40px);
+
+  pointer-events: none;
+}
+
+
+.db-unlock-rewards-banner::after {
+  content: "";
+
+  position: absolute;
+
+  width: 160px;
+  height: 160px;
+
+  right: -90px;
+  bottom: -100px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(251, 191, 36, 0.08);
+
+  filter: blur(35px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   BANNER LEFT
+   ========================================================= */
+
+.db-banner-left-content {
+  position: relative;
+
+  z-index: 1;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 13px;
+
+  min-width: 0;
+}
+
+
+.db-banner-icon-bg {
+  width: 46px;
+  height: 46px;
+
+  min-width: 46px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 13px;
+
+  background:
+    rgba(251, 191, 36, 0.08);
+
+  border:
+    1px solid rgba(251, 191, 36, 0.16);
+
+  box-shadow:
+    0 0 25px rgba(251, 191, 36, 0.06);
+}
+
+
+.db-banner-text-details {
+  min-width: 0;
+}
+
+
+.db-banner-text-details h3 {
+  margin: 0;
+
+  color: var(--db-text-primary);
+
+  font-size: 14px;
+
+  line-height: 1.3;
+
+  font-weight: 750;
+}
+
+
+.db-banner-text-details p {
+  margin: 5px 0 0;
+
+  color: var(--db-text-secondary);
+
+  font-size: 10px;
+
+  line-height: 1.45;
+}
+
+
+/* =========================================================
+   BANNER BUTTON
+   ========================================================= */
+
+.db-banner-action-btn {
+  position: relative;
+
+  z-index: 1;
+
+  flex-shrink: 0;
+
+  min-height: 40px;
+
+  padding:
+    0 15px;
+
+  border:
+    1px solid rgba(251, 191, 36, 0.2);
+
+  border-radius: 9px;
+
+  background:
+    rgba(251, 191, 36, 0.08);
+
+  color: var(--db-gold-light);
+
+  font-size: 10px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    transform 180ms ease;
+}
+
+
+.db-banner-action-btn:hover {
+  transform: translateY(-1px);
+
+  background:
+    rgba(251, 191, 36, 0.14);
+
+  border-color:
+    rgba(251, 191, 36, 0.4);
+}
+
+
+/* =========================================================
+   LARGE DESKTOP
+   ========================================================= */
+
+@media (min-width: 1400px) {
+
+  .db-stats-strip {
+    grid-template-columns:
+      repeat(6, minmax(0, 1fr));
+  }
+
+
+  .db-stat-card {
+    min-height: 120px;
+  }
+
+
+  .db-stat-value {
+    font-size: 20px;
+  }
+
+
+  .db-action-card {
+    min-height: 155px;
+  }
+}
+
+
+/* =========================================================
+   DESKTOP / LAPTOP
+   ========================================================= */
+
+@media (max-width: 1200px) {
+
+  .db-stats-strip {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr));
+  }
+
+
+  .db-dashboard-row-split {
+    grid-template-columns:
+      minmax(0, 1.25fr)
+      minmax(300px, 0.9fr);
+  }
+
+
+  .db-stat-value {
+    font-size: 18px;
+  }
+}
+
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .db-stats-strip {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 10px;
+  }
+
+
+  .db-dashboard-row-split {
+    grid-template-columns: 1fr;
+
+    gap: 14px;
+  }
+
+
+  .db-action-card {
+    min-height: 135px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+
+  .db-stats-strip {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 8px;
+
+    margin-bottom: 12px;
+  }
+
+
+  .db-stat-card {
+    min-height: 94px;
+
+    padding: 13px;
+  }
+
+
+  .db-stat-card::before {
+    top: 12px;
+    bottom: 12px;
+  }
+
+
+  .db-stat-label {
+    margin-bottom: 5px;
+
+    font-size: 9px;
+  }
+
+
+  .db-stat-value {
+    font-size: 14px;
+  }
+
+
+  .db-stat-change {
+    margin-top: 5px;
+
+    font-size: 8px;
+  }
+
+
+  .db-dashboard-row-split {
+    gap: 12px;
+
+    margin-bottom: 12px;
+  }
+
+
+  .db-card-box {
+    padding: 14px;
+
+    border-radius: 14px;
+  }
+
+
+  .db-card-title {
+    margin-bottom: 13px;
+
+    font-size: 14px;
+  }
+
+
+  /* Quick actions */
+
+  .db-quick-actions-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+
+    gap: 7px;
+  }
+
+
+  .db-action-card {
+    min-height: 132px;
+
+    padding: 12px;
+
+    border-radius: 11px;
+  }
+
+
+  .db-action-card-header {
+    gap: 7px;
+
+    margin-bottom: 7px;
+  }
+
+
+  .db-action-card-header h4 {
+    font-size: 10px;
+  }
+
+
+  .db-action-card p {
+    font-size: 9px;
+
+    line-height: 1.45;
+  }
+
+
+  .db-action-link {
+    margin-top: 8px;
+
+    font-size: 9px;
+  }
+
+
+  .db-gold-icon {
+    width: 17px;
+    height: 17px;
+  }
+
+
+  /* Platform statistics */
+
+  .db-chart-stats-row {
+    gap: 6px;
+
+    margin-bottom: 12px;
+  }
+
+
+  .db-chart-col {
+    padding: 8px;
+
+    border-radius: 8px;
+  }
+
+
+  .db-chart-stat-label {
+    font-size: 8px;
+  }
+
+
+  .db-chart-stat-val {
+    font-size: 11px;
+  }
+
+
+  .db-chart-stat-change {
+    font-size: 8px;
+  }
+
+
+  /* Chart */
+
+  .db-mock-chart-container {
+    min-height: 160px;
+
+    padding:
+      8px 5px 0;
+  }
+
+
+  .db-mock-svg-line {
+    height: 120px;
+  }
+
+
+  .db-mock-chart-labels {
+    font-size: 7px;
+  }
+
+
+  /* Banner */
+
+  .db-unlock-rewards-banner {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 13px;
+
+    min-height: auto;
+
+    padding: 14px;
+
+    margin-top: 12px;
+
+    border-radius: 14px;
+  }
+
+
+  .db-banner-left-content {
+    gap: 10px;
+  }
+
+
+  .db-banner-icon-bg {
+    width: 40px;
+    height: 40px;
+
+    min-width: 40px;
+
+    border-radius: 11px;
+  }
+
+
+  .db-banner-icon-bg svg {
+    width: 20px;
+    height: 20px;
+  }
+
+
+  .db-banner-text-details h3 {
+    font-size: 12px;
+  }
+
+
+  .db-banner-text-details p {
+    font-size: 9px;
+  }
+
+
+  .db-banner-action-btn {
+    width: 100%;
+
+    min-height: 38px;
+  }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+   ========================================================= */
+
+@media (max-width: 400px) {
+
+  .db-stats-strip {
+    grid-template-columns: 1fr;
+  }
+
+
+  .db-stat-card {
+    min-height: 78px;
+
+    flex-direction: row;
+
+    align-items: center;
+
+    gap: 12px;
+  }
+
+
+  .db-stat-card::before {
+    top: 10px;
+    bottom: 10px;
+  }
+
+
+  .db-stat-value {
+    font-size: 15px;
+  }
+
+
+  .db-quick-actions-grid {
+    grid-template-columns: 1fr;
+  }
+
+
+  .db-action-card {
+    min-height: 110px;
+  }
+
+
+  .db-chart-stats-row {
+    grid-template-columns: 1fr;
+  }
+
+
+  .db-chart-col {
+    display: grid;
+
+    grid-template-columns:
+      1fr auto;
+
+    align-items: center;
+
+    column-gap: 8px;
+  }
+
+
+  .db-chart-stat-label {
+    margin: 0;
+  }
+
+
+  .db-chart-stat-val {
+    text-align: right;
+  }
+
+
+  .db-chart-stat-change {
+    grid-column: 2;
+
+    margin-top: 0;
+
+    text-align: right;
+  }
+}
+
+
+/* =========================================================
+   TOUCH DEVICES
+   ========================================================= */
+
+@media (hover: none) {
+
+  .db-stat-card:hover {
+    transform: none;
+
+    border-color: var(--db-border);
+
+    box-shadow: none;
+  }
+
+
+  .db-action-card:hover {
+    transform: none;
+
+    border-color: var(--db-border);
+
+    box-shadow: none;
+  }
+
+
+  .db-action-card:hover .db-gold-icon {
+    transform: none;
+  }
+
+
+  .db-action-card:hover .db-action-link {
+    transform: none;
+  }
+
+
+  .db-banner-action-btn:hover {
+    transform: none;
+  }
+}
+
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.db-action-card:focus-visible,
+.db-banner-action-btn:focus-visible {
+  outline:
+    2px solid var(--db-purple-light);
+
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   REDUCED MOTION
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .db-stat-card,
+  .db-action-card,
+  .db-gold-icon,
+  .db-action-link,
+  .db-banner-action-btn {
+    transition: none;
+  }
+}

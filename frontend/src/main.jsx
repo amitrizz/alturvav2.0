@@ -32,7 +32,7 @@ const connectors = connectorsForWallets(
     },
   ],
   {
-    appName: 'BTC 3.0 DEX',
+    appName: 'BTC3.O DEX',
     projectId,
   }
 )

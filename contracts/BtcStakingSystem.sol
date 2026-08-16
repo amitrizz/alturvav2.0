@@ -12,7 +12,7 @@ interface IBtcToken is IERC20 {
 
 contract BtcStakingSystem is Ownable, ReentrancyGuard {
     IBtcToken public btcToken;
-    IERC20 public usdtToken; // stablecoin used for payment (USD reference)
+    IERC20 public usdtToken; 
 
     // Staking limits
     uint256 public constant MIN_STAKE_USD = 10 * 10**18;
@@ -21,14 +21,18 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
     // Pricing parameters
     uint256 public constant START_PRICE = 5 * 10**17; // $0.50
     uint256 public constant PRICE_STEP_VOLUME = 500 * 10**18; // $500
-    uint256 public constant PRICE_STEP_INCREASE = 5 * 10**14; // $0.0005 (0.1% of $0.50)
+    uint256 public constant PRICE_STEP_INCREASE = 5 * 10**14; // $0.0005
 
     uint256 public totalUSDValueMinted;
     uint256 public totalMintedTokens;
-    uint256 public spinCost = 10 * 10**18; // 10 RSS to spin
+    uint256 public spinCost = 10 * 10**18; 
 
-    // Affiliate Commission Percentages (5 levels)
-    uint256[5] public levelPercents = [1000, 300, 200, 200, 100]; // basis points (10%, 3%, 2%, 2%, 1%)
+    // Affiliate Commission Percentages (15 levels, total 19%)
+    uint256[15] public levelPercents = [800, 400, 200, 100, 50, 50, 50, 50, 50, 25, 25, 25, 25, 25, 25]; 
+
+    // Coupon System
+    mapping(bytes32 => bool) public validCoupons;
+    mapping(address => mapping(uint256 => uint256)) public userCouponsAppliedCountByMonth; 
 
     struct User {
         address referrer;
@@ -47,40 +51,40 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         uint256 startTime;
         uint256 lastClaimTime;
         uint256 rewardClaimedUSD;
-        uint256 rewardCapUSD; // e.g. 3x or 5x
-        bool is365Day;
+        uint256 lockupMonths; // 0 for normal, 3, 6, 12 months
+        uint256 ratePerDay; // basis points: 50 (0.5%), 60 (0.6%), 75 (0.75%), 100 (1.0%)
         bool active;
     }
 
     mapping(address => User) public users;
     mapping(address => StakePosition[]) public userStakes;
     mapping(address => address[]) public directs;
+    mapping(address => mapping(uint256 => uint256)) public rankClaimDays;
 
-    // Rank configurations (14 Ranks)
     struct RankConfig {
         string name;
         uint256 minBusinessUSD;
         uint256 dailyRewardUSD;
-        uint256 rankPercent; // basis points
+        uint256 rankPercent; 
     }
 
     RankConfig[14] public ranks;
 
     event Registered(address indexed user, address indexed referrer);
     event Minted(address indexed user, uint256 usdtAmount, uint256 btcAmount, uint256 currentPrice);
-    event Staked(address indexed user, uint256 amountTokens, uint256 amountUSD, bool is365Day);
+    event Staked(address indexed user, uint256 amountTokens, uint256 amountUSD, uint256 lockupMonths, uint256 ratePerDay);
     event RewardClaimed(address indexed user, uint256 stakeIndex, uint256 rewardTokens, uint256 rewardUSD);
     event RankRewardClaimed(address indexed user, uint256 rewardUSD);
     event Unstaked(address indexed user, uint256 stakeIndex, uint256 tokenReturned, uint256 feeApplied);
     event Sold(address indexed user, uint256 btcAmount, uint256 usdtAmount, uint256 price);
     event WheelSpun(address indexed user, uint8 index, uint256 rewardAmount);
-
+    event CouponApplied(address indexed user, string code, uint256 rewardUSD);
 
     constructor(address _btcToken, address _usdtToken) Ownable(msg.sender) {
         btcToken = IBtcToken(_btcToken);
         usdtToken = IERC20(_usdtToken);
 
-        // Initialize ranks
+        // Initialize ranks (Starter to Director)
         ranks[0] = RankConfig("Starter", 1000 * 10**18, 1 * 10**18, 1500);
         ranks[1] = RankConfig("Executive", 2501 * 10**18, 5 * 10**18, 2000);
         ranks[2] = RankConfig("Engr", 10001 * 10**18, 11 * 10**18, 2500);
@@ -97,13 +101,11 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         ranks[13] = RankConfig("Director", 70000001 * 10**18, 35000 * 10**18, 10000);
     }
 
-    // Get current BTC 3.0 price in USD (18 decimals)
     function getCurrentPrice() public view returns (uint256) {
         uint256 steps = totalUSDValueMinted / PRICE_STEP_VOLUME;
         return START_PRICE + (steps * PRICE_STEP_INCREASE);
     }
 
-    // Register user with a referrer
     function register(address _referrer) external {
         require(!users[msg.sender].registered, "Already registered");
         require(msg.sender != _referrer, "Cannot refer yourself");
@@ -118,16 +120,13 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         emit Registered(msg.sender, _referrer);
     }
 
-    // Mint BTC 3.0 tokens using USDT
     function mintTokens(uint256 _usdtAmount) external nonReentrant {
         require(users[msg.sender].registered, "Must be registered first");
         require(_usdtAmount >= 10 * 10**18, "Min mint is $10");
         require(_usdtAmount <= 10000 * 10**18, "Max mint is $10000");
 
-        // Transfer USDT to contract
         usdtToken.transferFrom(msg.sender, address(this), _usdtAmount);
 
-        // 2% Mint Fee
         uint256 fee = (_usdtAmount * 2) / 100;
         uint256 netUSD = _usdtAmount - fee;
 
@@ -137,13 +136,11 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         totalUSDValueMinted += netUSD;
         totalMintedTokens += btcAmount;
 
-        // Transfer BTC tokens to user from contract reserve
         btcToken.transfer(msg.sender, btcAmount);
 
         emit Minted(msg.sender, _usdtAmount, btcAmount, price);
     }
 
-    // Mint BTC 3.0 tokens using Native BNB (assuming fixed rate 1 BNB = $600 USD)
     function mintTokensWithBNB() external payable nonReentrant {
         require(users[msg.sender].registered, "Must be registered first");
         require(msg.value > 0, "BNB amount must be greater than 0");
@@ -154,7 +151,6 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         require(usdtAmount >= 10 * 10**18, "Min mint is $10");
         require(usdtAmount <= 10000 * 10**18, "Max mint is $10000");
 
-        // 2% Mint Fee
         uint256 fee = (usdtAmount * 2) / 100;
         uint256 netUSD = usdtAmount - fee;
 
@@ -164,25 +160,27 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         totalUSDValueMinted += netUSD;
         totalMintedTokens += btcAmount;
 
-        // Transfer BTC tokens to user from contract reserve
         btcToken.transfer(msg.sender, btcAmount);
 
         emit Minted(msg.sender, msg.value, btcAmount, price);
     }
 
-    // Stake BTC 3.0 tokens
-    function stake(uint256 _btcAmount, bool _is365Day) external nonReentrant {
+    // Stake package selection (lockupMonths: 0, 3, 6, 12)
+    function stake(uint256 _btcAmount, uint256 _lockupMonths) external nonReentrant {
         require(users[msg.sender].registered, "Must be registered");
+        require(_lockupMonths == 0 || _lockupMonths == 3 || _lockupMonths == 6 || _lockupMonths == 12, "Invalid lockup period");
         
         uint256 price = getCurrentPrice();
         uint256 usdValue = (_btcAmount * price) / 10**18;
         require(usdValue >= MIN_STAKE_USD, "Min stake is $10");
         require(usdValue <= MAX_STAKE_USD, "Max stake is $10000");
 
-        // Transfer BTC tokens from user to contract
         btcToken.transferFrom(msg.sender, address(this), _btcAmount);
 
-        uint256 cap = _is365Day ? usdValue * 5 : usdValue * 3;
+        uint256 dailyRate = 50; // default 0.5%
+        if (_lockupMonths == 3) dailyRate = 60; // 0.6%
+        else if (_lockupMonths == 6) dailyRate = 75; // 0.75%
+        else if (_lockupMonths == 12) dailyRate = 100; // 1.0%
 
         userStakes[msg.sender].push(StakePosition({
             amountTokens: _btcAmount,
@@ -190,31 +188,25 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
             startTime: block.timestamp,
             lastClaimTime: block.timestamp,
             rewardClaimedUSD: 0,
-            rewardCapUSD: cap,
-            is365Day: _is365Day,
+            lockupMonths: _lockupMonths,
+            ratePerDay: dailyRate,
             active: true
         }));
 
         users[msg.sender].totalSelfStakeUSD += usdValue;
-
-        // Update Affiliate direct active counts & business volume
         _updateTeamBusiness(msg.sender, usdValue);
 
-        emit Staked(msg.sender, _btcAmount, usdValue, _is365Day);
+        emit Staked(msg.sender, _btcAmount, usdValue, _lockupMonths, dailyRate);
     }
 
-    // Process team business volume calculations up the tree
     function _updateTeamBusiness(address _user, uint256 _stakeUSD) internal {
         address current = users[_user].referrer;
         uint256 level = 1;
 
-        while (current != address(0) && level <= 15) { // Track up to 15 referral levels for safety
+        while (current != address(0) && level <= 15) { 
             users[current].totalTeamBusinessUSD += _stakeUSD;
-            
-            // Check rank qualification
             _checkRankQualification(current);
 
-            // Update direct active direct count on Level 1
             if (level == 1) {
                 uint256 activeCount = 0;
                 for (uint256 i = 0; i < directs[current].length; i++) {
@@ -230,12 +222,11 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         }
     }
 
-    // Rank validation logic with 40% A-Team / 60% Other Teams structural check
+    // 50% Strongest Leg (Team A) / 50% Other Legs (Team B) structural check
     function _checkRankQualification(address _user) internal {
         uint256 totalVolume = users[_user].totalTeamBusinessUSD;
         if (totalVolume == 0) return;
 
-        // Find the strongest direct leg volume (A-Team)
         uint256 maxLegVolume = 0;
         for (uint256 i = 0; i < directs[_user].length; i++) {
             address child = directs[_user][i];
@@ -246,16 +237,12 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         }
 
         uint256 otherLegsVolume = totalVolume - maxLegVolume;
-
-        // For each rank config, check if eligible
         uint256 qualifiedRank = 0;
         bool found = false;
 
         for (int256 i = 13; i >= 0; i--) {
             uint256 minReq = ranks[uint256(i)].minBusinessUSD;
-            
-            // 40% Max of minReq can come from the strongest leg
-            uint256 maxAllowedFromStrongest = (minReq * 40) / 100;
+            uint256 maxAllowedFromStrongest = minReq / 2; // 50%
             uint256 effectiveStrongest = maxLegVolume > maxAllowedFromStrongest ? maxAllowedFromStrongest : maxLegVolume;
 
             if (effectiveStrongest + otherLegsVolume >= minReq) {
@@ -271,20 +258,21 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         }
     }
 
-    // Calculate daily rewards (0.5% or 1%)
+    // Caps: Non-working (2.5x) vs Working (5x)
     function getPendingReward(address _user, uint256 _index) public view returns (uint256 rewardTokens, uint256 rewardUSD) {
         if (_index >= userStakes[_user].length) return (0, 0);
         StakePosition memory st = userStakes[_user][_index];
         if (!st.active) return (0, 0);
 
         uint256 elapsed = block.timestamp - st.lastClaimTime;
-        uint256 ratePerDay = st.is365Day ? 100 : 50; // 1% or 0.5% (basis points)
-        
-        uint256 accruedUSD = (st.amountUSD * ratePerDay * elapsed) / (10000 * 86400);
+        uint256 accruedUSD = (st.amountUSD * st.ratePerDay * elapsed) / (10000 * 86400);
 
-        // Cap rewards
-        if (st.rewardClaimedUSD + accruedUSD > st.rewardCapUSD) {
-            accruedUSD = st.rewardCapUSD - st.rewardClaimedUSD;
+        // Calculate dynamic cap: 5x if working (active directs > 0), 2.5x if non-working
+        uint256 capMultiplier = (users[_user].directActiveCount > 0) ? 50 : 25; // 5.0x or 2.5x
+        uint256 rewardCapUSD = (st.amountUSD * capMultiplier) / 10;
+
+        if (st.rewardClaimedUSD + accruedUSD > rewardCapUSD) {
+            accruedUSD = rewardCapUSD - st.rewardClaimedUSD;
         }
 
         uint256 price = getCurrentPrice();
@@ -293,7 +281,6 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         return (tokens, accruedUSD);
     }
 
-    // Claim staking rewards and distribute level commissions
     function claimStakingReward(uint256 _index) external nonReentrant {
         require(_index < userStakes[msg.sender].length, "Invalid stake index");
         StakePosition storage st = userStakes[msg.sender][_index];
@@ -305,27 +292,26 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         st.lastClaimTime = block.timestamp;
         st.rewardClaimedUSD += accruedUSD;
 
-        if (st.rewardClaimedUSD >= st.rewardCapUSD) {
+        uint256 capMultiplier = (users[msg.sender].directActiveCount > 0) ? 50 : 25;
+        uint256 rewardCapUSD = (st.amountUSD * capMultiplier) / 10;
+
+        if (st.rewardClaimedUSD >= rewardCapUSD) {
             st.active = false;
         }
 
-        // Payout reward tokens
         btcToken.transfer(msg.sender, tokens);
-
-        // Process referral commission up to 5 levels
         _payReferralCommission(msg.sender, tokens);
 
         emit RewardClaimed(msg.sender, _index, tokens, accruedUSD);
     }
 
-    // Distribute level commissions
+    // 15 level payout logic
     function _payReferralCommission(address _user, uint256 _rewardTokens) internal {
         address current = users[_user].referrer;
         
-        for (uint256 i = 0; i < 5; i++) {
+        for (uint256 i = 0; i < 15; i++) {
             if (current == address(0)) break;
 
-            // Check if referrer has unlocked this level (1 direct active direct per level)
             if (users[current].directActiveCount >= (i + 1)) {
                 uint256 comm = (_rewardTokens * levelPercents[i]) / 10000;
                 btcToken.transfer(current, comm);
@@ -335,15 +321,23 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         }
     }
 
-    // Claim daily rank rewards
+    // Claim daily rank rewards with 150 days limit
     function claimRankReward() external nonReentrant {
         User storage u = users[msg.sender];
         require(u.dailyRankReward > 0, "No rank rewards qualified");
-        
+        require(rankClaimDays[msg.sender][u.currentRank] < 150, "Claim limit of 150 days exceeded for current rank");
+
         uint256 elapsed = block.timestamp - (u.lastRankClaimTime == 0 ? block.timestamp - 1 days : u.lastRankClaimTime);
         require(elapsed >= 1 days, "Can claim daily rank reward once per day");
 
         uint256 daysAccrued = elapsed / 1 days;
+        if (rankClaimDays[msg.sender][u.currentRank] + daysAccrued > 150) {
+            daysAccrued = 150 - rankClaimDays[msg.sender][u.currentRank];
+        }
+
+        require(daysAccrued > 0, "No remaining claimable days");
+
+        rankClaimDays[msg.sender][u.currentRank] += daysAccrued;
         uint256 totalUSD = daysAccrued * u.dailyRankReward;
 
         u.lastRankClaimTime = block.timestamp;
@@ -356,13 +350,11 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         emit RankRewardClaimed(msg.sender, totalUSD);
     }
 
-    // Unstake / early withdrawal
     function unstake(uint256 _index) external nonReentrant {
         require(_index < userStakes[msg.sender].length, "Invalid stake index");
         StakePosition storage st = userStakes[msg.sender][_index];
         require(st.active, "Stake is not active");
 
-        // Claim any pending reward first
         (uint256 pendingTokens, ) = getPendingReward(msg.sender, _index);
         if (pendingTokens > 0) {
             btcToken.transfer(msg.sender, pendingTokens);
@@ -372,13 +364,12 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         uint256 tokensToReturn = st.amountTokens;
         uint256 totalFee = 0;
 
-        // Apply 5% early withdrawal fee if 365-day locked staking is terminated early
-        if (st.is365Day && (block.timestamp < st.startTime + 365 days)) {
+        // Apply 5% early withdrawal fee if adaptable locked staking is terminated early
+        if (st.lockupMonths > 0 && (block.timestamp < st.startTime + (st.lockupMonths * 30 days))) {
             uint256 penalty = (tokensToReturn * 5) / 100;
             totalFee += penalty;
         }
 
-        // Apply 10% sell/withdrawal fee
         uint256 withdrawalFee = (tokensToReturn * 10) / 100;
         totalFee += withdrawalFee;
 
@@ -387,43 +378,34 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         st.active = false;
         users[msg.sender].totalSelfStakeUSD -= st.amountUSD;
 
-        // Burn 96% of the 10% withdrawal fee
         uint256 burnAmount = (withdrawalFee * 96) / 100;
         if (burnAmount > 0) {
             btcToken.burn(burnAmount);
         }
 
-        // Transfer remaining net tokens back to user
         btcToken.transfer(msg.sender, netReturn);
 
         emit Unstaked(msg.sender, _index, netReturn, totalFee);
     }
 
-    // Sell BTC 3.0 tokens back to USDT
     function sellTokens(uint256 _btcAmount) external nonReentrant {
         require(users[msg.sender].registered, "Must be registered");
         require(_btcAmount > 0, "Amount must be greater than 0");
 
-        // Transfer BTC tokens from user to contract
         btcToken.transferFrom(msg.sender, address(this), _btcAmount);
 
-        // 2% Sell Fee
         uint256 fee = (_btcAmount * 2) / 100;
         uint256 netBtc = _btcAmount - fee;
 
-        // Burn 96% of the 2% fee
         uint256 burnAmount = (fee * 96) / 100;
         if (burnAmount > 0) {
             btcToken.burn(burnAmount);
         }
 
-        // Calculate USDT payout based on current price
         uint256 price = getCurrentPrice();
         uint256 usdtPayout = (netBtc * price) / 10**18;
 
         require(usdtToken.balanceOf(address(this)) >= usdtPayout, "Insufficient contract USDT balance");
-        
-        // Transfer USDT to user
         usdtToken.transfer(msg.sender, usdtPayout);
 
         if (totalUSDValueMinted >= usdtPayout) {
@@ -435,38 +417,30 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         emit Sold(msg.sender, _btcAmount, usdtPayout, price);
     }
 
-    // Sell BTC 3.0 tokens back to BNB (assuming fixed rate 1 BNB = $600 USD)
     function sellTokensForBNB(uint256 _btcAmount) external nonReentrant {
         require(users[msg.sender].registered, "Must be registered");
         require(_btcAmount > 0, "Amount must be greater than 0");
 
-        // Transfer BTC tokens from user to contract
         btcToken.transferFrom(msg.sender, address(this), _btcAmount);
 
-        // 2% Sell Fee
         uint256 fee = (_btcAmount * 2) / 100;
         uint256 netBtc = _btcAmount - fee;
 
-        // Burn 96% of the 2% fee
         uint256 burnAmount = (fee * 96) / 100;
         if (burnAmount > 0) {
             btcToken.burn(burnAmount);
         }
 
-        // Calculate BNB payout based on current price
         uint256 price = getCurrentPrice();
         uint256 usdtValue = (netBtc * price) / 10**18;
         uint256 bnbPayout = usdtValue / 600;
 
         require(address(this).balance >= bnbPayout, "Insufficient contract BNB balance");
-
-        // Transfer BNB to user
         payable(msg.sender).transfer(bnbPayout);
 
         emit Sold(msg.sender, _btcAmount, bnbPayout, price);
     }
 
-    // Withdraw USDT gathered in the contract
     function withdrawUSDT(uint256 _amount) external onlyOwner {
         require(usdtToken.balanceOf(address(this)) >= _amount, "Insufficient balance");
         usdtToken.transfer(owner(), _amount);
@@ -478,27 +452,52 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         }
     }
 
-    // Withdraw BNB gathered in the contract
     function withdrawBNB(uint256 _amount) external onlyOwner {
         require(address(this).balance >= _amount, "Insufficient BNB balance");
         payable(owner()).transfer(_amount);
     }
 
-    // Spin the Lucky Wheel
+    // Coupon Actions
+    function addCoupon(string calldata _code) external onlyOwner {
+        validCoupons[keccak256(abi.encodePacked(_code))] = true;
+    }
+
+    function removeCoupon(string calldata _code) external onlyOwner {
+        validCoupons[keccak256(abi.encodePacked(_code))] = false;
+    }
+
+    function applyCoupon(string calldata _code) external {
+        require(users[msg.sender].registered, "Must be registered");
+        bytes32 hash = keccak256(abi.encodePacked(_code));
+        require(validCoupons[hash], "Invalid or expired coupon");
+
+        uint256 currentMonth = block.timestamp / (30 days);
+        require(userCouponsAppliedCountByMonth[msg.sender][currentMonth] < 3, "Coupon limit reached (max 3/month)");
+
+        userCouponsAppliedCountByMonth[msg.sender][currentMonth]++;
+        validCoupons[hash] = false; 
+
+        uint256 rewardUSD = 5 * 10**18; // $5 USD bonus
+        uint256 price = getCurrentPrice();
+        uint256 btcAmount = (rewardUSD * 10**18) / price;
+
+        require(btcToken.balanceOf(address(this)) >= btcAmount, "Insufficient token reserves");
+        btcToken.transfer(msg.sender, btcAmount);
+
+        emit CouponApplied(msg.sender, _code, rewardUSD);
+    }
+
     function spinWheel() external nonReentrant {
         require(users[msg.sender].registered, "Must be registered");
-        require(btcToken.balanceOf(msg.sender) >= spinCost, "Insufficient RSS balance to spin");
+        require(btcToken.balanceOf(msg.sender) >= spinCost, "Insufficient balance to spin");
 
-        // Transfer spin cost from user to this contract
         btcToken.transferFrom(msg.sender, address(this), spinCost);
 
-        // Burn 75% of the spin cost, leaving 25% in the contract reward pool
         uint256 burnAmount = (spinCost * 75) / 100;
         if (burnAmount > 0) {
             btcToken.burn(burnAmount);
         }
 
-        // Generate pseudorandom number between 0 and 99
         uint256 rand = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao, msg.sender))) % 100;
         uint8 prizeIndex;
         uint256 rewardAmount = 0;
@@ -521,26 +520,16 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         }
 
         if (rewardAmount > 0) {
-            require(btcToken.balanceOf(address(this)) >= rewardAmount, "Contract has insufficient token reserves");
+            require(btcToken.balanceOf(address(this)) >= rewardAmount, "Insufficient token reserves");
             btcToken.transfer(msg.sender, rewardAmount);
         }
 
         emit WheelSpun(msg.sender, prizeIndex, rewardAmount);
     }
 
-    // Set the spin cost (Admin only)
     function setSpinCost(uint256 _newCost) external onlyOwner {
         spinCost = _newCost;
     }
 
-    // Set level commission percentages (basis points, e.g. 1000 = 10%)
-    function setLevelPercents(uint256[5] calldata _newPercents) external onlyOwner {
-        for (uint256 i = 0; i < 5; i++) {
-            require(_newPercents[i] <= 5000, "Max 50% per level");
-        }
-        levelPercents = _newPercents;
-    }
-
-    // Allow contract to receive BNB directly for funding
     receive() external payable {}
 }
