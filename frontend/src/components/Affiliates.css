@@ -1505,7 +1505,7 @@
 
   .af-stats-4-columns {
     grid-template-columns:
-      1fr;
+      repeat(2, minmax(0, 1fr));
   }
 
 
