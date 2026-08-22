@@ -17,6 +17,7 @@ import Affiliates from "./components/Affiliates";
 import RanksAndLevels from "./components/RanksAndLevels";
 import LuckyWheel from "./components/LuckyWheel";
 import Shimmer from "./components/Shimmer";
+import Chatbot from "./components/Chatbot";
 
 const tokenSymbol = "BTC3.O";
 const tokenName = "BTC3.O";
@@ -423,6 +424,7 @@ function App() {
         ]);
 
         mintedEvents.forEach(e => {
+          const estTimestamp = Math.floor(Date.now() / 1000) - (Math.max(0, currentBlock - e.blockNumber) * 3);
           txs.push({
             type: "Mint",
             hash: e.transactionHash,
@@ -430,6 +432,8 @@ function App() {
             btcAmount: ethers.formatEther(e.args[2] || e.args.btcAmount),
             price: ethers.formatEther(e.args[3] || e.args.currentPrice),
             blockNumber: e.blockNumber,
+            timestamp: estTimestamp,
+            date: new Date(estTimestamp * 1000),
             category: "purchase"
           });
         });
@@ -655,6 +659,33 @@ function App() {
       setTimeout(loadUserData, 2000);
     } catch (err) {
       showToast("error", parseTxError(err, "Failed to apply coupon."));
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
+  const executeSellTokens = async (btcAmountStr, method) => {
+    if (!signer || !btcAmountStr) return;
+    setTxLoading(true);
+    try {
+      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
+      const parsedAmount = ethers.utils.parseEther(btcAmountStr);
+      let tx;
+      if (method === "USDT") {
+        tx = await stakingContract.sellTokens(parsedAmount);
+        showToast("info", `Selling ${btcAmountStr} ${tokenSymbol} for USDT...`);
+      } else {
+        tx = await stakingContract.sellTokensForBNB(parsedAmount);
+        showToast("info", `Selling ${btcAmountStr} ${tokenSymbol} for BNB...`);
+      }
+      await tx.wait();
+      showToast("success", `Tokens sold successfully!`);
+      loadUserData();
+      setTimeout(loadUserData, 2000);
+      return true;
+    } catch (err) {
+      showToast("error", parseTxError(err, "Failed to sell tokens."));
+      return false;
     } finally {
       setTxLoading(false);
     }
@@ -1116,6 +1147,10 @@ function App() {
                   transactionHistory={transactionHistory}
                   subTab={profileSubTab}
                   setSubTab={setProfileSubTab}
+                  executeSellTokens={executeSellTokens}
+                  currentPrice={currentPrice}
+                  txLoading={txLoading}
+                  userStakesList={userStakesList}
                 />
               )}
 
@@ -1323,6 +1358,7 @@ function App() {
           </div>
         </div>
       )}
+      <Chatbot />
     </div>
   );
 }

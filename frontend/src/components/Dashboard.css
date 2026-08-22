@@ -1238,7 +1238,7 @@
 
 
   .db-quick-actions-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
 
@@ -1357,4 +1357,31 @@
   transform: translateY(-2px);
   border-color: rgba(251, 191, 36, 0.25) !important;
   background: rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Mobile responsive styles to prevent token value wrapping */
+@media (max-width: 400px) {
+  .db-stat-card {
+    gap: 6px !important;
+    padding: 8px 10px !important;
+  }
+  .stat-card-icon-wrapper {
+    padding: 4px !important;
+    border-radius: 6px !important;
+  }
+  .stat-card-icon-wrapper svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  .db-stat-value {
+    font-size: 13.5px !important;
+  }
+  .db-stat-label {
+    font-size: 10px !important;
+    margin-bottom: 2px !important;
+  }
+  .db-stat-change {
+    font-size: 8px !important;
+    margin-top: 3px !important;
+  }
 }
