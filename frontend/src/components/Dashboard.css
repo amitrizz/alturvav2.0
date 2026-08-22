@@ -12,10 +12,10 @@
 
 .db-tab-pane {
   --db-bg-primary: #030712;
-  --db-bg-secondary: #070d1a;
-  --db-bg-card: #0a1120;
-  --db-bg-card-hover: #0e1729;
-  --db-bg-soft: #0d1524;
+  --db-bg-secondary: rgba(7, 13, 26, 0.7);
+  --db-bg-card: rgba(10, 17, 32, 0.55);
+  --db-bg-card-hover: rgba(14, 23, 41, 0.7);
+  --db-bg-soft: rgba(13, 21, 36, 0.6);
 
   --db-border: rgba(148, 163, 184, 0.1);
   --db-border-hover: rgba(139, 92, 246, 0.4);
@@ -94,10 +94,13 @@
   min-height: 118px;
 
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  min-height: 118px;
+  height: 118px;
 
-  padding: 18px 19px;
+  padding: 18px 20px;
 
   overflow: hidden;
 
@@ -227,11 +230,11 @@
 
   display: block;
 
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 
   color: var(--db-text-secondary);
 
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.3;
 
   font-weight: 500;
@@ -1219,10 +1222,6 @@
   .db-stat-card {
     min-height: 78px;
 
-    flex-direction: row;
-
-    align-items: center;
-
     gap: 12px;
   }
 
@@ -1348,7 +1347,14 @@
   .db-action-card,
   .db-gold-icon,
   .db-action-link,
-  .db-banner-action-btn {
+  .db-banner-action-btn,
+  .db-income-card {
     transition: none;
   }
+}
+
+.db-income-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(251, 191, 36, 0.25) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
 }

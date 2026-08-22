@@ -13,11 +13,11 @@
 
 .gm-tab-pane {
   --gm-bg-primary: #030712;
-  --gm-bg-secondary: #070d1a;
-  --gm-bg-card: #0a1120;
-  --gm-bg-card-hover: #0e1729;
-  --gm-bg-soft: #0d1524;
-  --gm-bg-input: #050b16;
+  --gm-bg-secondary: rgba(7, 13, 26, 0.7);
+  --gm-bg-card: rgba(10, 17, 32, 0.55);
+  --gm-bg-card-hover: rgba(14, 23, 41, 0.7);
+  --gm-bg-soft: rgba(13, 21, 36, 0.6);
+  --gm-bg-input: rgba(5, 11, 22, 0.75);
 
   --gm-border: rgba(148, 163, 184, 0.10);
   --gm-border-light: rgba(148, 163, 184, 0.07);
@@ -103,13 +103,17 @@
   display: grid;
 
   grid-template-columns:
-    repeat(4, minmax(0, 1fr));
+    repeat(3, minmax(0, 1fr));
 
   gap: 14px;
 
   width: 100%;
 
   margin-bottom: 20px;
+}
+
+.gm-stats-2-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 }
 
 
@@ -592,7 +596,7 @@
     rgba(139, 92, 246, 0.06);
 }
 
-.gm-small-cta-btn.active {
+.gm-tab-pane .gm-small-cta-btn.active {
   color: #fff;
 
   background:
@@ -1904,14 +1908,8 @@
   }
 
 
-  .gm-switcher-wrapper {
-    flex-direction: column;
-  }
 
 
-  .gm-small-cta-btn {
-    width: 100%;
-  }
 
 
   .gm-detail-row {

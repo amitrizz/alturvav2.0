@@ -4,20 +4,20 @@
 
 :root {
   --bg-primary: #030712;
-  --bg-secondary: #070d1a;
-  --bg-card: #0a1120;
-  --bg-card-hover: #0e1729;
-  --bg-soft: #0d1524;
-  --border-color: rgba(148, 163, 184, 0.1);
-  --border-hover: rgba(139, 92, 246, 0.45);
+  --bg-secondary: rgba(7, 13, 26, 0.7);
+  --bg-card: rgba(10, 17, 32, 0.55);
+  --bg-card-hover: rgba(14, 23, 41, 0.7);
+  --bg-soft: rgba(13, 21, 36, 0.6);
+  --border-color: rgba(148, 163, 184, 0.15);
+  --border-hover: rgba(226, 112, 18, 0.45);
   --text-primary: #f8fafc;
   --text-secondary: #a8b3c7;
   --text-muted: #718096;
-  --purple: #8b5cf6;
-  --purple-light: #a78bfa;
-  --gold: #fbbf24;
-  --gold-glow: rgba(251, 191, 36, 0.1);
-  --btn-gradient: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  --purple: #e27012;
+  --purple-light: #f9a03f;
+  --gold: #f59e0b;
+  --gold-glow: rgba(245, 158, 11, 0.1);
+  --btn-gradient: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   --success-color: #10b981;
   --danger-color: #ef4444;
   --radius-lg: 18px;
@@ -35,13 +35,31 @@ body {
   overflow: hidden;
 }
 
+
+
 /* Overall Dashboard Layout */
 .dashboard-root-layout {
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background-color: var(--bg-primary);
+  position: relative;
 }
+
+.dashboard-root-layout::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: linear-gradient(rgba(3, 7, 18, 0.92), rgba(3, 7, 18, 0.92)), url('/btc.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+  z-index: -1;
+  pointer-events: none;
+}
+
 
 /* Left Sidebar styling */
 .left-sidebar {
@@ -261,6 +279,8 @@ input:checked + .switch-slider:before {
   flex-direction: column;
   overflow: hidden;
   height: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 /* Top Header styling */
@@ -277,6 +297,29 @@ input:checked + .switch-slider:before {
 @media (max-width: 768px) {
   .top-header {
     padding: 1rem;
+  }
+  .bell-btn {
+    display: none !important;
+  }
+  .header-actions {
+    gap: 0.5rem;
+  }
+  .desktop-wallet-btn {
+    display: none !important;
+  }
+  .mobile-wallet-btn {
+    display: block !important;
+  }
+  .mobile-token-indicator {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+  }
+  .mobile-token-name {
+    font-weight: 700;
+    color: var(--gold);
+    font-size: 0.85rem;
   }
 }
 
@@ -296,6 +339,14 @@ input:checked + .switch-slider:before {
   display: flex;
   align-items: center;
   gap: 1rem;
+}
+
+.desktop-wallet-btn {
+  display: block;
+}
+
+.mobile-wallet-btn {
+  display: none;
 }
 
 .bell-btn {

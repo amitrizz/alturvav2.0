@@ -3,12 +3,12 @@ import { ethers } from "ethers";
 import { 
   Shield, Layers, Coins, Plus, ArrowUpRight, Flame, Trophy, Users, 
   ExternalLink, Loader2, Copy, Check, ChevronRight, Info, AlertCircle, 
-  Compass, LayoutDashboard, HelpCircle, Moon, Sun, Bell, ArrowRight, BookOpen, Crown, Clock
+  Compass, LayoutDashboard, HelpCircle, Moon, Sun, Bell, ArrowRight, BookOpen, Crown, Clock, LogOut
 } from "lucide-react";
 import { ERC20_ABI, BTC_STAKING_SYSTEM_ABI } from "./abis";
 import addresses from "./addresses.json";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount, useWalletClient, useSwitchChain } from "wagmi";
+import { useAccount, useWalletClient, useSwitchChain, useDisconnect } from "wagmi";
 import "./App.css?v=3";
 import Dashboard from "./components/Dashboard";
 import GenesisMint from "./components/GenesisMint";
@@ -16,6 +16,7 @@ import StakingPortal from "./components/StakingPortal";
 import Affiliates from "./components/Affiliates";
 import RanksAndLevels from "./components/RanksAndLevels";
 import LuckyWheel from "./components/LuckyWheel";
+import Shimmer from "./components/Shimmer";
 
 const tokenSymbol = "BTC3.O";
 const tokenName = "BTC3.O";
@@ -56,6 +57,7 @@ function App() {
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
   const { switchChain } = useSwitchChain();
+  const { disconnect } = useDisconnect();
 
   // Connection State
   const [provider, setProvider] = useState(null);
@@ -66,6 +68,8 @@ function App() {
 
   // Tab State
   const [activeTab, setActiveTab] = useState("dashboard"); // "dashboard", "mint", "stake", "affiliate", "ranks", "wheel"
+  const [ranksSubTab, setRanksSubTab] = useState("rank"); // "rank" or "referral"
+  const [profileSubTab, setProfileSubTab] = useState("profile"); // "profile" or "guide"
   
   // Balances & Data
   const [bnbBalance, setBnbBalance] = useState("0.0");
@@ -115,10 +119,13 @@ function App() {
     dailyRankReward: "0.0",
     lastRankClaimTime: 0,
     currentRank: 0,
-    registered: false
+    registered: false,
+    directReferralsCount: 0,
+    indirectReferralsCount: 0
   });
   const [referrerInput, setReferrerInput] = useState("");
   const [userStakesList, setUserStakesList] = useState([]);
+  const [transactionHistory, setTransactionHistory] = useState([]);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [sellBtcAmount, setSellBtcAmount] = useState("");
@@ -133,6 +140,7 @@ function App() {
   const canvasRef = useRef(null);
   const [newSpinCostInput, setNewSpinCostInput] = useState("");
   const [levelPercents, setLevelPercents] = useState([8, 4, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]);
+  const [isCalcOpen, setIsCalcOpen] = useState(false);
 
   const prizes = [
     { name: "Try Again", color: "#1e293b", reward: `0 ${tokenSymbol}` },
@@ -177,6 +185,28 @@ function App() {
     initEthers();
   }, [isConnected, walletClient]);
 
+  // Dynamically update document title and favicon based on activeTab
+  useEffect(() => {
+    const tabNames = {
+      dashboard: "Dashboard",
+      mint: "Mint",
+      stake: "Stake",
+      affiliate: "Profile",
+      ranks: "Ranks",
+      wheel: "Wheel"
+    };
+    const currentName = tabNames[activeTab] || "BTC3.O";
+    document.title = currentName;
+
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement("link");
+      link.rel = "icon";
+      document.getElementsByTagName("head")[0].appendChild(link);
+    }
+    link.href = "/logo.png";
+  }, [activeTab]);
+
   // Read referrer code from URL query
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -200,7 +230,9 @@ function App() {
         dailyRankReward: "0.0",
         lastRankClaimTime: 0,
         currentRank: 0,
-        registered: false
+        registered: false,
+        directReferralsCount: 0,
+        indirectReferralsCount: 0
       });
       setUserStakesList([]);
       loadUserData();
@@ -242,16 +274,69 @@ function App() {
       setTotalUSDValueMinted(ethers.formatEther(mintedVal));
       setTotalMintedTokens(ethers.formatEther(mintedTok));
 
+      let directReferralsCount = 0;
+      let indirectReferralsCount = 0;
       try {
-        const currentBlock = await provider.getBlockNumber();
-        const startBlock = currentBlock > 5000 ? currentBlock - 5000 : 0;
         const filter = stakingContract.filters.Registered();
-        const events = await stakingContract.queryFilter(filter, startBlock, "latest");
-        const baseCount = 1250 + Math.floor(parseFloat(ethers.formatEther(mintedTok)) / 100);
-        setRegisteredUsersCount(baseCount + (events ? events.length : 0));
+        let events = [];
+        try {
+          // Try full history first
+          events = await stakingContract.queryFilter(filter, 0, "latest");
+        } catch {
+          try {
+            // Fallback: last 50000 blocks
+            const currentBlock = await provider.getBlockNumber();
+            const startBlock = Math.max(0, currentBlock - 50000);
+            events = await stakingContract.queryFilter(filter, startBlock, "latest");
+          } catch {
+            try {
+              // Fallback: last 10000 blocks
+              const currentBlock = await provider.getBlockNumber();
+              const startBlock = Math.max(0, currentBlock - 10000);
+              events = await stakingContract.queryFilter(filter, startBlock, "latest");
+            } catch {
+              events = [];
+            }
+          }
+        }
+        setRegisteredUsersCount(events.length > 0 ? events.length : 1);
+
+        // Build referral tree
+        const referralMap = {};
+        events.forEach(ev => {
+          if (ev.args) {
+            const child = ev.args[0] || ev.args.user;
+            const parent = ev.args[1] || ev.args.referrer;
+            if (child && parent) {
+              referralMap[child.toLowerCase()] = parent.toLowerCase();
+            }
+          }
+        });
+
+        const lowerAccount = account.toLowerCase();
+        const directList = [];
+        Object.keys(referralMap).forEach(child => {
+          if (referralMap[child] === lowerAccount) {
+            directList.push(child);
+            directReferralsCount++;
+          }
+        });
+
+        let currentLevelUsers = [...directList];
+        for (let depth = 2; depth <= 15; depth++) {
+          const nextLevelUsers = [];
+          Object.keys(referralMap).forEach(child => {
+            if (currentLevelUsers.includes(referralMap[child])) {
+              nextLevelUsers.push(child);
+              indirectReferralsCount++;
+            }
+          });
+          currentLevelUsers = nextLevelUsers;
+          if (currentLevelUsers.length === 0) break;
+        }
       } catch (e) {
-        const baseCount = 1250 + Math.floor(parseFloat(ethers.formatEther(mintedTok)) / 100);
-        setRegisteredUsersCount(baseCount);
+        // If logged-in user exists, count at least 1
+        setRegisteredUsersCount(1);
       }
 
       // 5. User Registration & Stats
@@ -264,7 +349,9 @@ function App() {
         dailyRankReward: ethers.formatEther(u[4]),
         lastRankClaimTime: Number(u[5]),
         currentRank: Number(u[6]),
-        registered: u[7]
+        registered: u[7],
+        directReferralsCount,
+        indirectReferralsCount
       });
 
       // 6. User Stakes list
@@ -299,6 +386,138 @@ function App() {
         }
       }
       setUserStakesList(stakes);
+
+      // Load Transaction History
+      try {
+        const txs = [];
+        const currentBlock = await provider.getBlockNumber();
+        const startBlock = Math.max(0, currentBlock - 50000);
+
+        const filterMinted = stakingContract.filters.Minted(account);
+        const filterStaked = stakingContract.filters.Staked(account);
+        const filterSold = stakingContract.filters.Sold(account);
+        const filterUnstaked = stakingContract.filters.Unstaked(account);
+        const filterRewardClaimed = stakingContract.filters.RewardClaimed(account);
+        const filterRankRewardClaimed = stakingContract.filters.RankRewardClaimed(account);
+        const filterCouponApplied = stakingContract.filters.CouponApplied(account);
+        const filterWheelSpun = stakingContract.filters.WheelSpun(account);
+
+        const [
+          mintedEvents,
+          stakedEvents,
+          soldEvents,
+          unstakedEvents,
+          rewardClaimedEvents,
+          rankRewardClaimedEvents,
+          couponAppliedEvents,
+          wheelSpunEvents
+        ] = await Promise.all([
+          stakingContract.queryFilter(filterMinted, startBlock, "latest").catch(() => []),
+          stakingContract.queryFilter(filterStaked, startBlock, "latest").catch(() => []),
+          stakingContract.queryFilter(filterSold, startBlock, "latest").catch(() => []),
+          stakingContract.queryFilter(filterUnstaked, startBlock, "latest").catch(() => []),
+          stakingContract.queryFilter(filterRewardClaimed, startBlock, "latest").catch(() => []),
+          stakingContract.queryFilter(filterRankRewardClaimed, startBlock, "latest").catch(() => []),
+          stakingContract.queryFilter(filterCouponApplied, startBlock, "latest").catch(() => []),
+          stakingContract.queryFilter(filterWheelSpun, startBlock, "latest").catch(() => [])
+        ]);
+
+        mintedEvents.forEach(e => {
+          txs.push({
+            type: "Mint",
+            hash: e.transactionHash,
+            usdtAmount: ethers.formatEther(e.args[1] || e.args.usdtAmount),
+            btcAmount: ethers.formatEther(e.args[2] || e.args.btcAmount),
+            price: ethers.formatEther(e.args[3] || e.args.currentPrice),
+            blockNumber: e.blockNumber,
+            category: "purchase"
+          });
+        });
+
+        stakedEvents.forEach(e => {
+          txs.push({
+            type: "Stake",
+            hash: e.transactionHash,
+            btcAmount: ethers.formatEther(e.args[1] || e.args.amountTokens),
+            usdValue: ethers.formatEther(e.args[2] || e.args.amountUSD),
+            lockupMonths: Number(e.args[3] || e.args.lockupMonths),
+            ratePerDay: Number(e.args[4] || e.args.ratePerDay) / 100,
+            blockNumber: e.blockNumber,
+            category: "purchase"
+          });
+        });
+
+        soldEvents.forEach(e => {
+          txs.push({
+            type: "Sell",
+            hash: e.transactionHash,
+            btcAmount: ethers.formatEther(e.args[1] || e.args.btcAmount),
+            usdtAmount: ethers.formatEther(e.args[2] || e.args.usdtAmount),
+            price: ethers.formatEther(e.args[3] || e.args.price),
+            blockNumber: e.blockNumber,
+            category: "withdrawal"
+          });
+        });
+
+        unstakedEvents.forEach(e => {
+          txs.push({
+            type: "Unstake",
+            hash: e.transactionHash,
+            btcAmount: ethers.formatEther(e.args[2] || e.args.tokenReturned),
+            feeUSD: ethers.formatEther(e.args[3] || e.args.feeApplied),
+            blockNumber: e.blockNumber,
+            category: "withdrawal"
+          });
+        });
+
+        rewardClaimedEvents.forEach(e => {
+          txs.push({
+            type: "Yield Claim",
+            hash: e.transactionHash,
+            btcAmount: ethers.formatEther(e.args[2] || e.args.rewardTokens),
+            usdValue: ethers.formatEther(e.args[3] || e.args.rewardUSD),
+            blockNumber: e.blockNumber,
+            category: "withdrawal"
+          });
+        });
+
+        rankRewardClaimedEvents.forEach(e => {
+          txs.push({
+            type: "Rank Claim",
+            hash: e.transactionHash,
+            usdValue: ethers.formatEther(e.args[1] || e.args.rewardUSD),
+            blockNumber: e.blockNumber,
+            category: "withdrawal"
+          });
+        });
+
+        couponAppliedEvents.forEach(e => {
+          txs.push({
+            type: "Coupon",
+            hash: e.transactionHash,
+            code: e.args[1] || e.args.code,
+            usdValue: ethers.formatEther(e.args[2] || e.args.rewardUSD),
+            blockNumber: e.blockNumber,
+            category: "purchase"
+          });
+        });
+
+        wheelSpunEvents.forEach(e => {
+          txs.push({
+            type: "Wheel Spin",
+            hash: e.transactionHash,
+            prizeIdx: Number(e.args[1] || e.args.index),
+            rewardTokens: ethers.formatEther(e.args[2] || e.args.rewardAmount),
+            blockNumber: e.blockNumber,
+            category: "purchase"
+          });
+        });
+
+        txs.sort((a, b) => b.blockNumber - a.blockNumber);
+        setTransactionHistory(txs);
+      } catch (historyErr) {
+        console.error("Error loading transaction history:", historyErr);
+      }
 
       // 7. Check if Owner (Admin)
       const ownerAddress = await stakingContract.owner();
@@ -393,6 +612,7 @@ function App() {
       await tx.wait();
       showToast("success", `Successfully minted ${estimatedBtcToMint} ${tokenSymbol}!`);
       setMintUsdtAmount("");
+      setCouponInput("");
       loadUserData();
       setTimeout(loadUserData, 2000);
     } catch (err) {
@@ -596,8 +816,16 @@ function App() {
     }
     const netVal = parsed * 0.98;
     const price = parseFloat(currentPrice) || 0.5;
-    setEstimatedBtcToMint((netVal / price).toFixed(2));
+    let tokens = netVal / price;
+    if (couponInput && couponInput.trim() !== "") {
+      tokens = tokens * 2;
+    }
+    setEstimatedBtcToMint(tokens.toFixed(2));
   };
+
+  useEffect(() => {
+    handleMintInputChange(mintUsdtAmount);
+  }, [couponInput]);
 
   const copyReferralLink = () => {
     const link = `${window.location.origin}?ref=${encryptAddress(account)}`;
@@ -663,17 +891,17 @@ function App() {
             <Layers size={20} />
             <span>Staking Portal</span>
           </button>
-          <button className={`menu-item ${activeTab === "affiliate" ? "active" : ""}`} onClick={() => setActiveTab("affiliate")}>
-            <Users size={20} />
-            <span>Affiliates</span>
+          <button className={`menu-item ${activeTab === "wheel" ? "active" : ""}`} onClick={() => setActiveTab("wheel")}>
+            <Compass size={20} />
+            <span>Lucky Wheel</span>
           </button>
           <button className={`menu-item ${activeTab === "ranks" ? "active" : ""}`} onClick={() => setActiveTab("ranks")}>
             <Trophy size={20} />
             <span>Ranks & Levels</span>
           </button>
-          <button className={`menu-item ${activeTab === "wheel" ? "active" : ""}`} onClick={() => setActiveTab("wheel")}>
-            <Compass size={20} />
-            <span>Lucky Wheel</span>
+          <button className={`menu-item ${activeTab === "affiliate" ? "active" : ""}`} onClick={() => setActiveTab("affiliate")}>
+            <Users size={20} />
+            <span>Profile</span>
           </button>
         </nav>
 
@@ -724,15 +952,43 @@ function App() {
       <div className="main-content-wrapper">
         {/* Top Header */}
         <header className="top-header">
-          <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <img src="/logo.png" alt="BTC3.O Logo" style={{ width: "38px", height: "38px", objectFit: "contain", borderRadius: "50%" }} />
             <h2 className="top-header-title">{tabTitles[activeTab]}</h2>
           </div>
           <div className="header-actions">
-            <ConnectButton />
-            <button className="bell-btn">
-              <Bell size={20} />
-              <span className="bell-dot"></span>
-            </button>
+            <div className="desktop-wallet-btn">
+              <ConnectButton />
+            </div>
+            <div className="mobile-wallet-btn">
+              {isConnected ? (
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <button 
+                    onClick={() => {
+                      if (window.confirm("Are you sure you want to disconnect your wallet?")) {
+                        disconnect();
+                      }
+                    }}
+                    style={{ 
+                      background: "rgba(239, 68, 68, 0.15)", 
+                      border: "1px solid rgba(239, 68, 68, 0.4)", 
+                      color: "#ef4444", 
+                      padding: "8px", 
+                      borderRadius: "50%", 
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center"
+                    }}
+                    title="Disconnect Wallet"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </div>
+              ) : (
+                <ConnectButton label="Connect" />
+              )}
+            </div>
           </div>
         </header>
 
@@ -789,6 +1045,8 @@ function App() {
                   btcBalance={btcBalance}
                   setActiveTab={setActiveTab}
                   registeredUsersCount={registeredUsersCount}
+                  setRanksSubTab={setRanksSubTab}
+                  setProfileSubTab={setProfileSubTab}
                 />
               )}
 
@@ -811,6 +1069,9 @@ function App() {
                   txLoading={txLoading}
                   currentPrice={currentPrice}
                   registeredUsersCount={registeredUsersCount}
+                  couponInput={couponInput}
+                  setCouponInput={setCouponInput}
+                  executeApplyCoupon={executeApplyCoupon}
                 />
               )}
 
@@ -840,17 +1101,21 @@ function App() {
                   setCouponInput={setCouponInput}
                   executeApplyCoupon={executeApplyCoupon}
                   txLoading={txLoading}
+                  isCalcOpen={isCalcOpen}
+                  setIsCalcOpen={setIsCalcOpen}
                 />
               )}
 
               {activeTab === "affiliate" && (
                 <Affiliates
                   tokenSymbol={tokenSymbol}
-                  userInfo={userInfo}
                   account={account}
-                  encryptAddress={encryptAddress}
-                  copyReferralLink={copyReferralLink}
-                  copiedLink={copiedLink}
+                  bnbBalance={bnbBalance}
+                  usdtBalance={usdtBalance}
+                  btcBalance={btcBalance}
+                  transactionHistory={transactionHistory}
+                  subTab={profileSubTab}
+                  setSubTab={setProfileSubTab}
                 />
               )}
 
@@ -861,6 +1126,12 @@ function App() {
                   rankNames={rankNames}
                   executeClaimRankReward={executeClaimRankReward}
                   txLoading={txLoading}
+                  encryptAddress={encryptAddress}
+                  account={account}
+                  copyReferralLink={copyReferralLink}
+                  copiedLink={copiedLink}
+                  subTab={ranksSubTab}
+                  setSubTab={setRanksSubTab}
                 />
               )}
 
@@ -895,7 +1166,6 @@ function App() {
         </div>
       </div>
       
-      {/* Mobile Sticky bottom menu for better responsive UX */}
       <div className="mobile-bottom-bar">
         <button className={`mobile-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
           <LayoutDashboard size={20} />
@@ -909,6 +1179,10 @@ function App() {
           <Layers size={20} />
           <span>Stake</span>
         </button>
+        <button className={`mobile-nav-item ${activeTab === 'wheel' ? 'active' : ''}`} onClick={() => setActiveTab('wheel')}>
+          <Compass size={20} />
+          <span>Wheel</span>
+        </button>
         <button className={`mobile-nav-item ${activeTab === 'ranks' ? 'active' : ''}`} onClick={() => setActiveTab('ranks')}>
           <Trophy size={20} />
           <span>Ranks</span>
@@ -917,11 +1191,138 @@ function App() {
           <Users size={20} />
           <span>Profile</span>
         </button>
-        <button className={`mobile-nav-item ${activeTab === 'wheel' ? 'active' : ''}`} onClick={() => setActiveTab('wheel')}>
-          <Compass size={20} />
-          <span>Wheel</span>
-        </button>
       </div>
+
+      {/* Floating Compounding Calculator Icon Button (Universal) */}
+      {isConnected && userInfo.registered && (
+        <button 
+          className="sp-floating-calc-btn"
+          onClick={() => setIsCalcOpen(true)}
+          style={{
+            position: "fixed",
+            bottom: "85px",
+            right: "24px",
+            width: "56px",
+            height: "56px",
+            borderRadius: "50%",
+            backgroundColor: "var(--gold)",
+            color: "#000",
+            border: "none",
+            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 999
+          }}
+        >
+          <span style={{ fontSize: "1.4rem", fontWeight: "bold" }}>%</span>
+        </button>
+      )}
+
+      {/* Compounding Calculator Popup Modal Overlay */}
+      {isCalcOpen && (
+        <div 
+          className="sp-modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.75)",
+            backdropFilter: "blur(6px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 10000,
+            padding: "1rem"
+          }}
+        >
+          <div 
+            className="sp-card-box sp-modal-card"
+            style={{
+              width: "100%",
+              maxWidth: "460px",
+              background: "linear-gradient(145deg, rgba(10, 17, 32, 0.98), rgba(5, 10, 20, 0.98))",
+              border: "1px solid var(--border-color)",
+              borderRadius: "18px",
+              padding: "1.5rem",
+              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.4)",
+              position: "relative"
+            }}
+          >
+            <h3 className="sp-card-title" style={{ marginBottom: "10px" }}>Compounding Staking Calculator</h3>
+            <p className="sp-card-desc" style={{ marginBottom: "20px", fontSize: "0.85rem", opacity: 0.85 }}>
+              Simulate your earnings using daily compounding from 1 to 5 years.
+            </p>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+              <div>
+                <label className="sp-calc-label" style={{ fontSize: "0.8rem", opacity: 0.9 }}>Calculator Amount (USD)</label>
+                <input 
+                  type="number" 
+                  placeholder="USD Amount" 
+                  className="sp-field-input mt-1" 
+                  value={calcAmount}
+                  onChange={(e) => setCalcAmount(e.target.value)}
+                  style={{ width: "100%" }}
+                />
+              </div>
+              <div>
+                <label className="sp-calc-label" style={{ fontSize: "0.8rem", opacity: 0.9 }}>Compounding Years</label>
+                <select 
+                  className="sp-staking-mode-select mt-1" 
+                  value={calcYears}
+                  onChange={(e) => setCalcYears(Number(e.target.value))}
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", backgroundColor: "var(--bg-soft)", border: "1px solid var(--border-color)", color: "#fff" }}
+                >
+                  <option value={1}>1 Year</option>
+                  <option value={2}>2 Years</option>
+                  <option value={3}>3 Years</option>
+                  <option value={4}>4 Years</option>
+                  <option value={5}>5 Years</option>
+                </select>
+              </div>
+              <div>
+                <label className="sp-calc-label" style={{ fontSize: "0.8rem", opacity: 0.9 }}>Staking Yield Mode</label>
+                <select 
+                  className="sp-staking-mode-select mt-1" 
+                  value={calcYield}
+                  onChange={(e) => setCalcYield(Number(e.target.value))}
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", backgroundColor: "var(--bg-soft)", border: "1px solid var(--border-color)", color: "#fff" }}
+                >
+                  <option value={0.005}>0.5% Daily (Normal)</option>
+                  <option value={0.006}>0.6% Daily (3 Months Lock)</option>
+                  <option value={0.0075}>0.75% Daily (6 Months Lock)</option>
+                  <option value={0.01}>1.0% Daily (12 Months Lock)</option>
+                </select>
+              </div>
+              
+              <div className="sp-details-panel" style={{ marginTop: "10px", padding: "12px", borderRadius: "8px", backgroundColor: "var(--bg-soft)" }}>
+                <div className="sp-detail-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                  <span>Future Value (USD)</span>
+                  <span className="sp-gold-text font-bold" style={{ color: "var(--gold)", fontWeight: "bold" }}>${compoundingResults.future}</span>
+                </div>
+                <div className="sp-detail-row" style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Estimated Yield Earned</span>
+                  <span>${compoundingResults.yield}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
+              <button 
+                className="sp-small-danger-btn" 
+                onClick={() => setIsCalcOpen(false)}
+                style={{ flex: 1, padding: "10px", borderRadius: "8px", cursor: "pointer", border: "1px solid rgba(239, 68, 68, 0.4)", backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#fff" }}
+              >
+                Close Calculator
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

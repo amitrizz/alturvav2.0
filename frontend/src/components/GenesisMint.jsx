@@ -1,5 +1,5 @@
 import React from "react";
-import { Coins, Users, Clock, Info, Loader2 } from "lucide-react";
+import { Coins, Users, Info, Loader2 } from "lucide-react";
 import "./GenesisMint.css";
 
 function GenesisMint({
@@ -19,12 +19,18 @@ function GenesisMint({
   executeMint,
   txLoading,
   currentPrice,
-  registeredUsersCount
+  registeredUsersCount,
+  couponInput,
+  setCouponInput,
+  executeApplyCoupon
 }) {
+  // Derive total minters from registered users count
+  const totalMinters = registeredUsersCount;
+
   return (
     <div className="gm-tab-pane">
       {/* Top stats for mint tab */}
-      <section className="gm-stats-strip gm-stats-4-columns">
+      <section className="gm-stats-strip gm-stats-2-columns">
         <div className="gm-stat-card gm-card-price gm-card-flex">
           <div className="stat-card-icon-wrapper price-icon">
             <Coins size={24} />
@@ -34,31 +40,13 @@ function GenesisMint({
             <h3 className="gm-stat-value">${parseFloat(totalUSDValueMinted).toFixed(2)}</h3>
           </div>
         </div>
-        <div className="gm-stat-card gm-card-supply gm-card-flex">
-          <div className="stat-card-icon-wrapper minters-icon">
-            <Users size={24} />
-          </div>
-          <div>
-            <span className="gm-stat-label">Total Minters</span>
-            <h3 className="gm-stat-value">{registeredUsersCount} Users</h3>
-          </div>
-        </div>
-        <div className="gm-stat-card gm-card-remaining gm-card-flex">
-          <div className="stat-card-icon-wrapper clock-icon">
-            <Clock size={24} />
-          </div>
-          <div>
-            <span className="gm-stat-label">Minting Ends In</span>
-            <h3 className="gm-stat-value font-mono">12d : 14h : 32m</h3>
-          </div>
-        </div>
         <div className="gm-stat-card gm-card-balance gm-card-flex">
           <div className="stat-card-icon-wrapper balance-icon">
             <Coins size={24} />
           </div>
           <div>
             <span className="gm-stat-label">Your Balance</span>
-            <h3 className="gm-stat-value">{btcBalance} {tokenSymbol}</h3>
+            <h3 className="gm-stat-value">{btcBalance}</h3>
           </div>
         </div>
       </section>
@@ -82,7 +70,7 @@ function GenesisMint({
               className={`gm-small-cta-btn ${mintMethod === "USDT" ? "active" : ""}`}
               onClick={() => setMintMethod("USDT")}
             >
-              Mint with USDT
+              Mint with USDT (BEP20)
             </button>
             <button 
               className={`gm-small-cta-btn ${mintMethod === "BNB" ? "active" : ""}`}
@@ -138,17 +126,52 @@ function GenesisMint({
             </div>
           </div>
 
-          {mintMethod === "USDT" && !usdtApproved ? (
-            <button className="gm-cta-gradient-btn" onClick={approveUsdt} disabled={txLoading}>
-              {txLoading ? <Loader2 className="animate-spin inline mr-2" size={18} /> : null}
-              Approve USDT
-            </button>
-          ) : (
-            <button className="gm-cta-gradient-btn" onClick={executeMint} disabled={txLoading || !mintUsdtAmount}>
+          {/* Coupon Code Block for Double Mint Bonus */}
+          <div className="gm-input-block" style={{ marginTop: "14px" }}>
+            <div className="gm-input-label-row">
+              <span>Promo Coupon Code</span>
+            </div>
+            <div style={{ position: "relative", width: "100%" }}>
+              <input 
+                type="text" 
+                placeholder="Enter Coupon for Double Tokens" 
+                className="coin-field-input"
+                value={couponInput || ""}
+                onChange={(e) => setCouponInput(e.target.value)}
+                style={{ width: "100%", padding: "10px 95px 10px 14px", borderRadius: "10px", border: "1px solid var(--gm-border)", backgroundColor: "var(--gm-bg-input)", color: "#fff", height: "48px" }}
+              />
+              <button
+                className="gm-cta-gradient-btn"
+                onClick={executeApplyCoupon}
+                disabled={txLoading || !couponInput}
+                style={{ position: "absolute", right: "6px", top: "6px", bottom: "6px", padding: "0 16px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", whiteSpace: "nowrap", width: "auto", minWidth: "65px", margin: 0, height: "36px" }}
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+
+          <div className="gm-actions-horizontal-row" style={{ display: "flex", gap: "10px", marginTop: "18px" }}>
+            {mintMethod === "USDT" && (
+              <button 
+                className="gm-cta-gradient-btn" 
+                onClick={approveUsdt} 
+                disabled={txLoading || usdtApproved}
+                style={{ flex: 1 }}
+              >
+                {usdtApproved ? "USDT Approved" : "Approve USDT"}
+              </button>
+            )}
+            <button 
+              className="gm-cta-gradient-btn" 
+              onClick={executeMint} 
+              disabled={txLoading || !mintUsdtAmount || (mintMethod === "USDT" && !usdtApproved)}
+              style={{ flex: 1 }}
+            >
               {txLoading ? <Loader2 className="animate-spin inline mr-2" size={18} /> : null}
               Proceed to Mint
             </button>
-          )}
+          </div>
         </div>
 
         {/* How it works sidebar layout column */}

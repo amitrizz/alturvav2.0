@@ -12,6 +12,14 @@ export const ERC20_ABI = [
 
 export const BTC_STAKING_SYSTEM_ABI = [
   "event Registered(address indexed user, address indexed referrer)",
+  "event Minted(address indexed user, uint256 usdtAmount, uint256 btcAmount, uint256 currentPrice)",
+  "event Staked(address indexed user, uint256 amountTokens, bool is365Day)",
+  "event Sold(address indexed user, uint256 btcAmount, uint256 usdtAmount)",
+  "event Unstaked(address indexed user, uint256 index, uint256 amountTokens)",
+  "event RewardClaimed(address indexed user, uint256 index, uint256 rewardTokens, uint256 rewardUSD)",
+  "event RankRewardClaimed(address indexed user, uint256 amountUSD)",
+  "event CouponApplied(address indexed user, string code)",
+  "event WheelSpun(address indexed user, uint256 index, uint256 prizeTokens)",
   "function getCurrentPrice() view returns (uint256)",
   "function register(address _referrer)",
   "function mintTokens(uint256 _usdtAmount)",
@@ -35,5 +43,6 @@ export const BTC_STAKING_SYSTEM_ABI = [
   "function totalUSDValueMinted() view returns (uint256)",
   "function totalMintedTokens() view returns (uint256)",
   "function getDirectsCount(address _user) view returns (uint256)",
-  "function owner() view returns (address)"
+  "function owner() view returns (address)",
+  "function applyCoupon(string _code)"
 ];

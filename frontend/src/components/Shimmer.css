@@ -1,0 +1,74 @@
+/* =========================================================
+   SHIMMER ANIMATION & PLACEHOLDERS
+   ========================================================= */
+
+@keyframes shimmerEffect {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.shimmer-block {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 25%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.05) 75%
+  );
+  background-color: rgba(255, 255, 255, 0.03);
+  background-size: 200% 100%;
+  animation: shimmerEffect 1.5s infinite linear;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Shimmer Layouts */
+.shimmer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 0;
+  width: 100%;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Grid presets */
+.shimmer-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.shimmer-grid-2 {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+}
+
+.shimmer-grid-equal-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .shimmer-grid-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .shimmer-grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .shimmer-grid-equal-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .shimmer-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}

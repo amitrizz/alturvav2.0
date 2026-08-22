@@ -26,7 +26,9 @@ function StakingPortal({
   couponInput,
   setCouponInput,
   executeApplyCoupon,
-  txLoading
+  txLoading,
+  isCalcOpen,
+  setIsCalcOpen
 }) {
   return (
     <div className="sp-tab-pane">
@@ -206,93 +208,6 @@ function StakingPortal({
         </div>
       </div>
 
-      {/* Staking Compounding Calculator & Coupon Codes */}
-      <div className="sp-calculator-grid">
-        <div className="sp-card-box">
-          <h3 className="sp-card-title">Compounding Staking Calculator</h3>
-          <p className="sp-card-desc">
-            Simulate your earnings using daily compounding from 1 to 5 years.
-          </p>
-          
-          <div className="sp-calc-wrapper">
-            <div>
-              <label className="sp-calc-label">Calculator Amount (USD)</label>
-              <input 
-                type="number" 
-                placeholder="USD Amount" 
-                className="sp-field-input mt-1" 
-                value={calcAmount}
-                onChange={(e) => setCalcAmount(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="sp-calc-label">Compounding Years</label>
-              <select 
-                className="sp-staking-mode-select mt-1" 
-                value={calcYears}
-                onChange={(e) => setCalcYears(Number(e.target.value))}
-              >
-                <option value={1}>1 Year</option>
-                <option value={2}>2 Years</option>
-                <option value={3}>3 Years</option>
-                <option value={4}>4 Years</option>
-                <option value={5}>5 Years</option>
-              </select>
-            </div>
-            <div>
-              <label className="sp-calc-label">Staking Yield Mode</label>
-              <select 
-                className="sp-staking-mode-select mt-1" 
-                value={calcYield}
-                onChange={(e) => setCalcYield(Number(e.target.value))}
-              >
-                <option value={0.005}>0.5% Daily (Normal)</option>
-                <option value={0.006}>0.6% Daily (3 Months Lock)</option>
-                <option value={0.0075}>0.75% Daily (6 Months Lock)</option>
-                <option value={0.01}>1.0% Daily (12 Months Lock)</option>
-              </select>
-            </div>
-            
-            <div className="sp-details-panel">
-              <div className="sp-detail-row">
-                <span>Future Value (USD)</span>
-                <span className="sp-gold-text font-bold">${compoundingResults.future}</span>
-              </div>
-              <div className="sp-detail-row">
-                <span>Estimated Yield Earned</span>
-                <span>${compoundingResults.yield}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="sp-card-box">
-          <h3 className="sp-card-title sp-title-flex">
-            Apply Coupon Code
-            <span className="sp-tooltip-trigger">
-              <Info size={16} />
-              <span className="sp-tooltip-popup">
-                Apply a promotional coupon code. Limit of 3 coupon applications per user per month.
-              </span>
-            </span>
-          </h3>
-          
-          <div className="sp-input-block">
-            <input 
-              type="text" 
-              placeholder="Enter Coupon Code" 
-              className="sp-field-input"
-              value={couponInput}
-              onChange={(e) => setCouponInput(e.target.value)}
-            />
-          </div>
-          
-          <button className="sp-cta-gradient-btn" onClick={executeApplyCoupon} disabled={txLoading || !couponInput}>
-            {txLoading ? <Loader2 className="animate-spin inline mr-2" size={18} /> : null}
-            Apply Coupon
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
