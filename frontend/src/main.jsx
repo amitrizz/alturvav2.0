@@ -1,11 +1,28 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { registerSW } from 'virtual:pwa-register'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import './index.css'
 
-registerSW({ immediate: true })
+function registerServiceWorker() {
+  if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return
+  import('virtual:pwa-register')
+    .then(({ registerSW }) => {
+      registerSW({
+        immediate: true,
+        onRegisterError(error) {
+          console.warn('[BTC3.O] Service worker registration failed:', error)
+        },
+      })
+    })
+    .catch((error) => {
+      console.warn('[BTC3.O] Service worker module unavailable:', error)
+    })
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('load', registerServiceWorker, { once: true })
+}
 
 import '@rainbow-me/rainbowkit/styles.css'
 import { connectorsForWallets, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'

@@ -14,7 +14,33 @@
     <title>AI EARN BTC3.0 PLAN</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-boot" style="display:flex;align-items:center;justify-content:center;min-height:100dvh;min-height:-webkit-fill-available;background:#030712;color:#f59e0b;font-family:system-ui,-apple-system,sans-serif;font-size:1rem;font-weight:700">
+        Loading BTC3.0…
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      (function () {
+        var timeout = 15000;
+        setTimeout(function () {
+          if (!document.getElementById("app-boot")) return;
+          if (!("serviceWorker" in navigator)) return;
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all(regs.map(function (r) { return r.unregister(); }));
+          }).then(function () {
+            if ("caches" in window) {
+              return caches.keys().then(function (keys) {
+                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+              });
+            }
+          }).then(function () {
+            window.location.reload();
+          }).catch(function () {
+            window.location.reload();
+          });
+        }, timeout);
+      })();
+    </script>
   </body>
 </html>

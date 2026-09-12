@@ -1,28 +1,31 @@
-/* Lock document; scroll happens inside .landing-root */
+/* Lock document scroll; scroll happens inside .landing-root */
 html.landing-page,
 body.landing-page {
   width: 100%;
   height: 100%;
-  height: 100dvh;
-  overflow: hidden !important;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overflow: hidden;
   overscroll-behavior: none;
-  position: fixed;
-  inset: 0;
 }
 
 body.landing-page #root {
+  display: flex;
+  flex-direction: column;
   width: 100%;
   height: 100%;
-  height: 100dvh;
-  overflow: hidden !important;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overflow: hidden;
 }
 
 .landing-page-shell {
   display: flex;
   flex-direction: column;
+  flex: 1;
   width: 100%;
+  min-height: 0;
   height: 100%;
-  height: 100dvh;
   max-height: 100dvh;
   overflow: hidden;
   background: #0a0612;
