@@ -22,7 +22,7 @@
   position: relative;
   box-shadow: 0 8px 24px rgba(217, 119, 6, 0.35);
   transition: transform 0.2s, box-shadow 0.2s;
-  margin-bottom: 130px; /* Offset to sit above floating calculator */
+  margin-bottom: 0;
   pointer-events: auto; /* Restore clicks */
 }
 
@@ -339,20 +339,17 @@
 }
 
 /* Mobile responsive rules */
+@media (max-width: 1024px) {
+  .cb-chatbot-wrapper {
+    bottom: calc(var(--mobile-nav-height, 64px) + 76px);
+    right: 16px;
+  }
+}
+
 @media (max-width: 480px) {
   .cb-chat-window {
     width: calc(100vw - 32px);
     right: 16px;
-    height: 480px;
-  }
-  .cb-chatbot-wrapper {
-    bottom: 16px;
-    right: 24px;
-  }
-  .cb-bubble-btn {
-    margin-bottom: 155px !important; /* Stack cleanly above calculator: 100px (calc bottom) + 56px (calc height) + 15px gap */
-  }
-  .sp-floating-calc-btn {
-    bottom: 100px !important; /* Move above bottom navigation bar */
+    height: min(480px, calc(100dvh - var(--mobile-nav-height, 64px) - 120px));
   }
 }

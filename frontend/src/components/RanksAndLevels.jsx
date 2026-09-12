@@ -190,10 +190,19 @@ function RanksAndLevels({
                   {copiedLink ? <Check size={18} className="text-green" /> : <Copy size={18} />}
                 </button>
               </div>
-              <div className="af-details-panel" style={{ marginTop: "16px" }}>
-                <div className="af-detail-row"><span>Direct Referrals</span><span>{userInfo.directReferralsCount}</span></div>
-                <div className="af-detail-row"><span>Team Size</span><span>{userInfo.teamSize}</span></div>
-                <div className="af-detail-row"><span>Team Volume</span><span>${parseFloat(userInfo.totalTeamBusinessUSD).toFixed(2)}</span></div>
+              <div className="rl-referral-stats">
+                <div className="rl-referral-stat">
+                  <span className="rl-referral-stat-label">Direct Referrals</span>
+                  <span className="rl-referral-stat-value">{userInfo.directReferralsCount}</span>
+                </div>
+                <div className="rl-referral-stat">
+                  <span className="rl-referral-stat-label">Team Size</span>
+                  <span className="rl-referral-stat-value">{userInfo.teamSize}</span>
+                </div>
+                <div className="rl-referral-stat">
+                  <span className="rl-referral-stat-label">Team Volume</span>
+                  <span className="rl-referral-stat-value">${parseFloat(userInfo.totalTeamBusinessUSD).toFixed(2)}</span>
+                </div>
               </div>
             </div>
 

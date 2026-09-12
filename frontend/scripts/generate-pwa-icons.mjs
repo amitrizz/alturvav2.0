@@ -1,14 +1,42 @@
 /**
- * Generates PWA PNG icons from public/pwa-icon.svg using sharp (dev-only).
+ * Generates PWA / favicon PNGs from public/logo.png (same as header logo).
  * Run: node scripts/generate-pwa-icons.mjs
  */
-import { readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const publicDir = join(__dirname, "..", "public");
-const svgPath = join(publicDir, "pwa-icon.svg");
+const logoPath = join(publicDir, "logo.png");
+const BG = { r: 3, g: 7, b: 18, alpha: 1 }; // #030712
+
+async function renderIcon(sharp, size, logoScale, filename) {
+  const logoSize = Math.round(size * logoScale);
+  const logo = await sharp(logoPath)
+    .resize(logoSize, logoSize, {
+      fit: "contain",
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
+    })
+    .png()
+    .toBuffer();
+
+  const offset = Math.round((size - logoSize) / 2);
+  const out = join(publicDir, filename);
+
+  await sharp({
+    create: {
+      width: size,
+      height: size,
+      channels: 4,
+      background: BG,
+    },
+  })
+    .composite([{ input: logo, left: offset, top: offset }])
+    .png()
+    .toFile(out);
+
+  console.log(`Created ${out}`);
+}
 
 async function main() {
   let sharp;
@@ -16,18 +44,14 @@ async function main() {
     sharp = (await import("sharp")).default;
   } catch {
     console.warn("[pwa-icons] sharp not installed — run: npm install -D sharp");
-    console.warn("[pwa-icons] Skipping PNG generation. Install vite-plugin-pwa or add icons manually.");
     process.exit(0);
   }
 
-  const svg = await readFile(svgPath);
-  const sizes = [192, 512];
-
-  for (const size of sizes) {
-    const out = join(publicDir, `pwa-${size}x${size}.png`);
-    await sharp(svg).resize(size, size).png().toFile(out);
-    console.log(`Created ${out}`);
-  }
+  await renderIcon(sharp, 32, 0.9, "favicon-32x32.png");
+  await renderIcon(sharp, 180, 0.88, "apple-touch-icon.png");
+  await renderIcon(sharp, 192, 0.88, "pwa-192x192.png");
+  await renderIcon(sharp, 512, 0.88, "pwa-512x512.png");
+  await renderIcon(sharp, 512, 0.72, "pwa-512x512-maskable.png");
 }
 
 main().catch((err) => {

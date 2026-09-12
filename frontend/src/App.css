@@ -3,6 +3,7 @@
    ========================================================= */
 
 :root {
+  --mobile-nav-height: calc(64px + env(safe-area-inset-bottom, 0px));
   --bg-primary: #030712;
   --bg-secondary: rgba(7, 13, 26, 0.7);
   --bg-card: rgba(10, 17, 32, 0.55);
@@ -39,9 +40,11 @@ body {
 /* Overall Dashboard Layout */
 .dashboard-root-layout {
   display: flex;
+  width: 100%;
   height: 100%;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
+  height: 100dvh;
+  max-height: 100dvh;
+  min-height: 0;
   overflow: hidden;
   position: relative;
 }
@@ -280,6 +283,7 @@ input:checked + .switch-slider:before {
   flex-direction: column;
   overflow: hidden;
   height: 100%;
+  min-height: 0;
   position: relative;
   z-index: 1;
 }
@@ -375,16 +379,18 @@ input:checked + .switch-slider:before {
 .tab-pane-container {
   padding: 2rem;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 @media (max-width: 1024px) {
   .tab-pane-container {
     padding: 1rem;
-    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); /* leaves room for mobile footer menu */
+    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)); /* room for floating FABs */
   }
 }
 
@@ -476,19 +482,54 @@ input:checked + .switch-slider:before {
 }
 
 @media (max-width: 1024px) {
+  .main-content-wrapper {
+    width: 100%;
+    min-width: 0;
+  }
+
   .mobile-bottom-bar {
     display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    position: relative;
+    flex-shrink: 0;
+    width: 100%;
+    height: var(--mobile-nav-height);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background-color: var(--bg-secondary);
     border-top: 1px solid var(--border-color);
-    z-index: 1000;
+    z-index: 100;
     justify-content: space-around;
     align-items: center;
+  }
+}
+
+.app-floating-calc-btn {
+  position: fixed;
+  right: 24px;
+  bottom: calc(var(--mobile-nav-height) + 12px);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--gold);
+  color: #000;
+  border: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.app-floating-calc-btn span {
+  font-size: 1.4rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+@media (min-width: 1025px) {
+  .app-floating-calc-btn {
+    bottom: 24px;
   }
 }
 

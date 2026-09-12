@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useLayoutEffect } from "react";
 import { Shield, TrendingUp, Users, BarChart3, Zap, Lock, ArrowRight, Coins } from "lucide-react";
 import { ROI_TIERS, RANK_BONUS_NAMES, SALARY_RANK_NAMES } from "../abis";
 import InstallApp from "./InstallApp";
@@ -24,7 +24,7 @@ const FEATURES = [
 ];
 
 function Landing({ onEnterApp }) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     document.body.classList.add("landing-page");
     document.documentElement.classList.add("landing-page");
     return () => {
@@ -34,6 +34,7 @@ function Landing({ onEnterApp }) {
   }, []);
 
   return (
+    <div className="landing-page-shell">
     <div className="landing-root">
       {/* Mobile + desktop top bar */}
       <nav className="landing-nav">
@@ -220,12 +221,14 @@ function Landing({ onEnterApp }) {
         <p className="landing-copy">© 2026 AI EARN BTC3.0 Plan · BSC Testnet</p>
       </footer>
 
-      {/* Sticky mobile CTA */}
-      <div className="landing-mobile-sticky-cta">
-        <button type="button" className="landing-cta landing-cta-full" onClick={onEnterApp}>
-          Launch DApp <ArrowRight size={18} />
-        </button>
-      </div>
+    </div>
+
+    {/* Bottom bar outside scroll area — avoids iOS fixed-in-scroll bugs */}
+    <div className="landing-mobile-sticky-cta">
+      <button type="button" className="landing-cta landing-cta-full" onClick={onEnterApp}>
+        Launch DApp <ArrowRight size={18} />
+      </button>
+    </div>
     </div>
   );
 }

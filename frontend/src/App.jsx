@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { ethers } from "ethers";
 import { 
   Shield, Layers, Coins, Plus, ArrowUpRight, Flame, Trophy, Users, 
@@ -174,6 +174,20 @@ function App() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  useLayoutEffect(() => {
+    const isApp = route === "app";
+    document.documentElement.classList.toggle("app-route", isApp);
+    document.body.classList.toggle("app-route", isApp);
+    if (isApp) {
+      document.documentElement.classList.remove("landing-page");
+      document.body.classList.remove("landing-page");
+    }
+    return () => {
+      document.documentElement.classList.remove("app-route");
+      document.body.classList.remove("app-route");
+    };
+  }, [route]);
+
   const prizes = [
     { name: "Try Again", color: "#1e293b", reward: `0 ${tokenSymbol}` },
     { name: "Double Match", color: "#b45309", reward: `${(parseFloat(spinCost) * 0.5).toFixed(1)} ${tokenSymbol}` },
@@ -236,7 +250,7 @@ function App() {
       link.rel = "icon";
       document.getElementsByTagName("head")[0].appendChild(link);
     }
-    link.href = "/logo.png";
+    link.href = "/favicon-32x32.png";
   }, [activeTab]);
 
   // Read referrer code from URL query
@@ -1380,59 +1394,44 @@ function App() {
             </div>
           )}
         </div>
-      </div>
-      
-      <div className="mobile-bottom-bar">
-        <button className={`mobile-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-          <LayoutDashboard size={20} />
-          <span>Home</span>
-        </button>
-        <button className={`mobile-nav-item ${activeTab === 'mint' ? 'active' : ''}`} onClick={() => setActiveTab('mint')}>
-          <Flame size={20} />
-          <span>Mint</span>
-        </button>
-        <button className={`mobile-nav-item ${activeTab === 'stake' ? 'active' : ''}`} onClick={() => setActiveTab('stake')}>
-          <Layers size={20} />
-          <span>Stake</span>
-        </button>
-        <button className={`mobile-nav-item ${activeTab === 'wheel' ? 'active' : ''}`} onClick={() => setActiveTab('wheel')}>
-          <Compass size={20} />
-          <span>Wheel</span>
-        </button>
-        <button className={`mobile-nav-item ${activeTab === 'ranks' ? 'active' : ''}`} onClick={() => setActiveTab('ranks')}>
-          <Trophy size={20} />
-          <span>Ranks</span>
-        </button>
-        <button className={`mobile-nav-item ${activeTab === 'affiliate' ? 'active' : ''}`} onClick={() => setActiveTab('affiliate')}>
-          <Users size={20} />
-          <span>Profile</span>
-        </button>
+
+        <nav className="mobile-bottom-bar" aria-label="Main navigation">
+          <button className={`mobile-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
+            <LayoutDashboard size={20} />
+            <span>Home</span>
+          </button>
+          <button className={`mobile-nav-item ${activeTab === 'mint' ? 'active' : ''}`} onClick={() => setActiveTab('mint')}>
+            <Flame size={20} />
+            <span>Mint</span>
+          </button>
+          <button className={`mobile-nav-item ${activeTab === 'stake' ? 'active' : ''}`} onClick={() => setActiveTab('stake')}>
+            <Layers size={20} />
+            <span>Stake</span>
+          </button>
+          <button className={`mobile-nav-item ${activeTab === 'wheel' ? 'active' : ''}`} onClick={() => setActiveTab('wheel')}>
+            <Compass size={20} />
+            <span>Wheel</span>
+          </button>
+          <button className={`mobile-nav-item ${activeTab === 'ranks' ? 'active' : ''}`} onClick={() => setActiveTab('ranks')}>
+            <Trophy size={20} />
+            <span>Ranks</span>
+          </button>
+          <button className={`mobile-nav-item ${activeTab === 'affiliate' ? 'active' : ''}`} onClick={() => setActiveTab('affiliate')}>
+            <Users size={20} />
+            <span>Profile</span>
+          </button>
+        </nav>
       </div>
 
       {/* Floating Compounding Calculator Icon Button (Universal) */}
       {isConnected && userInfo.registered && (
-        <button 
-          className="sp-floating-calc-btn"
+        <button
+          type="button"
+          className="sp-floating-calc-btn app-floating-calc-btn"
           onClick={() => setIsCalcOpen(true)}
-          style={{
-            position: "fixed",
-            bottom: "85px",
-            right: "24px",
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            backgroundColor: "var(--gold)",
-            color: "#000",
-            border: "none",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 999
-          }}
+          aria-label="Open compounding calculator"
         >
-          <span style={{ fontSize: "1.4rem", fontWeight: "bold" }}>%</span>
+          <span>%</span>
         </button>
       )}
 

@@ -20,21 +20,23 @@ body {
   min-height: -webkit-fill-available;
 }
 
-/* Landing page: allow full-page scroll (DApp locks body scroll) */
-html.landing-page,
-body.landing-page {
-  height: auto;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior-y: auto;
-  -webkit-overflow-scrolling: touch;
+/* Landing scroll rules live in Landing.css */
+
+/* DApp: lock document, scroll inside .tab-pane-container */
+html.app-route,
+body.app-route {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden !important;
+  overscroll-behavior: none;
 }
 
-body.landing-page #root {
-  height: auto;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
-  overflow: visible;
+body.app-route #root {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
 }
