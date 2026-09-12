@@ -6,7 +6,7 @@ const PRESETS = [
   {
     q: "What is BTC3.O?",
     answers: [
-      "BTC3.O is a next-generation DeFi platform featuring a Genesis Minting curve, daily Staking yields, 15 levels of Referral commissions, Rank milestone awards (including luxury cars), and a decentralized Lucky Wheel.",
+      "BTC3.O is the AI EARN BTC3.0 PLAN — a DeFi platform with 365-day investments, ROI by amount ($10–$10K), 20-level referral income, rank bonuses, and monthly USDT salary.",
       "It is an innovative smart contract ecosystem built for dynamic token minting, passive staking payouts, and affiliate network rewards.",
       "BTC3.O provides multiple Web3 earning channels including daily staking yields, a bonding curve minting mechanism, and team achievements.",
       "Our platform offers a complete Web3 experience combining DeFi staking, lucky draws, network referrers, and rank milestone rewards.",
@@ -21,7 +21,7 @@ const PRESETS = [
   {
     q: "How does Staking Yield work?",
     answers: [
-      "You lock your BTC3.O tokens to earn 0.5% daily yield (15% monthly, 180% APR) up to a 300% (3x) USD return cap.",
+      "Invest $10–$10,000 for a 365-day cycle. Daily ROI depends on amount: 0.5% ($10–$499), 0.6% ($500–$2K), 0.75% ($2K–$5K), or 1.0% ($5K–$10K).",
       "Staking pools offer a passive daily rate of 0.5% paid in tokens. Once you reach 3x your initial staked USD value, the stake completes.",
       "Earn 180% APR by staking your tokens. Rewards accumulate daily and can be claimed anytime until you hit the 300% limit.",
       "Staking pays out a stable 0.5% daily yield. Your stake continues earning until total claims equal 300% of your starting USD deposit.",
@@ -36,7 +36,7 @@ const PRESETS = [
   {
     q: "What is the Referral Program?",
     answers: [
-      "Our program features 15 levels of affiliate rewards: 8% on Level 1, 4% on Level 2, down to 0.25% on deeper levels.",
+      "Our 20-level program pays: Level 1 = 8%, Levels 2–5 = 1%, Levels 6–10 = 0.5%, Levels 11–15 = 0.25%, Levels 16–20 = 0.1%.",
       "Earn commissions up to 15 levels deep based on the staking volume of your network referrals.",
       "Unlock affiliate payouts down to 15 tiers. You need active direct referrers to sequentially unlock deeper levels.",
       "Refer friends to earn network percentages: Level 1 pays 8%, Level 2 pays 4%, Level 3 pays 2%, down to 0.25% on Level 15.",
@@ -51,7 +51,7 @@ const PRESETS = [
   {
     q: "How do Rank Rewards work?",
     answers: [
-      "Team volume unlocks ranks. Ranks pay a daily salary (from $1 to $35k/day) for 150 days and milestones like Creta, BMW, Mercedes.",
+      "Ranks Bronze to Elite Crown unlock one-time USDT bonuses ($20–$50K) based on self investment, directs, and team size. Gold+ ranks earn monthly USDT salary up to $10,000.",
       "Achieving higher ranks based on team volume gives you a daily reward for 150 days plus physical assets (Hyundai, BMW, Mercedes).",
       "Team business volume determines your rank. Higher ranks pay direct daily USD rewards up to 150 days and luxury cars.",
       "Advance ranks by accumulating team volume (50% strong leg limit). Ranks yield guaranteed daily payouts for 150 days and car rewards.",

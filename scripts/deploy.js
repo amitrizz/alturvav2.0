@@ -31,12 +31,21 @@ async function main() {
   const stakingSystemAddress = await stakingSystem.getAddress();
   console.log("BtcStakingSystem deployed to:", stakingSystemAddress);
 
-  // 4. Fund Staking contract with 85% of total supply (85,000,000 RSS)
+  // 4. Fund Staking contract with 85% of total supply (85,000,000 BTC3.O)
   console.log("Funding staking system with 85 million BTC 3.0 (85% of supply)...");
   const fundAmount = hre.ethers.parseEther("85000000");
   const transferTx = await token.transfer(stakingSystemAddress, fundAmount);
   await transferTx.wait();
-  console.log("Staking contract successfully funded!");
+  console.log("Staking contract successfully funded with tokens!");
+
+  // 5. Fund USDT for rank bonuses and monthly salaries
+  console.log("Funding staking system with USDT for rank bonuses & salaries...");
+  const usdtFundAmount = hre.ethers.parseEther("500000");
+  const mintUsdtTx = await usdt.mint(deployer.address, usdtFundAmount);
+  await mintUsdtTx.wait();
+  const usdtTransferTx = await usdt.transfer(stakingSystemAddress, usdtFundAmount);
+  await usdtTransferTx.wait();
+  console.log("Staking contract funded with 500,000 USDT for rewards!");
 
   const network = await hre.ethers.provider.getNetwork();
   const chainIdHex = "0x" + network.chainId.toString(16);

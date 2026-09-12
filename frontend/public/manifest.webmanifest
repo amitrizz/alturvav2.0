@@ -1,0 +1,32 @@
+{
+  "name": "BTC3.0 DEX — AI EARN Plan",
+  "short_name": "BTC3.0",
+  "description": "Mint, stake, and earn on BSC Testnet with BTC3.0",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#030712",
+  "theme_color": "#030712",
+  "categories": ["finance", "business"],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

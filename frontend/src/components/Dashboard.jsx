@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Flame, Layers, Users, Trophy, Compass, BookOpen, Crown, Coins, TrendingUp, ShieldAlert, Sparkles, Database, Wallet, X } from "lucide-react";
+import { chartPathFromPoints } from "../utils/platformStats";
 import "./Dashboard.css";
 
 function Dashboard({
@@ -7,6 +8,11 @@ function Dashboard({
   currentPrice,
   totalUSDValueMinted,
   totalMintedTokens,
+  tokenTotalSupply,
+  stakingTokenReserve,
+  totalRewardsPaidUSD,
+  mintChartData,
+  mintVolumeGrowth,
   btcBalance,
   setActiveTab,
   registeredUsersCount,
@@ -14,6 +20,18 @@ function Dashboard({
   setProfileSubTab
 }) {
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+  const supply = parseFloat(tokenTotalSupply) || 0;
+  const reserve = parseFloat(stakingTokenReserve) || 0;
+  const chart = chartPathFromPoints(mintChartData || []);
+
+  const formatGrowth = (value) => {
+    if (value === null || value === undefined || Number.isNaN(value)) return null;
+    const sign = value >= 0 ? "▲" : "▼";
+    const cls = value >= 0 ? "text-green" : "text-red";
+    return { label: `${sign} ${Math.abs(value).toFixed(1)}%`, cls };
+  };
+
+  const volumeGrowth = formatGrowth(mintVolumeGrowth);
   return (
     <div className="db-tab-pane">
       {/* Hero Stats */}
@@ -46,7 +64,7 @@ function Dashboard({
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
             <span className="db-stat-label">Remaining Mintable Tokens</span>
-            <h3 className="db-stat-value">{(100000000 - parseFloat(totalMintedTokens)).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+            <h3 className="db-stat-value">{reserve.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
             <span style={{ fontSize: "10px", opacity: 0 }} className="db-stat-change">&nbsp;</span>
           </div>
         </div>
@@ -68,7 +86,7 @@ function Dashboard({
           </div>
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: "3px" }}>
             <span className="db-stat-label">Max Total Supply</span>
-            <h3 className="db-stat-value">100,000,000</h3>
+            <h3 className="db-stat-value">{supply.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
             <span style={{ fontSize: "10px", opacity: 0 }} className="db-stat-change">&nbsp;</span>
           </div>
         </div>
@@ -141,36 +159,41 @@ function Dashboard({
           </div>
         </div>
 
-        {/* Platform Overview Mock Chart Card */}
+        {/* Platform Overview — on-chain mint volume chart */}
         <div className="db-card-box">
           <h3 className="db-card-title">Platform Overview</h3>
           <div className="db-chart-stats-row">
             <div className="db-chart-col">
               <span className="db-chart-stat-label">Total Volume</span>
               <h4 className="db-chart-stat-val">${parseFloat(totalUSDValueMinted).toFixed(2)}</h4>
-              <span className="db-chart-stat-change text-green">&#9650; 12.5%</span>
+              {volumeGrowth ? (
+                <span className={`db-chart-stat-change ${volumeGrowth.cls}`}>{volumeGrowth.label}</span>
+              ) : (
+                <span className="db-chart-stat-change" style={{ opacity: 0.5 }}>On-chain</span>
+              )}
             </div>
             <div className="db-chart-col">
-              <span className="db-chart-stat-label">Active Users</span>
+              <span className="db-chart-stat-label">Registered Users</span>
               <h4 className="db-chart-stat-val">{registeredUsersCount}</h4>
-              <span className="db-chart-stat-change text-green">&#9650; 8.3%</span>
+              <span className="db-chart-stat-change" style={{ opacity: 0.5 }}>On-chain</span>
             </div>
             <div className="db-chart-col">
               <span className="db-chart-stat-label">Rewards Paid</span>
-              <h4 className="db-chart-stat-val">${(parseFloat(totalUSDValueMinted) * 0.23).toFixed(2)}</h4>
-              <span className="db-chart-stat-change text-green">&#9650; 15.7%</span>
+              <h4 className="db-chart-stat-val">${parseFloat(totalRewardsPaidUSD || 0).toFixed(2)}</h4>
+              <span className="db-chart-stat-change" style={{ opacity: 0.5 }}>On-chain</span>
             </div>
           </div>
           <div className="db-mock-chart-container">
             <svg className="db-mock-svg-line" viewBox="0 0 300 120">
-              <path d={`M 0 100 Q 50 ${Math.max(30, 100 - (parseFloat(totalUSDValueMinted) / 500) * 10)} 150 ${Math.max(20, 85 - (parseFloat(totalUSDValueMinted) / 500) * 12)} T 300 ${Math.max(10, 45 - (parseFloat(totalUSDValueMinted) / 500) * 15)}`} fill="none" stroke="var(--gold)" strokeWidth="3" />
-              <circle cx="150" cy={Math.max(20, 85 - (parseFloat(totalUSDValueMinted) / 500) * 12)} r="5" fill="var(--gold)" />
+              <path d={chart.path} fill="none" stroke="var(--gold)" strokeWidth="3" />
+              {mintChartData?.length > 0 && (
+                <circle cx={chart.dotX ?? 150} cy={chart.dotY} r="5" fill="var(--gold)" />
+              )}
             </svg>
             <div className="db-mock-chart-labels">
-              <span>{getPastDateLabel(6)}</span>
-              <span>{getPastDateLabel(4)}</span>
-              <span>{getPastDateLabel(2)}</span>
-              <span>{getPastDateLabel(0)}</span>
+              {(chart.labels?.length ? chart.labels : [getPastDateLabel(6), getPastDateLabel(4), getPastDateLabel(2), getPastDateLabel(0)]).map((label, i) => (
+                <span key={`${label}-${i}`}>{label}</span>
+              ))}
             </div>
           </div>
         </div>

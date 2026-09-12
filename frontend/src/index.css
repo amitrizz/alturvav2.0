@@ -1,5 +1,40 @@
-/* Empty global stylesheet */
+html {
+  height: 100%;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
   padding: 0;
+  height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+#root {
+  height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
+/* Landing page: allow full-page scroll (DApp locks body scroll) */
+html.landing-page,
+body.landing-page {
+  height: auto;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.landing-page #root {
+  height: auto;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  overflow: visible;
 }

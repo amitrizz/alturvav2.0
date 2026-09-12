@@ -1,11 +1,14 @@
 import React from "react";
-import { Coins, Users, Info, Loader2 } from "lucide-react";
+import { Coins, Users, Info, Loader2, AlertCircle } from "lucide-react";
+import { validateMintAmount } from "../utils/parseTxError";
 import "./GenesisMint.css";
 
 function GenesisMint({
   tokenSymbol,
   totalUSDValueMinted,
   totalMintedTokens,
+  stakingTokenReserve,
+  bondingCurveInfo,
   btcBalance,
   usdtBalance,
   bnbBalance,
@@ -24,8 +27,8 @@ function GenesisMint({
   setCouponInput,
   executeApplyCoupon
 }) {
-  // Derive total minters from registered users count
-  const totalMinters = registeredUsersCount;
+  const mintValidationError = mintUsdtAmount ? validateMintAmount(mintUsdtAmount, mintMethod) : null;
+  const depositPlaceholder = mintMethod === "USDT" ? "Min $10 | Max $10,000" : "Min ~0.0167 BNB | Max ~16.67 BNB";
 
   return (
     <div className="gm-tab-pane">
@@ -89,7 +92,7 @@ function GenesisMint({
               <Coins className="coin-input-icon" size={20} />
               <input 
                 type="number" 
-                placeholder="Min $10 | Max $10000" 
+                placeholder={depositPlaceholder}
                 className="coin-field-input"
                 value={mintUsdtAmount}
                 onChange={(e) => handleMintInputChange(e.target.value)}
@@ -107,6 +110,13 @@ function GenesisMint({
             <button className="gm-shortcut-btn" onClick={() => handleMintInputChange(mintMethod === "USDT" ? "10000" : "16.0")}>100%</button>
           </div>
 
+          {mintValidationError && (
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", marginTop: "10px", padding: "10px 12px", borderRadius: "8px", background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.35)", color: "#fca5a5", fontSize: "0.85rem" }}>
+              <AlertCircle size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
+              <span>{mintValidationError}</span>
+            </div>
+          )}
+
           <div className="gm-details-panel">
             <div className="gm-detail-row">
               <span>Estimated {tokenSymbol} Received</span>
@@ -122,7 +132,7 @@ function GenesisMint({
             </div>
             <div className="gm-detail-row">
               <span>Current Rate (BNB)</span>
-              <span>1 {tokenSymbol} = {(parseFloat(currentPrice) / 600).toFixed(6)} BNB</span>
+              <span>1 {tokenSymbol} = {(parseFloat(currentPrice) / 600).toFixed(6)} BNB ($600/BNB)</span>
             </div>
           </div>
 
@@ -165,7 +175,7 @@ function GenesisMint({
             <button 
               className="gm-cta-gradient-btn" 
               onClick={executeMint} 
-              disabled={txLoading || !mintUsdtAmount || (mintMethod === "USDT" && !usdtApproved)}
+              disabled={txLoading || !mintUsdtAmount || !!mintValidationError || (mintMethod === "USDT" && !usdtApproved)}
               style={{ flex: 1 }}
             >
               {txLoading ? <Loader2 className="animate-spin inline mr-2" size={18} /> : null}
@@ -229,51 +239,63 @@ function GenesisMint({
         </div>
       </div>
 
-      {/* Mint Rounds table list */}
+      {/* Bonding curve tiers — derived from on-chain contract constants */}
       <div className="gm-card-box gm-rounds-table-card">
-        <h3 className="gm-card-title">Genesis Mint Rounds</h3>
+        <h3 className="gm-card-title">Genesis Mint Bonding Curve</h3>
+        <div className="gm-details-panel" style={{ marginBottom: "14px" }}>
+          <div className="gm-detail-row">
+            <span>Start Price</span>
+            <span>${parseFloat(bondingCurveInfo?.startPrice || "0.5").toFixed(4)}</span>
+          </div>
+          <div className="gm-detail-row">
+            <span>Price Step</span>
+            <span>+0.1% every ${parseFloat(bondingCurveInfo?.stepVolume || "500").toFixed(0)} minted</span>
+          </div>
+          <div className="gm-detail-row">
+            <span>Total Minted</span>
+            <span>{parseFloat(totalMintedTokens).toLocaleString(undefined, { maximumFractionDigits: 2 })} {tokenSymbol}</span>
+          </div>
+          <div className="gm-detail-row">
+            <span>Contract Reserve</span>
+            <span>{parseFloat(stakingTokenReserve || "0").toLocaleString(undefined, { maximumFractionDigits: 2 })} {tokenSymbol}</span>
+          </div>
+        </div>
         <div className="gm-custom-table-container">
           <table className="gm-custom-table">
             <thead>
               <tr>
-                <th>Round</th>
+                <th>Price Tier</th>
                 <th>Price (USD)</th>
-                <th>Tokens Available</th>
-                <th>Tokens Minted</th>
+                <th>Volume Band</th>
                 <th>Progress</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td className="gold-text font-bold">Round 1</td>
-                <td>$0.5185</td>
-                <td>5,000,000 {tokenSymbol}</td>
-                <td>1,874,700 {tokenSymbol}</td>
-                <td>
-                  <div className="gm-progress-track">
-                    <div className="gm-progress-bar" style={{ width: '37.49%' }}></div>
-                  </div>
-                  <span className="text-xxs opacity-75">37.49%</span>
-                </td>
-                <td><span className="badge-status-unlocked">Live</span></td>
-              </tr>
-              <tr className="opacity-60">
-                <td>Round 2</td>
-                <td>$0.5695</td>
-                <td>5,000,000 {tokenSymbol}</td>
-                <td>0 {tokenSymbol}</td>
-                <td>0%</td>
-                <td><span className="badge-status-locked">Upcoming</span></td>
-              </tr>
-              <tr className="opacity-60">
-                <td>Round 3</td>
-                <td>$0.6254</td>
-                <td>5,000,000 {tokenSymbol}</td>
-                <td>0 {tokenSymbol}</td>
-                <td>0%</td>
-                <td><span className="badge-status-locked">Upcoming</span></td>
-              </tr>
+              {(bondingCurveInfo?.tiers || []).map((tier) => (
+                <tr key={tier.step} className={tier.status !== "Live" ? "opacity-60" : ""}>
+                  <td className={tier.status === "Live" ? "gold-text font-bold" : ""}>Step {tier.step + 1}</td>
+                  <td>${tier.price.toFixed(4)}</td>
+                  <td>${tier.bandMin.toLocaleString()} – ${tier.bandMax.toLocaleString()}</td>
+                  <td>
+                    {tier.status === "Live" ? (
+                      <>
+                        <div className="gm-progress-track">
+                          <div className="gm-progress-bar" style={{ width: `${tier.progress.toFixed(2)}%` }}></div>
+                        </div>
+                        <span className="text-xxs opacity-75">{tier.progress.toFixed(2)}%</span>
+                      </>
+                    ) : (
+                      <span>{tier.status === "Passed" ? "100%" : "0%"}</span>
+                    )}
+                  </td>
+                  <td>
+                    <span className={tier.status === "Live" ? "badge-status-unlocked" : "badge-status-locked"}>
+                      {tier.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

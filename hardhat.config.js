@@ -39,8 +39,10 @@ module.exports = {
       url: "http://127.0.0.1:8545",
     },
     bscTestnet: {
-      url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
+      url: process.env.BSC_TESTNET_RPC || "https://bsc-testnet-rpc.publicnode.com",
+      chainId: 97,
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      timeout: 120000,
     },
   },
 };

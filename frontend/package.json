@@ -5,15 +5,17 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "vite build",
+    "build": "node scripts/generate-pwa-icons.mjs && vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.2",
+    "sharp": "^0.35.4",
     "typescript": "~6.0.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vite-plugin-pwa": "^1.3.0"
   },
   "dependencies": {
     "@rainbow-me/rainbowkit": "^2.2.11",

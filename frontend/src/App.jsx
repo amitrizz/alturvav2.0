@@ -5,7 +5,16 @@ import {
   ExternalLink, Loader2, Copy, Check, ChevronRight, Info, AlertCircle, 
   Compass, LayoutDashboard, HelpCircle, Moon, Sun, Bell, ArrowRight, BookOpen, Crown, Clock, LogOut
 } from "lucide-react";
-import { ERC20_ABI, BTC_STAKING_SYSTEM_ABI } from "./abis";
+import { ERC20_ABI, BTC_STAKING_SYSTEM_ABI, RANK_BONUS_NAMES, LEVEL_COMMISSIONS } from "./abis";
+import Landing from "./components/Landing";
+import { parseTxError, validateMintAmount, getMintUsdValue, BNB_PRICE_USD } from "./utils/parseTxError";
+import {
+  queryEventsWithFallback,
+  buildMintVolumeChart,
+  sumRewardsPaidUSD,
+  computeGrowthPercent,
+  buildBondingCurveTiers,
+} from "./utils/platformStats";
 import addresses from "./addresses.json";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useAccount, useWalletClient, useSwitchChain, useDisconnect } from "wagmi";
@@ -18,14 +27,13 @@ import RanksAndLevels from "./components/RanksAndLevels";
 import LuckyWheel from "./components/LuckyWheel";
 import Shimmer from "./components/Shimmer";
 import Chatbot from "./components/Chatbot";
+import InstallApp from "./components/InstallApp";
+import { isMobileDevice, isInAppBrowser, hasInjectedProvider, needsHttpsForWallets } from "./utils/mobile";
 
 const tokenSymbol = "BTC3.O";
 const tokenName = "BTC3.O";
 
-const rankNames = [
-  "Starter", "Executive", "Engr", "Manager", "SR Manager", "AGM", "DGM", 
-  "Add GM", "GM", "SR GM", "VP", "Sr VP", "President", "Director"
-];
+const rankNames = RANK_BONUS_NAMES;
 const REFERRAL_KEY = import.meta.env.VITE_REFERRAL_KEY || "btc3dexSecretKey123";
 
 function encryptAddress(address) {
@@ -84,6 +92,19 @@ function App() {
   const [totalUSDValueMinted, setTotalUSDValueMinted] = useState("0");
   const [totalMintedTokens, setTotalMintedTokens] = useState("0");
   const [registeredUsersCount, setRegisteredUsersCount] = useState(0);
+  const [tokenTotalSupply, setTokenTotalSupply] = useState("0");
+  const [stakingTokenReserve, setStakingTokenReserve] = useState("0");
+  const [totalRewardsPaidUSD, setTotalRewardsPaidUSD] = useState("0");
+  const [mintChartData, setMintChartData] = useState([]);
+  const [mintVolumeGrowth, setMintVolumeGrowth] = useState(null);
+  const [bondingCurveInfo, setBondingCurveInfo] = useState({
+    startPrice: "0.5",
+    stepVolume: "500",
+    stepIncrease: "0.0005",
+    tiers: [],
+    currentStep: 0,
+    bandProgress: 0,
+  });
 
   // Mint Input
   const [mintUsdtAmount, setMintUsdtAmount] = useState("");
@@ -91,8 +112,8 @@ function App() {
 
   // Staking Input
   const [stakeBtcAmount, setStakeBtcAmount] = useState("");
-  const [lockupMonths, setLockupMonths] = useState(0); // 0, 3, 6, 12 months
   const [couponInput, setCouponInput] = useState("");
+  const [route, setRoute] = useState(window.location.hash === "#/app" ? "app" : "landing");
 
   // Compounding Calculator State & Logic
   const [calcAmount, setCalcAmount] = useState("1000");
@@ -115,15 +136,17 @@ function App() {
   const [userInfo, setUserInfo] = useState({
     referrer: ethers.ZeroAddress,
     directActiveCount: 0,
+    directReferralsCount: 0,
+    teamSize: 0,
     totalSelfStakeUSD: "0.0",
     totalTeamBusinessUSD: "0.0",
-    dailyRankReward: "0.0",
-    lastRankClaimTime: 0,
-    currentRank: 0,
+    lastSalaryClaimTime: 0,
+    highestSalaryRank: -1,
     registered: false,
-    directReferralsCount: 0,
     indirectReferralsCount: 0
   });
+  const [rankBonusStatus, setRankBonusStatus] = useState([]);
+  const [qualifiedSalaryRank, setQualifiedSalaryRank] = useState(-1);
   const [referrerInput, setReferrerInput] = useState("");
   const [userStakesList, setUserStakesList] = useState([]);
   const [transactionHistory, setTransactionHistory] = useState([]);
@@ -140,8 +163,16 @@ function App() {
   const [rotation, setRotation] = useState(0);
   const canvasRef = useRef(null);
   const [newSpinCostInput, setNewSpinCostInput] = useState("");
-  const [levelPercents, setLevelPercents] = useState([8, 4, 2, 1, 0.5, 0.5, 0.5, 0.5, 0.5, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]);
   const [isCalcOpen, setIsCalcOpen] = useState(false);
+  const [contractMismatch, setContractMismatch] = useState(false);
+
+  const networkLabel = "BNB Smart Chain (BSC Testnet)";
+
+  useEffect(() => {
+    const onHashChange = () => setRoute(window.location.hash === "#/app" ? "app" : "landing");
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   const prizes = [
     { name: "Try Again", color: "#1e293b", reward: `0 ${tokenSymbol}` },
@@ -210,7 +241,8 @@ function App() {
 
   // Read referrer code from URL query
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
+    const hashQuery = window.location.hash.includes("?") ? window.location.hash.split("?")[1] : "";
+    const params = new URLSearchParams(hashQuery || window.location.search);
     const refCode = params.get("ref");
     if (refCode) {
       const decrypted = decryptAddress(refCode);
@@ -226,13 +258,13 @@ function App() {
       setUserInfo({
         referrer: ethers.ZeroAddress,
         directActiveCount: 0,
+        directReferralsCount: 0,
+        teamSize: 0,
         totalSelfStakeUSD: "0.0",
         totalTeamBusinessUSD: "0.0",
-        dailyRankReward: "0.0",
-        lastRankClaimTime: 0,
-        currentRank: 0,
+        lastSalaryClaimTime: 0,
+        highestSalaryRank: -1,
         registered: false,
-        directReferralsCount: 0,
         indirectReferralsCount: 0
       });
       setUserStakesList([]);
@@ -274,6 +306,64 @@ function App() {
       const mintedTok = await stakingContract.totalMintedTokens();
       setTotalUSDValueMinted(ethers.formatEther(mintedVal));
       setTotalMintedTokens(ethers.formatEther(mintedTok));
+
+      const [totalSupply, reserveBalance, startPrice, stepVolume, stepIncrease] = await Promise.all([
+        btcContract.totalSupply(),
+        btcContract.balanceOf(addresses.stakingSystem),
+        stakingContract.START_PRICE(),
+        stakingContract.PRICE_STEP_VOLUME(),
+        stakingContract.PRICE_STEP_INCREASE(),
+      ]);
+      setTokenTotalSupply(ethers.formatEther(totalSupply));
+      setStakingTokenReserve(ethers.formatEther(reserveBalance));
+
+      const curve = buildBondingCurveTiers(
+        startPrice,
+        stepVolume,
+        stepIncrease,
+        ethers.formatEther(mintedVal)
+      );
+      setBondingCurveInfo({
+        startPrice: ethers.formatEther(startPrice),
+        stepVolume: ethers.formatEther(stepVolume),
+        stepIncrease: ethers.formatEther(stepIncrease),
+        tiers: curve.tiers,
+        currentStep: curve.currentStep,
+        bandProgress: curve.bandProgress,
+      });
+
+      const currentBlock = await provider.getBlockNumber();
+      const [
+        allMintedEvents,
+        allRewardClaimed,
+        allRankBonusClaimed,
+        allMonthlySalaryClaimed,
+        allCouponApplied,
+        allWheelSpun,
+      ] = await Promise.all([
+        queryEventsWithFallback(stakingContract, stakingContract.filters.Minted(), provider),
+        queryEventsWithFallback(stakingContract, stakingContract.filters.RewardClaimed(), provider),
+        queryEventsWithFallback(stakingContract, stakingContract.filters.RankBonusClaimed(), provider),
+        queryEventsWithFallback(stakingContract, stakingContract.filters.MonthlySalaryClaimed(), provider),
+        queryEventsWithFallback(stakingContract, stakingContract.filters.CouponApplied(), provider),
+        queryEventsWithFallback(stakingContract, stakingContract.filters.WheelSpun(), provider),
+      ]);
+
+      const chartPoints = buildMintVolumeChart(allMintedEvents, currentBlock);
+      setMintChartData(chartPoints);
+      setMintVolumeGrowth(computeGrowthPercent(chartPoints));
+      setTotalRewardsPaidUSD(
+        sumRewardsPaidUSD(
+          {
+            rewardClaimed: allRewardClaimed,
+            rankBonusClaimed: allRankBonusClaimed,
+            monthlySalaryClaimed: allMonthlySalaryClaimed,
+            couponApplied: allCouponApplied,
+            wheelSpun: allWheelSpun,
+          },
+          ethers.formatEther(price)
+        ).toFixed(2)
+      );
 
       let directReferralsCount = 0;
       let indirectReferralsCount = 0;
@@ -324,7 +414,7 @@ function App() {
         });
 
         let currentLevelUsers = [...directList];
-        for (let depth = 2; depth <= 15; depth++) {
+        for (let depth = 2; depth <= 20; depth++) {
           const nextLevelUsers = [];
           Object.keys(referralMap).forEach(child => {
             if (currentLevelUsers.includes(referralMap[child])) {
@@ -340,20 +430,41 @@ function App() {
         setRegisteredUsersCount(1);
       }
 
+      // Verify contract version (new contracts expose getRateByAmount)
+      try {
+        await stakingContract.getRateByAmount(ethers.parseEther("100"));
+        setContractMismatch(false);
+      } catch {
+        setContractMismatch(true);
+        return;
+      }
+
       // 5. User Registration & Stats
       const u = await stakingContract.users(account);
       setUserInfo({
         referrer: u[0],
         directActiveCount: Number(u[1]),
-        totalSelfStakeUSD: ethers.formatEther(u[2]),
-        totalTeamBusinessUSD: ethers.formatEther(u[3]),
-        dailyRankReward: ethers.formatEther(u[4]),
-        lastRankClaimTime: Number(u[5]),
-        currentRank: Number(u[6]),
-        registered: u[7],
-        directReferralsCount,
+        directReferralsCount: Number(u[2]),
+        teamSize: Number(u[3]),
+        totalSelfStakeUSD: ethers.formatEther(u[4]),
+        totalTeamBusinessUSD: ethers.formatEther(u[5]),
+        lastSalaryClaimTime: Number(u[6]),
+        highestSalaryRank: Number(u[7]),
+        registered: u[8],
         indirectReferralsCount
       });
+
+      const bonusStatus = [];
+      for (let i = 0; i < 10; i++) {
+        const claimed = await stakingContract.rankBonusClaimed(account, i);
+        const qualified = await stakingContract.qualifiesForRankBonus(account, i);
+        bonusStatus.push({ claimed, qualified });
+      }
+      setRankBonusStatus(bonusStatus);
+
+      const salaryRank = await stakingContract.getQualifiedSalaryRank(account);
+      const maxUint = BigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+      setQualifiedSalaryRank(BigInt(salaryRank.toString()) >= maxUint ? -1 : Number(salaryRank));
 
       // 6. User Stakes list
       const stakes = [];
@@ -367,16 +478,19 @@ function App() {
           const capMultiplier = u[1] > 0n ? 5.0 : 2.5;
           const computedCap = (parseFloat(stAmountUSD) * capMultiplier).toFixed(2);
 
+          const endTime = new Date(Number(st[3]) * 1000);
+          const daysLeft = Math.max(0, Math.ceil((endTime - new Date()) / 86400000));
           stakes.push({
             index,
             amountTokens: ethers.formatEther(st[0]),
             amountUSD: stAmountUSD,
             startTime: new Date(Number(st[2]) * 1000),
-            lastClaimTime: new Date(Number(st[3]) * 1000),
-            rewardClaimedUSD: ethers.formatEther(st[4]),
-            lockupMonths: Number(st[5]),
+            endTime,
+            lastClaimTime: new Date(Number(st[4]) * 1000),
+            rewardClaimedUSD: ethers.formatEther(st[5]),
             ratePerDay: Number(st[6]),
             active: st[7],
+            daysLeft,
             rewardCapUSD: computedCap,
             pendingTokens: ethers.formatEther(pending[0]),
             pendingUSD: ethers.formatEther(pending[1])
@@ -399,7 +513,8 @@ function App() {
         const filterSold = stakingContract.filters.Sold(account);
         const filterUnstaked = stakingContract.filters.Unstaked(account);
         const filterRewardClaimed = stakingContract.filters.RewardClaimed(account);
-        const filterRankRewardClaimed = stakingContract.filters.RankRewardClaimed(account);
+        const filterRankBonusClaimed = stakingContract.filters.RankBonusClaimed(account);
+        const filterMonthlySalaryClaimed = stakingContract.filters.MonthlySalaryClaimed(account);
         const filterCouponApplied = stakingContract.filters.CouponApplied(account);
         const filterWheelSpun = stakingContract.filters.WheelSpun(account);
 
@@ -409,7 +524,8 @@ function App() {
           soldEvents,
           unstakedEvents,
           rewardClaimedEvents,
-          rankRewardClaimedEvents,
+          rankBonusClaimedEvents,
+          monthlySalaryClaimedEvents,
           couponAppliedEvents,
           wheelSpunEvents
         ] = await Promise.all([
@@ -418,7 +534,8 @@ function App() {
           stakingContract.queryFilter(filterSold, startBlock, "latest").catch(() => []),
           stakingContract.queryFilter(filterUnstaked, startBlock, "latest").catch(() => []),
           stakingContract.queryFilter(filterRewardClaimed, startBlock, "latest").catch(() => []),
-          stakingContract.queryFilter(filterRankRewardClaimed, startBlock, "latest").catch(() => []),
+          stakingContract.queryFilter(filterRankBonusClaimed, startBlock, "latest").catch(() => []),
+          stakingContract.queryFilter(filterMonthlySalaryClaimed, startBlock, "latest").catch(() => []),
           stakingContract.queryFilter(filterCouponApplied, startBlock, "latest").catch(() => []),
           stakingContract.queryFilter(filterWheelSpun, startBlock, "latest").catch(() => [])
         ]);
@@ -444,8 +561,8 @@ function App() {
             hash: e.transactionHash,
             btcAmount: ethers.formatEther(e.args[1] || e.args.amountTokens),
             usdValue: ethers.formatEther(e.args[2] || e.args.amountUSD),
-            lockupMonths: Number(e.args[3] || e.args.lockupMonths),
-            ratePerDay: Number(e.args[4] || e.args.ratePerDay) / 100,
+            ratePerDay: Number(e.args[3] || e.args.ratePerDay) / 100,
+            endTime: Number(e.args[4] || e.args.endTime),
             blockNumber: e.blockNumber,
             category: "purchase"
           });
@@ -485,11 +602,21 @@ function App() {
           });
         });
 
-        rankRewardClaimedEvents.forEach(e => {
+        rankBonusClaimedEvents.forEach(e => {
           txs.push({
-            type: "Rank Claim",
+            type: "Rank Bonus",
             hash: e.transactionHash,
-            usdValue: ethers.formatEther(e.args[1] || e.args.rewardUSD),
+            usdValue: ethers.formatEther(e.args[2] || e.args.bonusUSD),
+            blockNumber: e.blockNumber,
+            category: "withdrawal"
+          });
+        });
+
+        monthlySalaryClaimedEvents.forEach(e => {
+          txs.push({
+            type: "Monthly Salary",
+            hash: e.transactionHash,
+            usdValue: ethers.formatEther(e.args[1] || e.args.salaryUSD),
             blockNumber: e.blockNumber,
             category: "withdrawal"
           });
@@ -559,7 +686,7 @@ function App() {
       showToast("success", "USDT Approved successfully!");
       setUsdtApproved(true);
     } catch (err) {
-      showToast("error", parseTxError(err, "USDT approval failed."));
+      showToast("error", parseTxError(err, "USDT approval failed.", { action: "approve" }));
     } finally {
       setTxLoading(false);
     }
@@ -576,7 +703,7 @@ function App() {
       showToast("success", `${tokenSymbol} Approved successfully!`);
       setBtcApproved(true);
     } catch (err) {
-      showToast("error", parseTxError(err, `${tokenSymbol} approval failed.`));
+      showToast("error", parseTxError(err, `${tokenSymbol} approval failed.`, { action: "approve" }));
     } finally {
       setTxLoading(false);
     }
@@ -594,7 +721,7 @@ function App() {
       showToast("success", "Successfully registered in the BTC3.O system!");
       loadUserData();
     } catch (err) {
-      showToast("error", parseTxError(err, "Registration failed."));
+      showToast("error", parseTxError(err, "Registration failed.", { action: "register" }));
     } finally {
       setTxLoading(false);
     }
@@ -602,6 +729,15 @@ function App() {
 
   const executeMint = async () => {
     if (!signer || !mintUsdtAmount) return;
+    const mintValidationError = validateMintAmount(mintUsdtAmount, mintMethod);
+    if (mintValidationError) {
+      showToast("error", mintValidationError);
+      return;
+    }
+    if (!userInfo.registered) {
+      showToast("error", "Please register in the system before minting tokens.");
+      return;
+    }
     setTxLoading(true);
     try {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
@@ -609,8 +745,7 @@ function App() {
       if (mintMethod === "USDT") {
         tx = await stakingContract.mintTokens(ethers.parseEther(mintUsdtAmount));
       } else {
-        const bnbVal = parseFloat(mintUsdtAmount) / 600;
-        tx = await stakingContract.mintTokensWithBNB({ value: ethers.parseEther(bnbVal.toString()) });
+        tx = await stakingContract.mintTokensWithBNB({ value: ethers.parseEther(mintUsdtAmount) });
       }
       showToast("info", "Mint transaction submitted...");
       await tx.wait();
@@ -620,7 +755,7 @@ function App() {
       loadUserData();
       setTimeout(loadUserData, 2000);
     } catch (err) {
-      showToast("error", parseTxError(err, "Minting execution failed."));
+      showToast("error", parseTxError(err, "Minting failed. Please check amount ($10–$10,000) and try again.", { action: "mint" }));
     } finally {
       setTxLoading(false);
     }
@@ -631,7 +766,7 @@ function App() {
     setTxLoading(true);
     try {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.stake(ethers.parseEther(stakeBtcAmount), lockupMonths);
+      const tx = await stakingContract.stake(ethers.parseEther(stakeBtcAmount));
       showToast("info", "Staking transaction submitted...");
       await tx.wait();
       showToast("success", `Successfully staked ${stakeBtcAmount} ${tokenSymbol}!`);
@@ -639,7 +774,7 @@ function App() {
       loadUserData();
       setTimeout(loadUserData, 2000);
     } catch (err) {
-      showToast("error", parseTxError(err, "Staking execution failed."));
+      showToast("error", parseTxError(err, "Staking failed.", { action: "stake" }));
     } finally {
       setTxLoading(false);
     }
@@ -658,7 +793,7 @@ function App() {
       loadUserData();
       setTimeout(loadUserData, 2000);
     } catch (err) {
-      showToast("error", parseTxError(err, "Failed to apply coupon."));
+      showToast("error", parseTxError(err, "Failed to apply coupon.", { action: "coupon" }));
     } finally {
       setTxLoading(false);
     }
@@ -669,7 +804,7 @@ function App() {
     setTxLoading(true);
     try {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const parsedAmount = ethers.utils.parseEther(btcAmountStr);
+      const parsedAmount = ethers.parseEther(btcAmountStr);
       let tx;
       if (method === "USDT") {
         tx = await stakingContract.sellTokens(parsedAmount);
@@ -684,7 +819,7 @@ function App() {
       setTimeout(loadUserData, 2000);
       return true;
     } catch (err) {
-      showToast("error", parseTxError(err, "Failed to sell tokens."));
+      showToast("error", parseTxError(err, "Failed to sell tokens.", { action: "sell" }));
       return false;
     } finally {
       setTxLoading(false);
@@ -703,7 +838,7 @@ function App() {
       loadUserData();
       setTimeout(loadUserData, 2000);
     } catch (err) {
-      showToast("error", parseTxError(err, "Failed to claim rewards."));
+      showToast("error", parseTxError(err, "Failed to claim rewards.", { action: "claim" }));
     } finally {
       setTxLoading(false);
     }
@@ -721,24 +856,41 @@ function App() {
       loadUserData();
       setTimeout(loadUserData, 2000);
     } catch (err) {
-      showToast("error", parseTxError(err, "Unstaking failed."));
+      showToast("error", parseTxError(err, "Withdrawal failed.", { action: "unstake" }));
     } finally {
       setTxLoading(false);
     }
   };
 
-  const executeClaimRankReward = async () => {
+  const executeClaimRankBonus = async (rankIndex) => {
     if (!signer) return;
     setTxLoading(true);
     try {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.claimRankReward();
-      showToast("info", "Claiming daily rank reward...");
+      const tx = await stakingContract.claimRankBonus(rankIndex);
+      showToast("info", "Claiming rank bonus...");
       await tx.wait();
-      showToast("success", "Daily rank reward claimed successfully!");
+      showToast("success", "Rank bonus claimed successfully!");
       loadUserData();
     } catch (err) {
-      showToast("error", parseTxError(err, "Rank reward claim failed."));
+      showToast("error", parseTxError(err, "Rank bonus claim failed.", { action: "rank" }));
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
+  const executeClaimMonthlySalary = async () => {
+    if (!signer) return;
+    setTxLoading(true);
+    try {
+      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
+      const tx = await stakingContract.claimMonthlySalary();
+      showToast("info", "Claiming monthly salary...");
+      await tx.wait();
+      showToast("success", "Monthly salary claimed successfully!");
+      loadUserData();
+    } catch (err) {
+      showToast("error", parseTxError(err, "Monthly salary claim failed.", { action: "salary" }));
     } finally {
       setTxLoading(false);
     }
@@ -799,7 +951,7 @@ function App() {
 
     } catch (err) {
       setIsSpinning(false);
-      showToast("error", parseTxError(err, "Lucky Wheel spin execution failed."));
+      showToast("error", parseTxError(err, "Lucky wheel spin failed.", { action: "wheel" }));
     }
   };
 
@@ -845,7 +997,8 @@ function App() {
       setEstimatedBtcToMint("0.0");
       return;
     }
-    const netVal = parsed * 0.98;
+    const usdVal = getMintUsdValue(parsed, mintMethod);
+    const netVal = usdVal * 0.98;
     const price = parseFloat(currentPrice) || 0.5;
     let tokens = netVal / price;
     if (couponInput && couponInput.trim() !== "") {
@@ -856,26 +1009,14 @@ function App() {
 
   useEffect(() => {
     handleMintInputChange(mintUsdtAmount);
-  }, [couponInput]);
+  }, [couponInput, mintMethod, currentPrice]);
 
   const copyReferralLink = () => {
-    const link = `${window.location.origin}?ref=${encryptAddress(account)}`;
+    const link = `${window.location.origin}${window.location.pathname}#/app?ref=${encryptAddress(account)}`;
     navigator.clipboard.writeText(link);
     setCopiedLink(true);
     showToast("success", "Referral link copied successfully!");
     setTimeout(() => setCopiedLink(false), 3000);
-  };
-
-  const parseTxError = (err, defaultMsg) => {
-    if (!err) return defaultMsg;
-    if (err.reason) return err.reason;
-    if (err.data && err.data.message) return err.data.message;
-    if (err.message) {
-      if (err.message.includes("user rejected action")) return "Transaction rejected by user.";
-      if (err.message.includes("insufficient funds")) return "Insufficient native chain tokens for gas fees.";
-      return err.message;
-    }
-    return defaultMsg;
   };
 
   const tabTitles = {
@@ -888,6 +1029,15 @@ function App() {
   };
 
 
+
+  const enterApp = () => {
+    window.location.hash = "#/app";
+    setRoute("app");
+  };
+
+  if (route === "landing") {
+    return <Landing onEnterApp={enterApp} />;
+  }
 
   return (
     <div className="dashboard-root-layout">
@@ -1025,12 +1175,24 @@ function App() {
 
         {/* Tab Contents */}
         <div className="tab-pane-container">
+          <InstallApp variant="banner" />
+          {isMobileDevice() && !isConnected && (
+            <div className="mobile-hint-banner">
+              {needsHttpsForWallets()
+                ? "Wallet connect requires HTTPS on mobile. Deploy with SSL or use your wallet app's built-in browser to open this site."
+                : isInAppBrowser()
+                  ? "Tip: For best results, open this link in Chrome/Safari or your wallet app browser (MetaMask / Trust Wallet), then tap Connect."
+                  : hasInjectedProvider()
+                    ? "Tap Connect and approve the wallet request in your browser extension or wallet app."
+                    : "Tap Connect and choose WalletConnect or your mobile wallet. If it fails, open this site inside MetaMask or Trust Wallet browser."}
+            </div>
+          )}
           {/* Wrong Network warning Banner */}
           {isConnected && isWrongNetwork && (
             <div className="wrong-network-banner">
               <AlertCircle size={20} />
               <span>
-                Please switch network to BNB Smart Chain (BSC Testnet).
+                Please switch your wallet to {networkLabel}. Only BNB (BEP20) is supported — not Ethereum.
               </span>
               <button onClick={switchNetwork} className="switch-network-btn">
                 Switch Network
@@ -1038,8 +1200,17 @@ function App() {
             </div>
           )}
 
+          {isConnected && !isWrongNetwork && contractMismatch && (
+            <div className="wrong-network-banner" style={{ borderColor: "rgba(251, 191, 36, 0.5)", background: "rgba(251, 191, 36, 0.1)" }}>
+              <AlertCircle size={20} style={{ color: "#fbbf24" }} />
+              <span>
+                Outdated contract on BSC Testnet. Redeploy with: <code>npx hardhat run scripts/deploy.js --network bscTestnet</code>
+              </span>
+            </div>
+          )}
+
           {/* Unregistered Register Block */}
-          {isConnected && !userInfo.registered && (
+          {isConnected && !isWrongNetwork && !contractMismatch && !userInfo.registered && (
             <div className="register-container">
               <div className="register-card">
                 <Shield size={48} className="register-icon" />
@@ -1065,7 +1236,7 @@ function App() {
           )}
 
           {/* Connected & Registered Pane Views */}
-          {isConnected && userInfo.registered && (
+          {isConnected && !isWrongNetwork && !contractMismatch && userInfo.registered && (
             <>
               {activeTab === "dashboard" && (
                 <Dashboard
@@ -1073,6 +1244,11 @@ function App() {
                   currentPrice={currentPrice}
                   totalUSDValueMinted={totalUSDValueMinted}
                   totalMintedTokens={totalMintedTokens}
+                  tokenTotalSupply={tokenTotalSupply}
+                  stakingTokenReserve={stakingTokenReserve}
+                  totalRewardsPaidUSD={totalRewardsPaidUSD}
+                  mintChartData={mintChartData}
+                  mintVolumeGrowth={mintVolumeGrowth}
                   btcBalance={btcBalance}
                   setActiveTab={setActiveTab}
                   registeredUsersCount={registeredUsersCount}
@@ -1086,6 +1262,8 @@ function App() {
                   tokenSymbol={tokenSymbol}
                   totalUSDValueMinted={totalUSDValueMinted}
                   totalMintedTokens={totalMintedTokens}
+                  stakingTokenReserve={stakingTokenReserve}
+                  bondingCurveInfo={bondingCurveInfo}
                   btcBalance={btcBalance}
                   usdtBalance={usdtBalance}
                   bnbBalance={bnbBalance}
@@ -1114,8 +1292,7 @@ function App() {
                   btcBalance={btcBalance}
                   stakeBtcAmount={stakeBtcAmount}
                   setStakeBtcAmount={setStakeBtcAmount}
-                  lockupMonths={lockupMonths}
-                  setLockupMonths={setLockupMonths}
+                  currentPrice={currentPrice}
                   btcApproved={btcApproved}
                   approveBtc={approveBtc}
                   executeStake={executeStake}
@@ -1159,7 +1336,11 @@ function App() {
                   tokenSymbol={tokenSymbol}
                   userInfo={userInfo}
                   rankNames={rankNames}
-                  executeClaimRankReward={executeClaimRankReward}
+                  rankBonusStatus={rankBonusStatus}
+                  qualifiedSalaryRank={qualifiedSalaryRank}
+                  executeClaimRankBonus={executeClaimRankBonus}
+                  executeClaimMonthlySalary={executeClaimMonthlySalary}
+                  levelCommissions={LEVEL_COMMISSIONS}
                   txLoading={txLoading}
                   encryptAddress={encryptAddress}
                   account={account}
@@ -1327,10 +1508,10 @@ function App() {
                   onChange={(e) => setCalcYield(Number(e.target.value))}
                   style={{ width: "100%", padding: "10px", borderRadius: "8px", backgroundColor: "var(--bg-soft)", border: "1px solid var(--border-color)", color: "#fff" }}
                 >
-                  <option value={0.005}>0.5% Daily (Normal)</option>
-                  <option value={0.006}>0.6% Daily (3 Months Lock)</option>
-                  <option value={0.0075}>0.75% Daily (6 Months Lock)</option>
-                  <option value={0.01}>1.0% Daily (12 Months Lock)</option>
+                  <option value={0.005}>0.5% Daily ($10–$499)</option>
+                  <option value={0.006}>0.6% Daily ($500–$2,000)</option>
+                  <option value={0.0075}>0.75% Daily ($2,001–$5,000)</option>
+                  <option value={0.01}>1.0% Daily ($5,001–$10,000)</option>
                 </select>
               </div>
               
