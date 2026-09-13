@@ -10,6 +10,20 @@ export function isInAppBrowser() {
   return /FBAN|FBAV|Instagram|Line\/|Twitter|Telegram|WhatsApp/i.test(ua);
 }
 
+export function isMetaMaskBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /MetaMask/i.test(navigator.userAgent || "");
+}
+
+export function isTrustWalletBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /Trust/i.test(navigator.userAgent || "");
+}
+
+export function isWalletInAppBrowser() {
+  return isMetaMaskBrowser() || isTrustWalletBrowser() || (hasInjectedProvider() && isMobileDevice());
+}
+
 export function hasInjectedProvider() {
   return typeof window !== "undefined" && Boolean(window.ethereum);
 }

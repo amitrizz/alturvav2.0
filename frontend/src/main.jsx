@@ -25,59 +25,17 @@ if (typeof window !== 'undefined') {
 }
 
 import '@rainbow-me/rainbowkit/styles.css'
-import { connectorsForWallets, RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'
-import {
-  metaMaskWallet,
-  trustWallet,
-  safepalWallet,
-  bitgetWallet,
-  coinbaseWallet,
-  walletConnectWallet,
-  injectedWallet,
-} from '@rainbow-me/rainbowkit/wallets'
-import { createConfig, WagmiProvider, http } from 'wagmi'
+import { RainbowKitProvider, darkTheme } from '@rainbow-me/rainbowkit'
+import { WagmiProvider } from 'wagmi'
 import { bscTestnet } from 'wagmi/chains'
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query"
+import { isWalletConnectConfigured, wagmiConfig } from './wagmiConfig.js'
 
-const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '88c9df409ffc9779df52c80333333333'
-
-if (!import.meta.env.VITE_WALLETCONNECT_PROJECT_ID) {
+if (!isWalletConnectConfigured) {
   console.warn(
-    '[BTC3.O] Set VITE_WALLETCONNECT_PROJECT_ID in frontend/.env for reliable mobile wallet connections. Get a free ID at https://cloud.walletconnect.com'
+    '[BTC3.O] VITE_WALLETCONNECT_PROJECT_ID is missing or invalid. Mobile wallet deep links will fail until you set a real project ID from https://cloud.walletconnect.com (also add it in Vercel env vars).'
   )
 }
-
-const BSC_TESTNET_RPC = import.meta.env.VITE_BSC_TESTNET_RPC || 'https://bsc-testnet-rpc.publicnode.com'
-
-const connectors = connectorsForWallets(
-  [
-    {
-      groupName: 'Recommended',
-      wallets: [
-        walletConnectWallet,
-        metaMaskWallet,
-        trustWallet,
-        injectedWallet,
-        safepalWallet,
-        bitgetWallet,
-        coinbaseWallet,
-      ],
-    },
-  ],
-  {
-    appName: 'BTC3.O DEX',
-    projectId,
-  }
-)
-
-const config = createConfig({
-  connectors,
-  chains: [bscTestnet],
-  transports: {
-    [bscTestnet.id]: http(BSC_TESTNET_RPC),
-  },
-  ssr: false,
-})
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -91,9 +49,17 @@ const queryClient = new QueryClient({
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
-      <WagmiProvider config={config}>
+      <WagmiProvider config={wagmiConfig} reconnectOnMount>
         <QueryClientProvider client={queryClient}>
-          <RainbowKitProvider theme={darkTheme()} initialChain={bscTestnet}>
+          <RainbowKitProvider
+            theme={darkTheme()}
+            initialChain={bscTestnet}
+            modalSize="compact"
+            appInfo={{
+              appName: 'BTC3.O DEX',
+              learnMoreUrl: 'https://kchain.vercel.app',
+            }}
+          >
             <App />
           </RainbowKitProvider>
         </QueryClientProvider>

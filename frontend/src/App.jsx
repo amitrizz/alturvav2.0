@@ -17,7 +17,7 @@ import {
 } from "./utils/platformStats";
 import addresses from "./addresses.json";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount, useWalletClient, useSwitchChain, useDisconnect } from "wagmi";
+import { useAccount, useWalletClient, useSwitchChain } from "wagmi";
 import "./App.css?v=3";
 import Dashboard from "./components/Dashboard";
 import GenesisMint from "./components/GenesisMint";
@@ -28,7 +28,16 @@ import LuckyWheel from "./components/LuckyWheel";
 import Shimmer from "./components/Shimmer";
 import Chatbot from "./components/Chatbot";
 import InstallApp from "./components/InstallApp";
-import { isMobileDevice, isInAppBrowser, hasInjectedProvider, needsHttpsForWallets } from "./utils/mobile";
+import {
+  isMobileDevice,
+  isInAppBrowser,
+  isWalletInAppBrowser,
+  isMetaMaskBrowser,
+  isTrustWalletBrowser,
+  hasInjectedProvider,
+  needsHttpsForWallets,
+} from "./utils/mobile";
+import { isWalletConnectConfigured } from "./wagmiConfig";
 
 const tokenSymbol = "BTC3.O";
 const tokenName = "BTC3.O";
@@ -65,8 +74,7 @@ function decryptAddress(str) {
 function App() {
   const { address, isConnected } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const { switchChain } = useSwitchChain();
-  const { disconnect } = useDisconnect();
+  const { switchChainAsync } = useSwitchChain();
 
   // Connection State
   const [provider, setProvider] = useState(null);
@@ -680,12 +688,11 @@ function App() {
   };
 
   const switchNetwork = async () => {
-    if (switchChain) {
-      try {
-        switchChain({ chainId: Number(addresses.chainId) });
-      } catch (e) {
-        console.error("Error switching chain:", e);
-      }
+    try {
+      await switchChainAsync({ chainId: Number(addresses.chainId) });
+    } catch (e) {
+      console.error("Error switching chain:", e);
+      showToast("error", parseTxError(e));
     }
   };
 
@@ -1153,36 +1160,15 @@ function App() {
           </div>
           <div className="header-actions">
             <div className="desktop-wallet-btn">
-              <ConnectButton />
+              <ConnectButton chainStatus="icon" showBalance={false} />
             </div>
             <div className="mobile-wallet-btn">
-              {isConnected ? (
-                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                  <button 
-                    onClick={() => {
-                      if (window.confirm("Are you sure you want to disconnect your wallet?")) {
-                        disconnect();
-                      }
-                    }}
-                    style={{ 
-                      background: "rgba(239, 68, 68, 0.15)", 
-                      border: "1px solid rgba(239, 68, 68, 0.4)", 
-                      color: "#ef4444", 
-                      padding: "8px", 
-                      borderRadius: "50%", 
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center"
-                    }}
-                    title="Disconnect Wallet"
-                  >
-                    <LogOut size={16} />
-                  </button>
-                </div>
-              ) : (
-                <ConnectButton label="Connect" />
-              )}
+              <ConnectButton
+                chainStatus="none"
+                showBalance={false}
+                accountStatus={isConnected ? "avatar" : "full"}
+                label={isConnected ? undefined : "Connect"}
+              />
             </div>
           </div>
         </header>
@@ -1190,15 +1176,28 @@ function App() {
         {/* Tab Contents */}
         <div className="tab-pane-container">
           <InstallApp variant="banner" />
+          {isMobileDevice() && !isConnected && !isWalletConnectConfigured && (
+            <div className="wallet-config-banner">
+              Mobile wallet linking needs a WalletConnect project ID on the server.
+              Open this site inside MetaMask or Trust Wallet browser and choose <strong>Browser Wallet</strong>,
+              or ask the admin to set <code>VITE_WALLETCONNECT_PROJECT_ID</code> in Vercel env vars.
+            </div>
+          )}
           {isMobileDevice() && !isConnected && (
             <div className="mobile-hint-banner">
               {needsHttpsForWallets()
                 ? "Wallet connect requires HTTPS on mobile. Deploy with SSL or use your wallet app's built-in browser to open this site."
                 : isInAppBrowser()
-                  ? "Tip: For best results, open this link in Chrome/Safari or your wallet app browser (MetaMask / Trust Wallet), then tap Connect."
-                  : hasInjectedProvider()
-                    ? "Tap Connect and approve the wallet request in your browser extension or wallet app."
-                    : "Tap Connect and choose WalletConnect or your mobile wallet. If it fails, open this site inside MetaMask or Trust Wallet browser."}
+                  ? "Social in-app browsers block wallets. Open in Chrome/Safari, or paste this URL in MetaMask / Trust Wallet browser."
+                  : isWalletInAppBrowser()
+                    ? isMetaMaskBrowser()
+                      ? "You're in MetaMask browser — tap Connect → Browser Wallet (or MetaMask)."
+                      : isTrustWalletBrowser()
+                        ? "You're in Trust Wallet browser — tap Connect → Browser Wallet (or Trust Wallet)."
+                        : "Tap Connect → Browser Wallet to use your wallet app."
+                    : isWalletConnectConfigured
+                      ? "Tap Connect → WalletConnect, then pick MetaMask, Trust Wallet, or SafePal. Approve the connection in your wallet app."
+                      : "Tap Connect → Browser Wallet. For Chrome/Safari, open this site in your wallet app's browser instead."}
             </div>
           )}
           {/* Wrong Network warning Banner */}
