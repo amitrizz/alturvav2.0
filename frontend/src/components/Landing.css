@@ -255,6 +255,13 @@ body.landing-page #root {
   z-index: 1;
 }
 
+.landing-coin-img {
+  object-fit: cover;
+  background: transparent;
+  border: 2px solid rgba(251, 191, 36, 0.45);
+  padding: 0;
+}
+
 /* ── Sections ── */
 .landing-section {
   max-width: 1100px;

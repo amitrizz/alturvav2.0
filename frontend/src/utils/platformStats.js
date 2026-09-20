@@ -1,16 +1,558 @@
 import { ethers } from "ethers";
 
-export async function queryEventsWithFallback(contract, filter, provider) {
-  try {
-    return await contract.queryFilter(filter, 0, "latest");
-  } catch {
+const LOG_CHUNK_SIZE = 4_000;
+const MAX_LOG_BLOCK_RANGE = 49_999;
+const INDEXED_LOG_WINDOWS = 120;
+
+async function queryFilterChunked(contract, filter, provider, fromBlock, toBlock) {
+  const latest =
+    toBlock === "latest" ? await provider.getBlockNumber() : Number(toBlock);
+  let from = Math.max(0, Number(fromBlock));
+  const events = [];
+
+  while (from <= latest) {
+    const to = Math.min(from + LOG_CHUNK_SIZE - 1, latest);
     try {
-      const currentBlock = await provider.getBlockNumber();
-      return await contract.queryFilter(filter, Math.max(0, currentBlock - 50000), "latest");
+      const chunk = await contract.queryFilter(filter, from, to);
+      if (chunk.length) events.push(...chunk);
     } catch {
-      return [];
+      if (LOG_CHUNK_SIZE > 500) {
+        const mid = Math.floor((from + to) / 2);
+        try {
+          const a = await contract.queryFilter(filter, from, mid);
+          if (a.length) events.push(...a);
+        } catch {
+          /* skip sub-range */
+        }
+        try {
+          const b = await contract.queryFilter(filter, mid + 1, to);
+          if (b.length) events.push(...b);
+        } catch {
+          /* skip sub-range */
+        }
+      }
+    }
+    from = to + 1;
+  }
+
+  return events;
+}
+
+export async function queryEventsWithFallback(contract, filter, provider, options = {}) {
+  const lookback = options.lookbackBlocks ?? MAX_LOG_BLOCK_RANGE * 4;
+  const currentBlock = await provider.getBlockNumber();
+  const fromDefault = Math.max(0, currentBlock - lookback);
+
+  try {
+    const wide = await contract.queryFilter(
+      filter,
+      Math.max(0, currentBlock - MAX_LOG_BLOCK_RANGE),
+      "latest"
+    );
+    if (wide.length > 0) return wide;
+  } catch {
+    /* chunked fallback */
+  }
+
+  const chunked = await queryFilterChunked(contract, filter, provider, fromDefault, "latest");
+  if (chunked.length > 0) return chunked;
+
+  return [];
+}
+
+async function queryIndexedUserEventsInWindows(contract, eventName, userAddress, provider) {
+  const user = ethers.getAddress(userAddress);
+  const filter = contract.filters[eventName](user);
+  const latest = await provider.getBlockNumber();
+  const events = [];
+
+  for (let w = 0; w < INDEXED_LOG_WINDOWS; w++) {
+    const to = latest - w * MAX_LOG_BLOCK_RANGE;
+    const from = Math.max(0, to - MAX_LOG_BLOCK_RANGE + 1);
+    if (to < 0 || from > to) break;
+
+    try {
+      const chunk = await contract.queryFilter(filter, from, to);
+      if (chunk.length) events.push(...chunk);
+    } catch {
+      try {
+        const small = await queryFilterChunked(contract, filter, provider, from, to);
+        if (small.length) events.push(...small);
+      } catch {
+        /* pruned range — try next window */
+      }
     }
   }
+
+  return events;
+}
+
+async function queryUserEvents(contract, eventName, userAddress, provider) {
+  const user = ethers.getAddress(userAddress);
+  const indexed = await queryIndexedUserEventsInWindows(contract, eventName, user, provider);
+  if (indexed.length > 0) return indexed;
+
+  const filtered = await queryEventsWithFallback(contract, contract.filters[eventName](user), provider);
+  if (filtered.length > 0) return filtered;
+
+  const all = await queryEventsWithFallback(contract, contract.filters[eventName](), provider);
+  return all.filter((e) => {
+    const who = e.args?.user ?? e.args?.[0];
+    if (!who) return false;
+    try {
+      return ethers.getAddress(who) === user;
+    } catch {
+      return String(who).toLowerCase() === user.toLowerCase();
+    }
+  });
+}
+
+async function blockTimestamp(provider, blockNumber, cache) {
+  if (cache.has(blockNumber)) return cache.get(blockNumber);
+  try {
+    const block = await provider.getBlock(blockNumber);
+    const ts = block?.timestamp ?? Math.floor(Date.now() / 1000);
+    cache.set(blockNumber, ts);
+    return ts;
+  } catch {
+    return Math.floor(Date.now() / 1000);
+  }
+}
+
+const LOCAL_TX_KEY = (account) => `btc3_tx_${account.toLowerCase()}`;
+
+export function readLocalTransactionHistory(account) {
+  if (!account) return [];
+  try {
+    const raw = localStorage.getItem(LOCAL_TX_KEY(account));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+export function appendLocalTransaction(account, tx) {
+  if (!account || !tx?.hash) return;
+  const list = readLocalTransactionHistory(account);
+  const hash = tx.hash.toLowerCase();
+  if (list.some((t) => String(t.hash).toLowerCase() === hash)) return;
+  list.unshift({
+    ...tx,
+    date: tx.date || new Date().toISOString(),
+    source: "local",
+  });
+  localStorage.setItem(LOCAL_TX_KEY(account), JSON.stringify(list.slice(0, 100)));
+}
+
+const STAKING_EVENT_NAMES = [
+  "Minted",
+  "Staked",
+  "Sold",
+  "Unstaked",
+  "RewardClaimed",
+  "RankBonusClaimed",
+  "MonthlySalaryClaimed",
+  "CouponApplied",
+  "WheelSpun",
+];
+
+export async function historyRecordsFromReceipt(receipt, stakingContract, account, provider) {
+  if (!receipt?.logs?.length) return [];
+  const user = ethers.getAddress(account);
+  const tsCache = new Map();
+  const blockNumber = receipt.blockNumber;
+  const timestamp = await blockTimestamp(provider, blockNumber, tsCache);
+  const hash = receipt.hash;
+  const records = [];
+
+  for (const log of receipt.logs) {
+    let parsed;
+    try {
+      parsed = stakingContract.interface.parseLog(log);
+    } catch {
+      continue;
+    }
+    if (!parsed || !STAKING_EVENT_NAMES.includes(parsed.name)) continue;
+
+    const who = parsed.args?.user ?? parsed.args?.[0];
+    try {
+      if (ethers.getAddress(who) !== user) continue;
+    } catch {
+      if (String(who).toLowerCase() !== user.toLowerCase()) continue;
+    }
+
+    const base = {
+      hash,
+      blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      source: "receipt",
+    };
+
+    switch (parsed.name) {
+      case "Minted":
+        records.push({
+          ...base,
+          type: "Mint",
+          usdtAmount: ethers.formatEther(parsed.args.usdtAmount ?? parsed.args[1] ?? 0),
+          btcAmount: ethers.formatEther(parsed.args.btcAmount ?? parsed.args[2] ?? 0),
+          price: ethers.formatEther(parsed.args.currentPrice ?? parsed.args[3] ?? 0),
+          category: "purchase",
+        });
+        break;
+      case "Staked":
+        records.push({
+          ...base,
+          type: "Stake",
+          btcAmount: ethers.formatEther(parsed.args.amountTokens ?? parsed.args[1] ?? 0),
+          usdValue: ethers.formatEther(parsed.args.amountUSD ?? parsed.args[2] ?? 0),
+          ratePerDay: Number(parsed.args.ratePerDay ?? parsed.args[3] ?? 0) / 100,
+          lockupMonths: 12,
+          category: "purchase",
+        });
+        break;
+      case "Sold":
+        records.push({
+          ...base,
+          type: "Sell",
+          btcAmount: ethers.formatEther(parsed.args.btcAmount ?? parsed.args[1] ?? 0),
+          usdtAmount: ethers.formatEther(parsed.args.usdtAmount ?? parsed.args[2] ?? 0),
+          category: "withdrawal",
+        });
+        break;
+      case "Unstaked":
+        records.push({
+          ...base,
+          type: "Unstake",
+          btcAmount: ethers.formatEther(parsed.args.tokenReturned ?? parsed.args[2] ?? 0),
+          category: "withdrawal",
+        });
+        break;
+      case "RewardClaimed":
+        records.push({
+          ...base,
+          type: "Yield Claim",
+          btcAmount: ethers.formatEther(parsed.args.rewardTokens ?? parsed.args[2] ?? 0),
+          usdValue: ethers.formatEther(parsed.args.rewardUSD ?? parsed.args[3] ?? 0),
+          category: "withdrawal",
+        });
+        break;
+      case "RankBonusClaimed":
+        records.push({
+          ...base,
+          type: "Rank Bonus",
+          usdValue: ethers.formatEther(parsed.args.bonusUSD ?? parsed.args[2] ?? 0),
+          category: "withdrawal",
+        });
+        break;
+      case "MonthlySalaryClaimed":
+        records.push({
+          ...base,
+          type: "Monthly Salary",
+          usdValue: ethers.formatEther(parsed.args.salaryUSD ?? parsed.args[1] ?? 0),
+          category: "withdrawal",
+        });
+        break;
+      case "CouponApplied":
+        records.push({
+          ...base,
+          type: "Coupon",
+          code: parsed.args.code ?? parsed.args[1],
+          usdValue: ethers.formatEther(parsed.args.rewardUSD ?? parsed.args[2] ?? 0),
+          category: "purchase",
+        });
+        break;
+      case "WheelSpun":
+        records.push({
+          ...base,
+          type: "Wheel Spin",
+          prizeIdx: Number(parsed.args.index ?? parsed.args[1] ?? 0),
+          rewardTokens: ethers.formatEther(parsed.args.rewardAmount ?? parsed.args[2] ?? 0),
+          category: "purchase",
+        });
+        break;
+      default:
+        break;
+    }
+  }
+
+  return records;
+}
+
+export async function importHistoryFromTxHash(stakingContract, provider, account, txHash) {
+  const hash = txHash.trim();
+  if (!hash || !hash.startsWith("0x")) {
+    throw new Error("Enter a valid transaction hash (0x…).");
+  }
+  const receipt = await provider.getTransactionReceipt(hash);
+  if (!receipt) {
+    throw new Error("Transaction not found yet. Wait for confirmation and try again.");
+  }
+  const records = await historyRecordsFromReceipt(receipt, stakingContract, account, provider);
+  if (!records.length) {
+    throw new Error("No platform events for your wallet in this transaction.");
+  }
+  records.forEach((r) => appendLocalTransaction(account, r));
+  return records;
+}
+
+export function mergeTransactionHistories(chainTxs, localTxs) {
+  const map = new Map();
+  [...chainTxs, ...localTxs].forEach((tx) => {
+    const key = tx.hash ? String(tx.hash).toLowerCase() : `${tx.type}-${tx.blockNumber}-${tx.timestamp}`;
+    const existing = map.get(key);
+    if (!existing || (tx.blockNumber || 0) >= (existing.blockNumber || 0)) {
+      map.set(key, tx);
+    }
+  });
+  return Array.from(map.values()).sort((a, b) => {
+    const tb = b.timestamp || (b.date ? new Date(b.date).getTime() / 1000 : 0);
+    const ta = a.timestamp || (a.date ? new Date(a.date).getTime() / 1000 : 0);
+    return tb - ta;
+  });
+}
+
+async function queryTokenTransfersFromStaking(tokenAddress, stakingAddress, account, provider) {
+  if (!tokenAddress || !stakingAddress || !account) return [];
+  const token = new ethers.Contract(
+    tokenAddress,
+    ["event Transfer(address indexed from, address indexed to, uint256 value)"],
+    provider
+  );
+  const user = ethers.getAddress(account);
+  const staking = ethers.getAddress(stakingAddress).toLowerCase();
+
+  const incoming = await queryEventsWithFallback(
+    token,
+    token.filters.Transfer(stakingAddress, user),
+    provider
+  );
+
+  return incoming.filter((e) => {
+    const from = e.args?.from ?? e.args?.[0];
+    try {
+      return ethers.getAddress(from).toLowerCase() === staking;
+    } catch {
+      return String(from).toLowerCase() === staking;
+    }
+  });
+}
+
+export async function buildUserTransactionHistory(
+  stakingContract,
+  provider,
+  account,
+  { tokenAddress, stakingAddress, currentPrice } = {}
+) {
+  const [
+    mintedEvents,
+    stakedEvents,
+    soldEvents,
+    unstakedEvents,
+    rewardClaimedEvents,
+    rankBonusClaimedEvents,
+    monthlySalaryClaimedEvents,
+    couponAppliedEvents,
+    wheelSpunEvents,
+  ] = await Promise.all([
+    queryUserEvents(stakingContract, "Minted", account, provider),
+    queryUserEvents(stakingContract, "Staked", account, provider),
+    queryUserEvents(stakingContract, "Sold", account, provider),
+    queryUserEvents(stakingContract, "Unstaked", account, provider),
+    queryUserEvents(stakingContract, "RewardClaimed", account, provider),
+    queryUserEvents(stakingContract, "RankBonusClaimed", account, provider),
+    queryUserEvents(stakingContract, "MonthlySalaryClaimed", account, provider),
+    queryUserEvents(stakingContract, "CouponApplied", account, provider),
+    queryUserEvents(stakingContract, "WheelSpun", account, provider),
+  ]);
+
+  const tsCache = new Map();
+  const txs = [];
+
+  for (const e of mintedEvents) {
+    const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+    txs.push({
+      type: "Mint",
+      hash: e.transactionHash,
+      usdtAmount: ethers.formatEther(e.args.usdtAmount ?? e.args[1] ?? 0),
+      btcAmount: ethers.formatEther(e.args.btcAmount ?? e.args[2] ?? 0),
+      price: ethers.formatEther(e.args.currentPrice ?? e.args[3] ?? 0),
+      blockNumber: e.blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      category: "purchase",
+      source: "chain",
+    });
+  }
+
+  for (const e of stakedEvents) {
+    const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+    const endTime = Number(e.args.endTime ?? e.args[4] ?? 0);
+    const startEstimate = timestamp;
+    const lockupMonths = endTime > startEstimate ? Math.max(1, Math.round((endTime - startEstimate) / (30 * 86400))) : 12;
+    txs.push({
+      type: "Stake",
+      hash: e.transactionHash,
+      btcAmount: ethers.formatEther(e.args.amountTokens ?? e.args[1] ?? 0),
+      usdValue: ethers.formatEther(e.args.amountUSD ?? e.args[2] ?? 0),
+      ratePerDay: Number(e.args.ratePerDay ?? e.args[3] ?? 0) / 100,
+      lockupMonths,
+      blockNumber: e.blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      category: "purchase",
+      source: "chain",
+    });
+  }
+
+  for (const e of soldEvents) {
+    const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+    txs.push({
+      type: "Sell",
+      hash: e.transactionHash,
+      btcAmount: ethers.formatEther(e.args.btcAmount ?? e.args[1] ?? 0),
+      usdtAmount: ethers.formatEther(e.args.usdtAmount ?? e.args[2] ?? 0),
+      price: ethers.formatEther(e.args.price ?? e.args[3] ?? 0),
+      blockNumber: e.blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      category: "withdrawal",
+      source: "chain",
+    });
+  }
+
+  for (const e of unstakedEvents) {
+    const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+    txs.push({
+      type: "Unstake",
+      hash: e.transactionHash,
+      btcAmount: ethers.formatEther(e.args.tokenReturned ?? e.args[2] ?? 0),
+      feeUSD: ethers.formatEther(e.args.feeApplied ?? e.args[3] ?? 0),
+      blockNumber: e.blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      category: "withdrawal",
+      source: "chain",
+    });
+  }
+
+  for (const e of rewardClaimedEvents) {
+    const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+    txs.push({
+      type: "Yield Claim",
+      hash: e.transactionHash,
+      btcAmount: ethers.formatEther(e.args.rewardTokens ?? e.args[2] ?? 0),
+      usdValue: ethers.formatEther(e.args.rewardUSD ?? e.args[3] ?? 0),
+      blockNumber: e.blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      category: "withdrawal",
+      source: "chain",
+    });
+  }
+
+  for (const e of rankBonusClaimedEvents) {
+    const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+    txs.push({
+      type: "Rank Bonus",
+      hash: e.transactionHash,
+      usdValue: ethers.formatEther(e.args.bonusUSD ?? e.args[2] ?? 0),
+      blockNumber: e.blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      category: "withdrawal",
+      source: "chain",
+    });
+  }
+
+  for (const e of monthlySalaryClaimedEvents) {
+    const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+    txs.push({
+      type: "Monthly Salary",
+      hash: e.transactionHash,
+      usdValue: ethers.formatEther(e.args.salaryUSD ?? e.args[1] ?? 0),
+      blockNumber: e.blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      category: "withdrawal",
+      source: "chain",
+    });
+  }
+
+  for (const e of couponAppliedEvents) {
+    const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+    txs.push({
+      type: "Coupon",
+      hash: e.transactionHash,
+      code: e.args.code ?? e.args[1],
+      usdValue: ethers.formatEther(e.args.rewardUSD ?? e.args[2] ?? 0),
+      blockNumber: e.blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      category: "purchase",
+      source: "chain",
+    });
+  }
+
+  for (const e of wheelSpunEvents) {
+    const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+    txs.push({
+      type: "Wheel Spin",
+      hash: e.transactionHash,
+      prizeIdx: Number(e.args.index ?? e.args[1] ?? 0),
+      rewardTokens: ethers.formatEther(e.args.rewardAmount ?? e.args[2] ?? 0),
+      blockNumber: e.blockNumber,
+      timestamp,
+      date: new Date(timestamp * 1000).toISOString(),
+      category: "purchase",
+      source: "chain",
+    });
+  }
+
+  const mintHashes = new Set(
+    txs.filter((t) => t.type === "Mint" && t.hash).map((t) => String(t.hash).toLowerCase())
+  );
+
+  if (tokenAddress && stakingAddress) {
+    try {
+      const transfers = await queryTokenTransfersFromStaking(
+        tokenAddress,
+        stakingAddress,
+        account,
+        provider
+      );
+      const priceNum = parseFloat(currentPrice || "0.5") || 0.5;
+
+      for (const e of transfers) {
+        const hash = e.transactionHash;
+        if (hash && mintHashes.has(String(hash).toLowerCase())) continue;
+
+        const timestamp = await blockTimestamp(provider, e.blockNumber, tsCache);
+        const btcAmount = ethers.formatEther(e.args?.value ?? e.args?.[2] ?? 0);
+        const usdEst = (parseFloat(btcAmount) * priceNum).toFixed(2);
+
+        txs.push({
+          type: "Mint",
+          hash,
+          usdtAmount: usdEst,
+          btcAmount,
+          paymentMethod: "USDT",
+          blockNumber: e.blockNumber,
+          timestamp,
+          date: new Date(timestamp * 1000).toISOString(),
+          category: "purchase",
+          source: "transfer",
+        });
+        if (hash) mintHashes.add(String(hash).toLowerCase());
+      }
+    } catch (err) {
+      console.warn("Token transfer history fallback failed:", err);
+    }
+  }
+
+  return mergeTransactionHistories(txs, readLocalTransactionHistory(account));
 }
 
 export function buildMintVolumeChart(mintedEvents, currentBlock) {

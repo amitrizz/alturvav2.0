@@ -74,7 +74,11 @@ function Landing({ onEnterApp }) {
           </div>
           <div className="landing-hero-visual" aria-hidden="true">
             <div className="landing-coin-ring">
-              <div className="landing-coin">BTC3.0</div>
+              <img
+                src="/btctheme.png"
+                alt="BTC3.0"
+                className="landing-coin landing-coin-img"
+              />
             </div>
           </div>
         </div>

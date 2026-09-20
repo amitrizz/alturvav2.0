@@ -14,6 +14,11 @@ import {
   sumRewardsPaidUSD,
   computeGrowthPercent,
   buildBondingCurveTiers,
+  buildUserTransactionHistory,
+  appendLocalTransaction,
+  readLocalTransactionHistory,
+  mergeTransactionHistories,
+  importHistoryFromTxHash,
 } from "./utils/platformStats";
 import addresses from "./addresses.json";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -38,6 +43,7 @@ import {
   needsHttpsForWallets,
 } from "./utils/mobile";
 import { isWalletConnectConfigured } from "./wagmiConfig";
+import { getReadProvider, withReadProviders } from "./utils/readProvider";
 
 const tokenSymbol = "BTC3.O";
 const tokenName = "BTC3.O";
@@ -158,6 +164,7 @@ function App() {
   const [referrerInput, setReferrerInput] = useState("");
   const [userStakesList, setUserStakesList] = useState([]);
   const [transactionHistory, setTransactionHistory] = useState([]);
+  const [historyImportLoading, setHistoryImportLoading] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [sellBtcAmount, setSellBtcAmount] = useState("");
@@ -453,40 +460,47 @@ function App() {
       }
 
       // Verify contract version (new contracts expose getRateByAmount)
+      let contractOk = true;
       try {
         await stakingContract.getRateByAmount(ethers.parseEther("100"));
         setContractMismatch(false);
       } catch {
         setContractMismatch(true);
-        return;
+        contractOk = false;
       }
 
       // 5. User Registration & Stats
-      const u = await stakingContract.users(account);
-      setUserInfo({
-        referrer: u[0],
-        directActiveCount: Number(u[1]),
-        directReferralsCount: Number(u[2]),
-        teamSize: Number(u[3]),
-        totalSelfStakeUSD: ethers.formatEther(u[4]),
-        totalTeamBusinessUSD: ethers.formatEther(u[5]),
-        lastSalaryClaimTime: Number(u[6]),
-        highestSalaryRank: Number(u[7]),
-        registered: u[8],
-        indirectReferralsCount
-      });
+      let directActiveForCap = 0n;
+      try {
+        const u = await stakingContract.users(account);
+        directActiveForCap = u[1];
+        setUserInfo({
+          referrer: u[0],
+          directActiveCount: Number(u[1]),
+          directReferralsCount: Number(u[2]),
+          teamSize: Number(u[3]),
+          totalSelfStakeUSD: ethers.formatEther(u[4]),
+          totalTeamBusinessUSD: ethers.formatEther(u[5]),
+          lastSalaryClaimTime: Number(u[6]),
+          highestSalaryRank: Number(u[7]),
+          registered: u[8],
+          indirectReferralsCount
+        });
 
-      const bonusStatus = [];
-      for (let i = 0; i < 10; i++) {
-        const claimed = await stakingContract.rankBonusClaimed(account, i);
-        const qualified = await stakingContract.qualifiesForRankBonus(account, i);
-        bonusStatus.push({ claimed, qualified });
+        const bonusStatus = [];
+        for (let i = 0; i < 10; i++) {
+          const claimed = await stakingContract.rankBonusClaimed(account, i);
+          const qualified = await stakingContract.qualifiesForRankBonus(account, i);
+          bonusStatus.push({ claimed, qualified });
+        }
+        setRankBonusStatus(bonusStatus);
+
+        const salaryRank = await stakingContract.getQualifiedSalaryRank(account);
+        const maxUint = BigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+        setQualifiedSalaryRank(BigInt(salaryRank.toString()) >= maxUint ? -1 : Number(salaryRank));
+      } catch (userErr) {
+        console.error("Error loading user profile from contract:", userErr);
       }
-      setRankBonusStatus(bonusStatus);
-
-      const salaryRank = await stakingContract.getQualifiedSalaryRank(account);
-      const maxUint = BigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935");
-      setQualifiedSalaryRank(BigInt(salaryRank.toString()) >= maxUint ? -1 : Number(salaryRank));
 
       // 6. User Stakes list
       const stakes = [];
@@ -497,7 +511,7 @@ function App() {
           if (st.amountTokens === 0n) break;
           const pending = await stakingContract.getPendingReward(account, index);
           const stAmountUSD = ethers.formatEther(st[1]);
-          const capMultiplier = u[1] > 0n ? 5.0 : 2.5;
+          const capMultiplier = directActiveForCap > 0n ? 5.0 : 2.5;
           const computedCap = (parseFloat(stAmountUSD) * capMultiplier).toFixed(2);
 
           const endTime = new Date(Number(st[3]) * 1000);
@@ -524,152 +538,27 @@ function App() {
       }
       setUserStakesList(stakes);
 
-      // Load Transaction History
       try {
-        const txs = [];
-        const currentBlock = await provider.getBlockNumber();
-        const startBlock = Math.max(0, currentBlock - 50000);
-
-        const filterMinted = stakingContract.filters.Minted(account);
-        const filterStaked = stakingContract.filters.Staked(account);
-        const filterSold = stakingContract.filters.Sold(account);
-        const filterUnstaked = stakingContract.filters.Unstaked(account);
-        const filterRewardClaimed = stakingContract.filters.RewardClaimed(account);
-        const filterRankBonusClaimed = stakingContract.filters.RankBonusClaimed(account);
-        const filterMonthlySalaryClaimed = stakingContract.filters.MonthlySalaryClaimed(account);
-        const filterCouponApplied = stakingContract.filters.CouponApplied(account);
-        const filterWheelSpun = stakingContract.filters.WheelSpun(account);
-
-        const [
-          mintedEvents,
-          stakedEvents,
-          soldEvents,
-          unstakedEvents,
-          rewardClaimedEvents,
-          rankBonusClaimedEvents,
-          monthlySalaryClaimedEvents,
-          couponAppliedEvents,
-          wheelSpunEvents
-        ] = await Promise.all([
-          stakingContract.queryFilter(filterMinted, startBlock, "latest").catch(() => []),
-          stakingContract.queryFilter(filterStaked, startBlock, "latest").catch(() => []),
-          stakingContract.queryFilter(filterSold, startBlock, "latest").catch(() => []),
-          stakingContract.queryFilter(filterUnstaked, startBlock, "latest").catch(() => []),
-          stakingContract.queryFilter(filterRewardClaimed, startBlock, "latest").catch(() => []),
-          stakingContract.queryFilter(filterRankBonusClaimed, startBlock, "latest").catch(() => []),
-          stakingContract.queryFilter(filterMonthlySalaryClaimed, startBlock, "latest").catch(() => []),
-          stakingContract.queryFilter(filterCouponApplied, startBlock, "latest").catch(() => []),
-          stakingContract.queryFilter(filterWheelSpun, startBlock, "latest").catch(() => [])
-        ]);
-
-        mintedEvents.forEach(e => {
-          const estTimestamp = Math.floor(Date.now() / 1000) - (Math.max(0, currentBlock - e.blockNumber) * 3);
-          txs.push({
-            type: "Mint",
-            hash: e.transactionHash,
-            usdtAmount: ethers.formatEther(e.args[1] || e.args.usdtAmount),
-            btcAmount: ethers.formatEther(e.args[2] || e.args.btcAmount),
-            price: ethers.formatEther(e.args[3] || e.args.currentPrice),
-            blockNumber: e.blockNumber,
-            timestamp: estTimestamp,
-            date: new Date(estTimestamp * 1000),
-            category: "purchase"
+        const txs = await withReadProviders(async (readProvider) => {
+          const stakingForLogs = new ethers.Contract(
+            addresses.stakingSystem,
+            BTC_STAKING_SYSTEM_ABI,
+            readProvider
+          );
+          return buildUserTransactionHistory(stakingForLogs, readProvider, account, {
+            tokenAddress: addresses.token,
+            stakingAddress: addresses.stakingSystem,
+            currentPrice: ethers.formatEther(price),
           });
         });
-
-        stakedEvents.forEach(e => {
-          txs.push({
-            type: "Stake",
-            hash: e.transactionHash,
-            btcAmount: ethers.formatEther(e.args[1] || e.args.amountTokens),
-            usdValue: ethers.formatEther(e.args[2] || e.args.amountUSD),
-            ratePerDay: Number(e.args[3] || e.args.ratePerDay) / 100,
-            endTime: Number(e.args[4] || e.args.endTime),
-            blockNumber: e.blockNumber,
-            category: "purchase"
-          });
-        });
-
-        soldEvents.forEach(e => {
-          txs.push({
-            type: "Sell",
-            hash: e.transactionHash,
-            btcAmount: ethers.formatEther(e.args[1] || e.args.btcAmount),
-            usdtAmount: ethers.formatEther(e.args[2] || e.args.usdtAmount),
-            price: ethers.formatEther(e.args[3] || e.args.price),
-            blockNumber: e.blockNumber,
-            category: "withdrawal"
-          });
-        });
-
-        unstakedEvents.forEach(e => {
-          txs.push({
-            type: "Unstake",
-            hash: e.transactionHash,
-            btcAmount: ethers.formatEther(e.args[2] || e.args.tokenReturned),
-            feeUSD: ethers.formatEther(e.args[3] || e.args.feeApplied),
-            blockNumber: e.blockNumber,
-            category: "withdrawal"
-          });
-        });
-
-        rewardClaimedEvents.forEach(e => {
-          txs.push({
-            type: "Yield Claim",
-            hash: e.transactionHash,
-            btcAmount: ethers.formatEther(e.args[2] || e.args.rewardTokens),
-            usdValue: ethers.formatEther(e.args[3] || e.args.rewardUSD),
-            blockNumber: e.blockNumber,
-            category: "withdrawal"
-          });
-        });
-
-        rankBonusClaimedEvents.forEach(e => {
-          txs.push({
-            type: "Rank Bonus",
-            hash: e.transactionHash,
-            usdValue: ethers.formatEther(e.args[2] || e.args.bonusUSD),
-            blockNumber: e.blockNumber,
-            category: "withdrawal"
-          });
-        });
-
-        monthlySalaryClaimedEvents.forEach(e => {
-          txs.push({
-            type: "Monthly Salary",
-            hash: e.transactionHash,
-            usdValue: ethers.formatEther(e.args[1] || e.args.salaryUSD),
-            blockNumber: e.blockNumber,
-            category: "withdrawal"
-          });
-        });
-
-        couponAppliedEvents.forEach(e => {
-          txs.push({
-            type: "Coupon",
-            hash: e.transactionHash,
-            code: e.args[1] || e.args.code,
-            usdValue: ethers.formatEther(e.args[2] || e.args.rewardUSD),
-            blockNumber: e.blockNumber,
-            category: "purchase"
-          });
-        });
-
-        wheelSpunEvents.forEach(e => {
-          txs.push({
-            type: "Wheel Spin",
-            hash: e.transactionHash,
-            prizeIdx: Number(e.args[1] || e.args.index),
-            rewardTokens: ethers.formatEther(e.args[2] || e.args.rewardAmount),
-            blockNumber: e.blockNumber,
-            category: "purchase"
-          });
-        });
-
-        txs.sort((a, b) => b.blockNumber - a.blockNumber);
-        setTransactionHistory(txs);
+        setTransactionHistory(txs || readLocalTransactionHistory(account));
       } catch (historyErr) {
         console.error("Error loading transaction history:", historyErr);
+        setTransactionHistory(readLocalTransactionHistory(account));
+      }
+
+      if (!contractOk) {
+        return;
       }
 
       // 7. Check if Owner (Admin)
@@ -769,12 +658,25 @@ function App() {
         tx = await stakingContract.mintTokensWithBNB({ value: ethers.parseEther(mintUsdtAmount) });
       }
       showToast("info", "Mint transaction submitted...");
-      await tx.wait();
+      const receipt = await tx.wait();
+      appendLocalTransaction(account, {
+        type: "Mint",
+        hash: receipt.hash || tx.hash,
+        usdtAmount: mintUsdtAmount,
+        btcAmount: estimatedBtcToMint,
+        paymentMethod: mintMethod,
+        blockNumber: receipt.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+        category: "purchase",
+      });
+      setTransactionHistory((prev) =>
+        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
+      );
       showToast("success", `Successfully minted ${estimatedBtcToMint} ${tokenSymbol}!`);
       setMintUsdtAmount("");
       setCouponInput("");
       loadUserData();
-      setTimeout(loadUserData, 2000);
+      setTimeout(loadUserData, 3000);
     } catch (err) {
       showToast("error", parseTxError(err, "Minting failed. Please check amount ($10–$10,000) and try again.", { action: "mint" }));
     } finally {
@@ -789,7 +691,20 @@ function App() {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
       const tx = await stakingContract.stake(ethers.parseEther(stakeBtcAmount));
       showToast("info", "Staking transaction submitted...");
-      await tx.wait();
+      const receipt = await tx.wait();
+      appendLocalTransaction(account, {
+        type: "Stake",
+        hash: receipt.hash || tx.hash,
+        btcAmount: stakeBtcAmount,
+        blockNumber: receipt.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+        category: "purchase",
+        lockupMonths: 12,
+        ratePerDay: 0,
+      });
+      setTransactionHistory((prev) =>
+        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
+      );
       showToast("success", `Successfully staked ${stakeBtcAmount} ${tokenSymbol}!`);
       setStakeBtcAmount("");
       loadUserData();
@@ -808,7 +723,19 @@ function App() {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
       const tx = await stakingContract.applyCoupon(couponInput);
       showToast("info", "Applying coupon code...");
-      await tx.wait();
+      const receipt = await tx.wait();
+      appendLocalTransaction(account, {
+        type: "Coupon",
+        hash: receipt.hash || tx.hash,
+        code: couponInput,
+        usdValue: "5",
+        blockNumber: receipt.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+        category: "purchase",
+      });
+      setTransactionHistory((prev) =>
+        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
+      );
       showToast("success", "Coupon applied successfully! $5 reward added.");
       setCouponInput("");
       loadUserData();
@@ -834,7 +761,20 @@ function App() {
         tx = await stakingContract.sellTokensForBNB(parsedAmount);
         showToast("info", `Selling ${btcAmountStr} ${tokenSymbol} for BNB...`);
       }
-      await tx.wait();
+      const receipt = await tx.wait();
+      appendLocalTransaction(account, {
+        type: "Sell",
+        hash: receipt.hash || tx.hash,
+        btcAmount: btcAmountStr,
+        usdtAmount: (parseFloat(btcAmountStr) * parseFloat(currentPrice)).toFixed(2),
+        paymentMethod: method,
+        blockNumber: receipt.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+        category: "withdrawal",
+      });
+      setTransactionHistory((prev) =>
+        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
+      );
       showToast("success", `Tokens sold successfully!`);
       loadUserData();
       setTimeout(loadUserData, 2000);
@@ -854,7 +794,20 @@ function App() {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
       const tx = await stakingContract.claimStakingReward(index);
       showToast("info", "Claim reward transaction submitted...");
-      await tx.wait();
+      const receipt = await tx.wait();
+      const stake = userStakesList.find((s) => s.index === index);
+      appendLocalTransaction(account, {
+        type: "Yield Claim",
+        hash: receipt.hash || tx.hash,
+        btcAmount: stake?.pendingTokens || "0",
+        usdValue: stake?.pendingUSD || "0",
+        blockNumber: receipt.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+        category: "withdrawal",
+      });
+      setTransactionHistory((prev) =>
+        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
+      );
       showToast("success", "Accrued rewards claimed successfully!");
       loadUserData();
       setTimeout(loadUserData, 2000);
@@ -872,7 +825,19 @@ function App() {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
       const tx = await stakingContract.unstake(index);
       showToast("info", "Unstake transaction submitted...");
-      await tx.wait();
+      const receipt = await tx.wait();
+      const stake = userStakesList.find((s) => s.index === index);
+      appendLocalTransaction(account, {
+        type: "Unstake",
+        hash: receipt.hash || tx.hash,
+        btcAmount: stake?.amountTokens || "0",
+        blockNumber: receipt.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+        category: "withdrawal",
+      });
+      setTransactionHistory((prev) =>
+        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
+      );
       showToast("success", "Successfully unstaked tokens!");
       loadUserData();
       setTimeout(loadUserData, 2000);
@@ -890,7 +855,18 @@ function App() {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
       const tx = await stakingContract.claimRankBonus(rankIndex);
       showToast("info", "Claiming rank bonus...");
-      await tx.wait();
+      const receipt = await tx.wait();
+      appendLocalTransaction(account, {
+        type: "Rank Bonus",
+        hash: receipt.hash || tx.hash,
+        usdValue: "0",
+        blockNumber: receipt.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+        category: "withdrawal",
+      });
+      setTransactionHistory((prev) =>
+        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
+      );
       showToast("success", "Rank bonus claimed successfully!");
       loadUserData();
     } catch (err) {
@@ -907,13 +883,54 @@ function App() {
       const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
       const tx = await stakingContract.claimMonthlySalary();
       showToast("info", "Claiming monthly salary...");
-      await tx.wait();
+      const receipt = await tx.wait();
+      appendLocalTransaction(account, {
+        type: "Monthly Salary",
+        hash: receipt.hash || tx.hash,
+        usdValue: "0",
+        blockNumber: receipt.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+        category: "withdrawal",
+      });
+      setTransactionHistory((prev) =>
+        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
+      );
       showToast("success", "Monthly salary claimed successfully!");
       loadUserData();
     } catch (err) {
       showToast("error", parseTxError(err, "Monthly salary claim failed.", { action: "salary" }));
     } finally {
       setTxLoading(false);
+    }
+  };
+
+  const executeImportTxHistory = async (txHash) => {
+    if (!account || !txHash?.trim()) return false;
+    setHistoryImportLoading(true);
+    try {
+      const readProvider = getReadProvider();
+      const stakingForLogs = new ethers.Contract(
+        addresses.stakingSystem,
+        BTC_STAKING_SYSTEM_ABI,
+        readProvider
+      );
+      await importHistoryFromTxHash(stakingForLogs, readProvider, account, txHash);
+      const txs = await withReadProviders(async (rp) => {
+        const c = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, rp);
+        return buildUserTransactionHistory(c, rp, account, {
+          tokenAddress: addresses.token,
+          stakingAddress: addresses.stakingSystem,
+          currentPrice,
+        });
+      });
+      setTransactionHistory(txs || readLocalTransactionHistory(account));
+      showToast("success", "Transaction imported into your history.");
+      return true;
+    } catch (err) {
+      showToast("error", err?.message || "Could not import that transaction.");
+      return false;
+    } finally {
+      setHistoryImportLoading(false);
     }
   };
 
@@ -946,15 +963,30 @@ function App() {
 
       const receipt = await tx.wait();
       let prizeIdx = 0;
+      let rewardTokens = "0";
       for (const log of receipt.logs) {
         try {
           const parsed = stakingContract.interface.parseLog(log);
           if (parsed && parsed.name === "WheelSpun") {
             prizeIdx = Number(parsed.args.index);
+            rewardTokens = ethers.formatEther(parsed.args.rewardAmount ?? 0);
             break;
           }
         } catch (e) {}
       }
+
+      appendLocalTransaction(account, {
+        type: "Wheel Spin",
+        hash: receipt.hash || tx.hash,
+        prizeIdx,
+        rewardTokens,
+        blockNumber: receipt.blockNumber,
+        timestamp: Math.floor(Date.now() / 1000),
+        category: "purchase",
+      });
+      setTransactionHistory((prev) =>
+        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
+      );
 
       const degreesPerSegment = 360 / prizes.length;
       const targetDeg = 360 - (prizeIdx * degreesPerSegment) - (degreesPerSegment / 2);
@@ -1080,6 +1112,7 @@ function App() {
           </div>
         </div>
 
+        <p className="sidebar-menu-label">Main Menu</p>
         <nav className="sidebar-menu">
           <button className={`menu-item ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
             <LayoutDashboard size={20} />
@@ -1341,6 +1374,9 @@ function App() {
                   currentPrice={currentPrice}
                   txLoading={txLoading}
                   userStakesList={userStakesList}
+                  onImportTxHistory={executeImportTxHistory}
+                  historyImportLoading={historyImportLoading}
+                  onRefreshHistory={loadUserData}
                 />
               )}
 

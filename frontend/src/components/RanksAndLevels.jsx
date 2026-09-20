@@ -50,30 +50,18 @@ function RanksAndLevels({
 
   return (
     <div className="rl-tab-pane">
-      <div className="rl-subtab-switcher" style={{ display: "flex", gap: "12px", marginBottom: "20px" }}>
+      <div className="rl-subtab-switcher">
         <button
+          type="button"
           className={`rl-subtab-btn ${subTab === "rank" ? "active" : ""}`}
           onClick={() => setSubTab("rank")}
-          style={{
-            flex: 1, padding: "12px", borderRadius: "10px",
-            border: "1px solid var(--rl-border, rgba(148,163,184,0.1))",
-            background: subTab === "rank" ? "linear-gradient(135deg, #fbbf24 0%, #d97706 100%)" : "rgba(255,255,255,0.02)",
-            color: subTab === "rank" ? "#000" : "#fff", fontWeight: "bold", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
-          }}
         >
           <Trophy size={18} /> Rank & Salary
         </button>
         <button
+          type="button"
           className={`rl-subtab-btn ${subTab === "referral" ? "active" : ""}`}
           onClick={() => setSubTab("referral")}
-          style={{
-            flex: 1, padding: "12px", borderRadius: "10px",
-            border: "1px solid var(--rl-border, rgba(148,163,184,0.1))",
-            background: subTab === "referral" ? "linear-gradient(135deg, #fbbf24 0%, #d97706 100%)" : "rgba(255,255,255,0.02)",
-            color: subTab === "referral" ? "#000" : "#fff", fontWeight: "bold", cursor: "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
-          }}
         >
           <Users size={18} /> Level Income
         </button>

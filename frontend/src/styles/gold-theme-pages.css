@@ -1,0 +1,37 @@
+/* Gold borders + card shell on app tab pages (Mint, Stake, Profile, etc.) */
+
+.gm-tab-pane,
+.sp-tab-pane,
+.af-tab-pane,
+.rl-tab-pane,
+.lw-tab-pane {
+  --gm-border: rgba(201, 162, 77, 0.45);
+  --gm-border-hover: rgba(245, 200, 100, 0.65);
+  --sp-border: rgba(201, 162, 77, 0.45);
+  --sp-border-hover: rgba(245, 200, 100, 0.65);
+  --af-border: rgba(201, 162, 77, 0.45);
+  --af-border-hover: rgba(245, 200, 100, 0.65);
+  --rl-border: rgba(201, 162, 77, 0.45);
+  --rl-border-hover: rgba(245, 200, 100, 0.65);
+  --lw-border: rgba(201, 162, 77, 0.45);
+  --lw-border-hover: rgba(245, 200, 100, 0.65);
+}
+
+.gm-card-box,
+.sp-card-box,
+.af-card-box,
+.rl-card-box,
+.lw-card-box {
+  border-color: rgba(212, 175, 55, 0.75) !important;
+}
+
+.gm-stat-card,
+.sp-stat-card,
+.af-stat-card {
+  border-color: rgba(212, 175, 55, 0.75) !important;
+}
+
+.gm-stat-value,
+.sp-stat-value {
+  color: #e8b84a !important;
+}

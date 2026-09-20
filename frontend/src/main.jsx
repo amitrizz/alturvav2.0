@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import './index.css'
+import './styles/gold-theme-buttons.css'
+import './styles/gold-theme-pages.css'
 
 function registerServiceWorker() {
   if (!import.meta.env.PROD || !('serviceWorker' in navigator)) return

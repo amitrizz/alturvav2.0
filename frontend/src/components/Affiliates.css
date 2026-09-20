@@ -605,13 +605,19 @@
     0;
 
   border-left:
-    1px solid var(--af-border);
+    0;
 
   background:
-    rgba(139, 92, 246, 0.06);
+    linear-gradient(90deg, #f5d78e 0%, #e8a838 45%, #c9922e 100%);
 
   color:
-    var(--af-text-secondary);
+    #1a1208;
+
+  font-weight:
+    800;
+
+  font-size:
+    0.78rem;
 
   cursor:
     pointer;
@@ -1895,6 +1901,69 @@
 .af-empty-history p {
   margin: 0;
   font-size: 13px;
+}
+
+.af-history-sync-bar {
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  background: rgba(6, 11, 19, 0.85);
+}
+
+.af-history-sync-hint {
+  margin: 0 0 10px;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--gm-text-secondary);
+}
+
+.af-history-sync-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.af-history-import-input {
+  flex: 1;
+  min-width: 160px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: #fff;
+  font-size: 0.8rem;
+  font-family: ui-monospace, monospace;
+}
+
+.af-history-import-btn,
+.af-history-refresh-btn {
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.12));
+  color: var(--gold);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.af-history-refresh-btn {
+  width: 40px;
+  padding: 0;
+}
+
+.af-history-import-btn:disabled,
+.af-history-refresh-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {

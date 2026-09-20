@@ -14,9 +14,13 @@ function Affiliates({
   executeSellTokens,
   currentPrice = "0.5",
   txLoading = false,
-  userStakesList = []
+  userStakesList = [],
+  onImportTxHistory,
+  historyImportLoading = false,
+  onRefreshHistory,
 }) {
   const [copiedAddr, setCopiedAddr] = useState(false);
+  const [importTxHash, setImportTxHash] = useState("");
   const [swapAmount, setSwapAmount] = useState("");
   const [swapMethod, setSwapMethod] = useState("USDT"); // "USDT" or "BNB"
   const [isSwapping, setIsSwapping] = useState(false);
@@ -259,24 +263,10 @@ function Affiliates({
                   </div>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
+                  className="af-swap-submit-btn"
                   disabled={txLoading || isSwapping || !swapAmount || parseFloat(swapAmount) <= 0 || parseFloat(swapAmount) > parseFloat(btcBalance)}
-                  style={{
-                    width: "100%",
-                    height: "42px",
-                    borderRadius: "8px",
-                    background: "linear-gradient(135deg, #fbbf24 0%, #d97706 100%)",
-                    color: "#000",
-                    fontWeight: "bold",
-                    cursor: "pointer",
-                    border: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "8px",
-                    opacity: (txLoading || isSwapping || !swapAmount || parseFloat(swapAmount) <= 0 || parseFloat(swapAmount) > parseFloat(btcBalance)) ? 0.5 : 1
-                  }}
                 >
                   {(txLoading || isSwapping) ? <RefreshCw className="animate-spin" size={16} /> : "Execute Swap to USDT"}
                 </button>
@@ -362,6 +352,45 @@ function Affiliates({
       )}
 
       {/* History Sections */}
+      <div className="af-history-sync-bar">
+        <p className="af-history-sync-hint">
+          Mint, stake, sell, and claims are listed below. If an older purchase is missing (BSC Testnet log limits),
+          paste the transaction hash from BSCScan.
+        </p>
+        <div className="af-history-sync-row">
+          <input
+            type="text"
+            className="af-history-import-input"
+            placeholder="Paste mint / stake tx hash (0x…)"
+            value={importTxHash}
+            onChange={(e) => setImportTxHash(e.target.value)}
+          />
+          <button
+            type="button"
+            className="af-history-import-btn"
+            disabled={historyImportLoading || !importTxHash.trim()}
+            onClick={async () => {
+              if (!onImportTxHistory) return;
+              const ok = await onImportTxHistory(importTxHash);
+              if (ok) setImportTxHash("");
+            }}
+          >
+            {historyImportLoading ? <RefreshCw className="animate-spin" size={16} /> : "Import"}
+          </button>
+          {onRefreshHistory && (
+            <button
+              type="button"
+              className="af-history-refresh-btn"
+              disabled={txLoading}
+              onClick={() => onRefreshHistory()}
+              title="Refresh from chain"
+            >
+              <RefreshCw size={16} />
+            </button>
+          )}
+        </div>
+      </div>
+
       <div className="af-affiliates-grid">
         {/* Purchase History Column */}
         <div className="af-card-box af-main-column">
@@ -374,7 +403,7 @@ function Affiliates({
             {purchases.length === 0 ? (
               <div className="af-empty-history">
                 <Info size={28} className="af-text-muted" />
-                <p>No purchase or activity logs found.</p>
+                <p>No purchase or activity logs found. Mint again from this app or import a past tx hash above.</p>
               </div>
             ) : (
               purchases.map((tx, idx) => (
@@ -391,8 +420,12 @@ function Affiliates({
                   <div className="af-history-right">
                     {tx.type === "Mint" && (
                       <>
-                        <span className="af-tx-value text-green">+{parseFloat(tx.btcAmount).toFixed(2)} {tokenSymbol}</span>
-                        <span className="af-tx-subtext">for ${parseFloat(tx.usdtAmount).toFixed(2)} USDT</span>
+                        <span className="af-tx-value text-green">+{parseFloat(tx.btcAmount || 0).toFixed(2)} {tokenSymbol}</span>
+                        <span className="af-tx-subtext">
+                          {tx.paymentMethod === "BNB"
+                            ? `for ${parseFloat(tx.usdtAmount || 0).toFixed(4)} BNB`
+                            : `for $${parseFloat(tx.usdtAmount || 0).toFixed(2)} USDT`}
+                        </span>
                       </>
                     )}
                     {tx.type === "Stake" && (
@@ -449,7 +482,11 @@ function Affiliates({
                     {tx.type === "Sell" && (
                       <>
                         <span className="af-tx-value text-red">-{parseFloat(tx.btcAmount).toFixed(2)} {tokenSymbol}</span>
-                        <span className="af-tx-subtext">Sold for ${parseFloat(tx.usdtAmount).toFixed(2)} USDT</span>
+                        <span className="af-tx-subtext">
+                          {tx.paymentMethod === "BNB"
+                            ? "Sold for BNB"
+                            : `Sold for $${parseFloat(tx.usdtAmount || 0).toFixed(2)} USDT`}
+                        </span>
                       </>
                     )}
                     {tx.type === "Unstake" && (
@@ -464,10 +501,20 @@ function Affiliates({
                         <span className="af-tx-subtext">Accrued Staking reward</span>
                       </>
                     )}
-                    {tx.type === "Rank Claim" && (
+                    {(tx.type === "Rank Bonus" || tx.type === "Rank Claim") && (
                       <>
-                        <span className="af-tx-value text-green">+${parseFloat(tx.usdValue).toFixed(2)}</span>
-                        <span className="af-tx-subtext">Daily rank reward</span>
+                        <span className="af-tx-value text-green">
+                          +${parseFloat(tx.usdValue || 0).toFixed(2)}
+                        </span>
+                        <span className="af-tx-subtext">Rank bonus</span>
+                      </>
+                    )}
+                    {tx.type === "Monthly Salary" && (
+                      <>
+                        <span className="af-tx-value text-green">
+                          +${parseFloat(tx.usdValue || 0).toFixed(2)}
+                        </span>
+                        <span className="af-tx-subtext">Monthly salary</span>
                       </>
                     )}
                   </div>
