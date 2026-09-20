@@ -43,7 +43,7 @@ import {
   needsHttpsForWallets,
 } from "./utils/mobile";
 import { isWalletConnectConfigured } from "./wagmiConfig";
-import { getReadProvider, withReadProviders } from "./utils/readProvider";
+import { getReadProvider } from "./utils/readProvider";
 
 const tokenSymbol = "BTC3.O";
 const tokenName = "BTC3.O";
@@ -165,6 +165,12 @@ function App() {
   const [userStakesList, setUserStakesList] = useState([]);
   const [transactionHistory, setTransactionHistory] = useState([]);
   const [historyImportLoading, setHistoryImportLoading] = useState(false);
+  const activeTabRef = useRef(activeTab);
+  const lastPlatformChartsAtRef = useRef(0);
+
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+  }, [activeTab]);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [sellBtcAmount, setSellBtcAmount] = useState("");
@@ -297,13 +303,47 @@ function App() {
         indirectReferralsCount: 0
       });
       setUserStakesList([]);
-      loadUserData();
-      const interval = setInterval(loadUserData, 10000); // refresh every 10s
+      setTransactionHistory(readLocalTransactionHistory(account));
+      loadUserData({ includePlatformCharts: true });
+      const interval = setInterval(() => {
+        const chartsDue =
+          activeTabRef.current === "dashboard" &&
+          Date.now() - lastPlatformChartsAtRef.current > 90_000;
+        loadUserData({ includePlatformCharts: chartsDue });
+      }, 30_000);
       return () => clearInterval(interval);
     }
   }, [provider, account, isWrongNetwork]);
 
-  const loadUserData = async () => {
+  const loadTransactionHistory = async (deepScan = false) => {
+    if (!account) return;
+    try {
+      const readProvider = getReadProvider();
+      const stakingForLogs = new ethers.Contract(
+        addresses.stakingSystem,
+        BTC_STAKING_SYSTEM_ABI,
+        readProvider
+      );
+      const txs = await buildUserTransactionHistory(stakingForLogs, readProvider, account, {
+        tokenAddress: addresses.token,
+        stakingAddress: addresses.stakingSystem,
+        currentPrice,
+        deepScan,
+      });
+      setTransactionHistory(txs || readLocalTransactionHistory(account));
+    } catch (historyErr) {
+      console.error("Error loading transaction history:", historyErr);
+      setTransactionHistory(readLocalTransactionHistory(account));
+    }
+  };
+
+  useEffect(() => {
+    if (provider && account && !isWrongNetwork && activeTab === "affiliate") {
+      loadTransactionHistory(false);
+    }
+  }, [activeTab, provider, account, isWrongNetwork]);
+
+  const loadUserData = async ({ includePlatformCharts = false } = {}) => {
     try {
       // 1. BNB Balance
       const bnbBal = await provider.getBalance(account);
@@ -361,38 +401,41 @@ function App() {
         bandProgress: curve.bandProgress,
       });
 
-      const currentBlock = await provider.getBlockNumber();
-      const [
-        allMintedEvents,
-        allRewardClaimed,
-        allRankBonusClaimed,
-        allMonthlySalaryClaimed,
-        allCouponApplied,
-        allWheelSpun,
-      ] = await Promise.all([
-        queryEventsWithFallback(stakingContract, stakingContract.filters.Minted(), provider),
-        queryEventsWithFallback(stakingContract, stakingContract.filters.RewardClaimed(), provider),
-        queryEventsWithFallback(stakingContract, stakingContract.filters.RankBonusClaimed(), provider),
-        queryEventsWithFallback(stakingContract, stakingContract.filters.MonthlySalaryClaimed(), provider),
-        queryEventsWithFallback(stakingContract, stakingContract.filters.CouponApplied(), provider),
-        queryEventsWithFallback(stakingContract, stakingContract.filters.WheelSpun(), provider),
-      ]);
+      if (includePlatformCharts) {
+        const currentBlock = await provider.getBlockNumber();
+        const [
+          allMintedEvents,
+          allRewardClaimed,
+          allRankBonusClaimed,
+          allMonthlySalaryClaimed,
+          allCouponApplied,
+          allWheelSpun,
+        ] = await Promise.all([
+          queryEventsWithFallback(stakingContract, stakingContract.filters.Minted(), provider),
+          queryEventsWithFallback(stakingContract, stakingContract.filters.RewardClaimed(), provider),
+          queryEventsWithFallback(stakingContract, stakingContract.filters.RankBonusClaimed(), provider),
+          queryEventsWithFallback(stakingContract, stakingContract.filters.MonthlySalaryClaimed(), provider),
+          queryEventsWithFallback(stakingContract, stakingContract.filters.CouponApplied(), provider),
+          queryEventsWithFallback(stakingContract, stakingContract.filters.WheelSpun(), provider),
+        ]);
 
-      const chartPoints = buildMintVolumeChart(allMintedEvents, currentBlock);
-      setMintChartData(chartPoints);
-      setMintVolumeGrowth(computeGrowthPercent(chartPoints));
-      setTotalRewardsPaidUSD(
-        sumRewardsPaidUSD(
-          {
-            rewardClaimed: allRewardClaimed,
-            rankBonusClaimed: allRankBonusClaimed,
-            monthlySalaryClaimed: allMonthlySalaryClaimed,
-            couponApplied: allCouponApplied,
-            wheelSpun: allWheelSpun,
-          },
-          ethers.formatEther(price)
-        ).toFixed(2)
-      );
+        const chartPoints = buildMintVolumeChart(allMintedEvents, currentBlock);
+        setMintChartData(chartPoints);
+        setMintVolumeGrowth(computeGrowthPercent(chartPoints));
+        setTotalRewardsPaidUSD(
+          sumRewardsPaidUSD(
+            {
+              rewardClaimed: allRewardClaimed,
+              rankBonusClaimed: allRankBonusClaimed,
+              monthlySalaryClaimed: allMonthlySalaryClaimed,
+              couponApplied: allCouponApplied,
+              wheelSpun: allWheelSpun,
+            },
+            ethers.formatEther(price)
+          ).toFixed(2)
+        );
+        lastPlatformChartsAtRef.current = Date.now();
+      }
 
       let directReferralsCount = 0;
       let indirectReferralsCount = 0;
@@ -537,25 +580,6 @@ function App() {
         }
       }
       setUserStakesList(stakes);
-
-      try {
-        const txs = await withReadProviders(async (readProvider) => {
-          const stakingForLogs = new ethers.Contract(
-            addresses.stakingSystem,
-            BTC_STAKING_SYSTEM_ABI,
-            readProvider
-          );
-          return buildUserTransactionHistory(stakingForLogs, readProvider, account, {
-            tokenAddress: addresses.token,
-            stakingAddress: addresses.stakingSystem,
-            currentPrice: ethers.formatEther(price),
-          });
-        });
-        setTransactionHistory(txs || readLocalTransactionHistory(account));
-      } catch (historyErr) {
-        console.error("Error loading transaction history:", historyErr);
-        setTransactionHistory(readLocalTransactionHistory(account));
-      }
 
       if (!contractOk) {
         return;
@@ -915,15 +939,7 @@ function App() {
         readProvider
       );
       await importHistoryFromTxHash(stakingForLogs, readProvider, account, txHash);
-      const txs = await withReadProviders(async (rp) => {
-        const c = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, rp);
-        return buildUserTransactionHistory(c, rp, account, {
-          tokenAddress: addresses.token,
-          stakingAddress: addresses.stakingSystem,
-          currentPrice,
-        });
-      });
-      setTransactionHistory(txs || readLocalTransactionHistory(account));
+      await loadTransactionHistory(true);
       showToast("success", "Transaction imported into your history.");
       return true;
     } catch (err) {
@@ -1376,7 +1392,7 @@ function App() {
                   userStakesList={userStakesList}
                   onImportTxHistory={executeImportTxHistory}
                   historyImportLoading={historyImportLoading}
-                  onRefreshHistory={loadUserData}
+                  onRefreshHistory={() => loadTransactionHistory(true)}
                 />
               )}
 

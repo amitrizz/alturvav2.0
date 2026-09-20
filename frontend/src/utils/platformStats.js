@@ -2,7 +2,12 @@ import { ethers } from "ethers";
 
 const LOG_CHUNK_SIZE = 4_000;
 const MAX_LOG_BLOCK_RANGE = 49_999;
-const INDEXED_LOG_WINDOWS = 120;
+const INDEXED_LOG_WINDOWS_LIGHT = 2;
+const INDEXED_LOG_WINDOWS_DEEP = 8;
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function queryFilterChunked(contract, filter, provider, fromBlock, toBlock) {
   const latest =
@@ -39,34 +44,32 @@ async function queryFilterChunked(contract, filter, provider, fromBlock, toBlock
 }
 
 export async function queryEventsWithFallback(contract, filter, provider, options = {}) {
-  const lookback = options.lookbackBlocks ?? MAX_LOG_BLOCK_RANGE * 4;
   const currentBlock = await provider.getBlockNumber();
-  const fromDefault = Math.max(0, currentBlock - lookback);
+  const from = Math.max(0, currentBlock - MAX_LOG_BLOCK_RANGE);
 
   try {
-    const wide = await contract.queryFilter(
-      filter,
-      Math.max(0, currentBlock - MAX_LOG_BLOCK_RANGE),
-      "latest"
-    );
-    if (wide.length > 0) return wide;
+    return await contract.queryFilter(filter, from, "latest");
   } catch {
-    /* chunked fallback */
+    if (options.allowChunked) {
+      return await queryFilterChunked(contract, filter, provider, from, "latest");
+    }
+    return [];
   }
-
-  const chunked = await queryFilterChunked(contract, filter, provider, fromDefault, "latest");
-  if (chunked.length > 0) return chunked;
-
-  return [];
 }
 
-async function queryIndexedUserEventsInWindows(contract, eventName, userAddress, provider) {
+async function queryIndexedUserEventsInWindows(
+  contract,
+  eventName,
+  userAddress,
+  provider,
+  maxWindows = INDEXED_LOG_WINDOWS_LIGHT
+) {
   const user = ethers.getAddress(userAddress);
   const filter = contract.filters[eventName](user);
   const latest = await provider.getBlockNumber();
   const events = [];
 
-  for (let w = 0; w < INDEXED_LOG_WINDOWS; w++) {
+  for (let w = 0; w < maxWindows; w++) {
     const to = latest - w * MAX_LOG_BLOCK_RANGE;
     const from = Math.max(0, to - MAX_LOG_BLOCK_RANGE + 1);
     if (to < 0 || from > to) break;
@@ -75,36 +78,18 @@ async function queryIndexedUserEventsInWindows(contract, eventName, userAddress,
       const chunk = await contract.queryFilter(filter, from, to);
       if (chunk.length) events.push(...chunk);
     } catch {
-      try {
-        const small = await queryFilterChunked(contract, filter, provider, from, to);
-        if (small.length) events.push(...small);
-      } catch {
-        /* pruned range — try next window */
-      }
+      /* skip pruned / rate-limited window */
     }
+    if (w < maxWindows - 1) await sleep(80);
   }
 
   return events;
 }
 
-async function queryUserEvents(contract, eventName, userAddress, provider) {
+async function queryUserEvents(contract, eventName, userAddress, provider, options = {}) {
   const user = ethers.getAddress(userAddress);
-  const indexed = await queryIndexedUserEventsInWindows(contract, eventName, user, provider);
-  if (indexed.length > 0) return indexed;
-
-  const filtered = await queryEventsWithFallback(contract, contract.filters[eventName](user), provider);
-  if (filtered.length > 0) return filtered;
-
-  const all = await queryEventsWithFallback(contract, contract.filters[eventName](), provider);
-  return all.filter((e) => {
-    const who = e.args?.user ?? e.args?.[0];
-    if (!who) return false;
-    try {
-      return ethers.getAddress(who) === user;
-    } catch {
-      return String(who).toLowerCase() === user.toLowerCase();
-    }
-  });
+  const windows = options.deepScan ? INDEXED_LOG_WINDOWS_DEEP : INDEXED_LOG_WINDOWS_LIGHT;
+  return queryIndexedUserEventsInWindows(contract, eventName, user, provider, windows);
 }
 
 async function blockTimestamp(provider, blockNumber, cache) {
@@ -324,11 +309,14 @@ async function queryTokenTransfersFromStaking(tokenAddress, stakingAddress, acco
   const user = ethers.getAddress(account);
   const staking = ethers.getAddress(stakingAddress).toLowerCase();
 
-  const incoming = await queryEventsWithFallback(
-    token,
-    token.filters.Transfer(stakingAddress, user),
-    provider
-  );
+  const latest = await provider.getBlockNumber();
+  const from = Math.max(0, latest - MAX_LOG_BLOCK_RANGE);
+  let incoming = [];
+  try {
+    incoming = await token.queryFilter(token.filters.Transfer(stakingAddress, user), from, "latest");
+  } catch {
+    /* skip — avoids extra chunked scans */
+  }
 
   return incoming.filter((e) => {
     const from = e.args?.from ?? e.args?.[0];
@@ -340,12 +328,31 @@ async function queryTokenTransfersFromStaking(tokenAddress, stakingAddress, acco
   });
 }
 
+const HISTORY_EVENT_NAMES = [
+  "Minted",
+  "Staked",
+  "Sold",
+  "Unstaked",
+  "RewardClaimed",
+  "RankBonusClaimed",
+  "MonthlySalaryClaimed",
+  "CouponApplied",
+  "WheelSpun",
+];
+
 export async function buildUserTransactionHistory(
   stakingContract,
   provider,
   account,
-  { tokenAddress, stakingAddress, currentPrice } = {}
+  { tokenAddress, stakingAddress, currentPrice, deepScan = false } = {}
 ) {
+  const queryOpts = { deepScan };
+  const eventBatches = [];
+  for (const name of HISTORY_EVENT_NAMES) {
+    eventBatches.push(await queryUserEvents(stakingContract, name, account, provider, queryOpts));
+    await sleep(100);
+  }
+
   const [
     mintedEvents,
     stakedEvents,
@@ -356,17 +363,7 @@ export async function buildUserTransactionHistory(
     monthlySalaryClaimedEvents,
     couponAppliedEvents,
     wheelSpunEvents,
-  ] = await Promise.all([
-    queryUserEvents(stakingContract, "Minted", account, provider),
-    queryUserEvents(stakingContract, "Staked", account, provider),
-    queryUserEvents(stakingContract, "Sold", account, provider),
-    queryUserEvents(stakingContract, "Unstaked", account, provider),
-    queryUserEvents(stakingContract, "RewardClaimed", account, provider),
-    queryUserEvents(stakingContract, "RankBonusClaimed", account, provider),
-    queryUserEvents(stakingContract, "MonthlySalaryClaimed", account, provider),
-    queryUserEvents(stakingContract, "CouponApplied", account, provider),
-    queryUserEvents(stakingContract, "WheelSpun", account, provider),
-  ]);
+  ] = eventBatches;
 
   const tsCache = new Map();
   const txs = [];
@@ -515,7 +512,7 @@ export async function buildUserTransactionHistory(
     txs.filter((t) => t.type === "Mint" && t.hash).map((t) => String(t.hash).toLowerCase())
   );
 
-  if (tokenAddress && stakingAddress) {
+  if (deepScan && tokenAddress && stakingAddress) {
     try {
       const transfers = await queryTokenTransfersFromStaking(
         tokenAddress,

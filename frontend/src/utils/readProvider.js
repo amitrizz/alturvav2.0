@@ -3,9 +3,9 @@ import addresses from "../addresses.json";
 
 const DEFAULT_RPCS = [
   import.meta.env.VITE_BSC_TESTNET_RPC,
-  "https://bsc-testnet-rpc.publicnode.com",
   "https://data-seed-prebsc-1-s1.binance.org:8545",
   "https://bsc-testnet.bnbchain.org",
+  "https://bsc-testnet-rpc.publicnode.com",
 ].filter(Boolean);
 
 const chainId = parseInt(String(addresses.chainId), 16);
