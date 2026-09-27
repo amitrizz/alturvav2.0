@@ -183,20 +183,20 @@ function Affiliates({
       {/* Swap / Exchange Tokens Card */}
       <div className="af-card-box af-swap-card" style={{ marginBottom: "20px", padding: "24px" }}>
         <h3 className="af-card-title" style={{ display: "flex", alignItems: "center", gap: "8px", margin: 0, fontSize: "1.2rem" }}>
-          <RefreshCw size={20} className="gold-text" /> Swap / Exchange {tokenSymbol}
+          <RefreshCw size={20} className="gold-text" /> Withdrawal Token ({tokenSymbol})
         </h3>
         <p className="af-swap-description" style={{ color: "var(--gm-text-secondary)", fontSize: "0.82rem", margin: "6px 0 20px", lineHeight: "1.4" }}>
-          Sell your {tokenSymbol} tokens back into the contract instantly for USDT. (<span style={{ textDecoration: "underline", color: "var(--gold)", cursor: "pointer", fontWeight: "bold" }} onClick={() => setIsPenaltyModalOpen(true)}>Applied Platform Fee</span>)
+          Withdraw your {tokenSymbol} tokens back into the contract instantly for USDT. (<span style={{ textDecoration: "underline", color: "var(--gold)", cursor: "pointer", fontWeight: "bold" }} onClick={() => setIsPenaltyModalOpen(true)}>Applied Platform Fee</span>)
         </p>
 
         <form onSubmit={handleSwap} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "flex", gap: "12px", alignItems: "flex-end" }}>
             <div style={{ flex: 1, position: "relative" }}>
-              <label style={{ display: "block", fontSize: "0.75rem", color: "var(--gm-text-secondary)", marginBottom: "6px" }}>Amount to Swap ({tokenSymbol})</label>
+              <label style={{ display: "block", fontSize: "0.75rem", color: "var(--gm-text-secondary)", marginBottom: "6px" }}>Withdrawal amount ({tokenSymbol})</label>
               <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
                 <input 
                   type="number" 
-                  placeholder={parseFloat(btcBalance) === 0 ? "No tokens to swap" : "0.0"}
+                  placeholder={parseFloat(btcBalance) === 0 ? "No tokens to withdraw" : "0.0"}
                   value={swapAmount}
                   disabled={parseFloat(btcBalance) === 0}
                   max={btcBalance}
@@ -268,7 +268,7 @@ function Affiliates({
                   className="af-swap-submit-btn"
                   disabled={txLoading || isSwapping || !swapAmount || parseFloat(swapAmount) <= 0 || parseFloat(swapAmount) > parseFloat(btcBalance)}
                 >
-                  {(txLoading || isSwapping) ? <RefreshCw className="animate-spin" size={16} /> : "Execute Swap to USDT"}
+                  {(txLoading || isSwapping) ? <RefreshCw className="animate-spin" size={16} /> : "Withdraw to USDT"}
                 </button>
               </>
             );
@@ -354,7 +354,7 @@ function Affiliates({
       {/* History Sections */}
       <div className="af-history-sync-bar">
         <p className="af-history-sync-hint">
-          Mint, stake, sell, and claims are listed below. If an older purchase is missing (BSC Testnet log limits),
+          Mint, stake, withdrawals, and claims are listed below. If an older purchase is missing (BSC Testnet log limits),
           paste the transaction hash from BSCScan.
         </p>
         <div className="af-history-sync-row">
@@ -413,7 +413,7 @@ function Affiliates({
                       <ArrowDownLeft size={16} className="text-green" />
                     </div>
                     <div>
-                      <span className="af-tx-type">{tx.type}</span>
+                      <span className="af-tx-type">{tx.type === "Sell" ? "Withdrawal" : tx.type}</span>
                       <span className="af-tx-hash font-mono">{truncateAddress(tx.hash)}</span>
                     </div>
                   </div>
@@ -474,7 +474,7 @@ function Affiliates({
                       <ArrowUpRight size={16} className="text-red" />
                     </div>
                     <div>
-                      <span className="af-tx-type">{tx.type}</span>
+                      <span className="af-tx-type">{tx.type === "Sell" ? "Withdrawal" : tx.type}</span>
                       <span className="af-tx-hash font-mono">{truncateAddress(tx.hash)}</span>
                     </div>
                   </div>
@@ -484,8 +484,8 @@ function Affiliates({
                         <span className="af-tx-value text-red">-{parseFloat(tx.btcAmount).toFixed(2)} {tokenSymbol}</span>
                         <span className="af-tx-subtext">
                           {tx.paymentMethod === "BNB"
-                            ? "Sold for BNB"
-                            : `Sold for $${parseFloat(tx.usdtAmount || 0).toFixed(2)} USDT`}
+                            ? "Withdrawn for BNB"
+                            : `Withdrawn for $${parseFloat(tx.usdtAmount || 0).toFixed(2)} USDT`}
                         </span>
                       </>
                     )}

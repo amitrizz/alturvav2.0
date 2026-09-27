@@ -56,13 +56,13 @@ function Dashboard({
   return (
     <div className="db-tab-pane">
       <section className="db-trade-panel ui-gold-card">
-        <div className="db-trade-panel-header">BUY &amp; SELL TOKEN</div>
+        <div className="db-trade-panel-header">DEPOSIT &amp; WITHDRAWAL TOKEN</div>
         <div className="db-trade-panel-actions">
           <button type="button" className="ui-btn-buy" onClick={() => setActiveTab("mint")}>
-            Buy Token
+            Deposit Token
           </button>
           <button type="button" className="ui-btn-sell" onClick={goSell}>
-            Sell Token
+            Withdrawal Token
           </button>
         </div>
       </section>
@@ -220,7 +220,7 @@ function Dashboard({
             <h3>How BTC3.0 Works</h3>
             <ol className="db-guide-list">
               <li><strong>Connect Wallet:</strong> Click Connect in the header (WalletConnect on mobile).</li>
-              <li><strong>Genesis Mint:</strong> Buy {tokenSymbol} with BNB or USDT on BSC Testnet.</li>
+              <li><strong>Genesis Mint:</strong> Deposit {tokenSymbol} with BNB or USDT on BSC Testnet.</li>
               <li><strong>Stake:</strong> Lock tokens in the Staking Portal for daily ROI.</li>
               <li><strong>Refer:</strong> Share your link from Ranks → Level Income.</li>
               <li><strong>Rank Up:</strong> Hit team targets for one-time bonuses and monthly salary.</li>

@@ -780,10 +780,10 @@ function App() {
       let tx;
       if (method === "USDT") {
         tx = await stakingContract.sellTokens(parsedAmount);
-        showToast("info", `Selling ${btcAmountStr} ${tokenSymbol} for USDT...`);
+        showToast("info", `Withdrawing ${btcAmountStr} ${tokenSymbol} for USDT...`);
       } else {
         tx = await stakingContract.sellTokensForBNB(parsedAmount);
-        showToast("info", `Selling ${btcAmountStr} ${tokenSymbol} for BNB...`);
+        showToast("info", `Withdrawing ${btcAmountStr} ${tokenSymbol} for BNB...`);
       }
       const receipt = await tx.wait();
       appendLocalTransaction(account, {
@@ -799,12 +799,12 @@ function App() {
       setTransactionHistory((prev) =>
         mergeTransactionHistories(prev, readLocalTransactionHistory(account))
       );
-      showToast("success", `Tokens sold successfully!`);
+      showToast("success", `Token withdrawal completed successfully!`);
       loadUserData();
       setTimeout(loadUserData, 2000);
       return true;
     } catch (err) {
-      showToast("error", parseTxError(err, "Failed to sell tokens.", { action: "sell" }));
+      showToast("error", parseTxError(err, "Failed to withdraw tokens.", { action: "sell" }));
       return false;
     } finally {
       setTxLoading(false);

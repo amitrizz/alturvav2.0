@@ -31,7 +31,7 @@ const ACTION_HINTS = {
   stake: "Staking failed. Ensure you are registered and stake between $10 and $10,000 USDT equivalent.",
   register: "Registration failed. Check your referrer address or try again.",
   approve: "Token approval failed. Please try again in your wallet.",
-  sell: "Sell failed. Check your token balance and try again.",
+  sell: "Withdrawal failed. Check your token balance and try again.",
   claim: "Claim failed. Rewards may not be available yet.",
   unstake: "Withdrawal failed. The 365-day cycle may not be complete yet.",
   coupon: "Coupon could not be applied. Check the code and your monthly limit.",

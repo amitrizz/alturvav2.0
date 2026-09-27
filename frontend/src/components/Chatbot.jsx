@@ -12,7 +12,7 @@ const PRESETS = [
       "Our platform offers a complete Web3 experience combining DeFi staking, lucky draws, network referrers, and rank milestone rewards.",
       "BTC3.O is a decentralized portal designed to let users mint tokens, stake for yield, spin the lucky wheel, and climb affiliate ranks.",
       "At its core, BTC3.O is the AI EARN BTC3.0 plan on BEP20: mint, 365-day stake ROI tiers, 20-level income, rank USDT bonuses, and monthly salary.",
-      "BTC3.O is an all-in-one reward platform where you can buy early, stake for daily payouts, spin the wheel, and invite team members.",
+      "BTC3.O is an all-in-one reward platform where you can deposit early, stake for daily payouts, spin the wheel, and invite team members.",
       "It is a utility-driven DeFi ecosystem that uses smart contracts to handle decentralized minting, staking yield pools, and rank milestone achievements.",
       "BTC3.O is a community-first DeFi hub offering 365-day ROI tiers, 20-level mint commissions, rank USDT bonuses, and monthly salary.",
       "Welcome to BTC3.O! A decentralized Web3 dashboard that merges bonding curve minting, staking nodes, referral rewards, and lucky draws."
@@ -128,7 +128,7 @@ const PRESETS = [
     answers: [
       "Unstake is allowed after the 365-day cycle completes. You cannot unstake principal before the cycle ends.",
       "The plan uses a 365-day investment cycle—wait until your stake end time, then unstake from the Stake tab.",
-      "Selling BTC3.O back via Profile swap may include platform fee rules shown in the app; unstake returns staked principal after 365 days.",
+      "Withdrawing BTC3.O via Profile may include platform fee rules shown in the app; unstake returns staked principal after 365 days.",
       "Claim ROI anytime during the cycle; unstaking principal is separate and time-locked for 365 days.",
       "Check days remaining on each stake in the Staking Portal before planning an unstake.",
       "After 365 days, unstake returns your locked tokens per contract logic.",
