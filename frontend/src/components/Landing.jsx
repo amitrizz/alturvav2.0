@@ -1,17 +1,15 @@
 import React, { useLayoutEffect } from "react";
 import { Shield, TrendingUp, Users, BarChart3, Zap, Lock, ArrowRight, Coins } from "lucide-react";
-import { ROI_TIERS, RANK_BONUS_NAMES, SALARY_RANK_NAMES } from "../abis";
+import { ROI_TIERS } from "../abis";
+import { PLAN_RANK_BONUSES, PLAN_MONTHLY_SALARIES, TOKENOMICS_PUBLIC_PERCENT } from "../planConfig";
 import InstallApp from "./InstallApp";
 import "./Landing.css";
-
-const RANK_BONUSES = ["$20", "$100", "$500", "$1,500", "$5,000", "$10,000", "$20,000", "$30,000", "$40,000", "$50,000"];
-const SALARY_AMOUNTS = ["$50", "$200", "$500", "$1,000", "$2,500", "$5,000", "$7,500", "$10,000"];
 
 const STEPS = [
   { icon: Users, label: "Register" },
   { icon: Coins, label: "Activate Investment" },
   { icon: TrendingUp, label: "Refer & Earn" },
-  { icon: BarChart3, label: "Track Progress" },
+  { icon: BarChart3, label: "Track your Progress" },
 ];
 
 const FEATURES = [
@@ -123,14 +121,14 @@ function Landing({ onEnterApp }) {
       </section>
 
       <section className="landing-section landing-tokenomics">
-        <h2>Tokenomics</h2>
+        <h2>Tokenization — For Public {TOKENOMICS_PUBLIC_PERCENT}%</h2>
         <div className="landing-tokenomics-grid">
           <div className="landing-donut">
-            <div className="donut-center">100%<br />Supply</div>
+            <div className="donut-center">{TOKENOMICS_PUBLIC_PERCENT}%<br />Public</div>
           </div>
           <ul className="landing-token-list">
-            <li><span className="dot dot-60" /> 60% Public Minting</li>
-            <li><span className="dot dot-25" /> 25% Staking Rewards</li>
+            <li><span className="dot dot-60" /> 60% Public Minting (community mint & own)</li>
+            <li><span className="dot dot-25" /> 25% Liquidity / Rewards Pool</li>
             <li><span className="dot dot-5" /> 5% Marketing</li>
             <li><span className="dot dot-5b" /> 5% Development</li>
             <li><span className="dot dot-25b" /> 2.5% Team</li>
@@ -154,41 +152,70 @@ function Landing({ onEnterApp }) {
         <h2>Rank Bonus</h2>
         <div className="landing-table-wrap landing-desktop-only">
           <table className="landing-table">
-            <thead><tr><th>Rank</th><th>One-Time Bonus</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>Self BTC3.0</th>
+                <th>Direct</th>
+                <th>Team Size</th>
+                <th>Reward (USDT)</th>
+              </tr>
+            </thead>
             <tbody>
-              {RANK_BONUSES.map((b, i) => (
-                <tr key={i}><td>{RANK_BONUS_NAMES[i]}</td><td className="gold">{b}</td></tr>
+              {PLAN_RANK_BONUSES.map((r) => (
+                <tr key={r.rank}>
+                  <td>{r.rank}</td>
+                  <td>${r.selfUsd.toLocaleString()}</td>
+                  <td>{r.directs}</td>
+                  <td>{r.team.toLocaleString()}</td>
+                  <td className="gold">${r.bonusUsd.toLocaleString()}</td>
+                </tr>
               ))}
             </tbody>
           </table>
         </div>
         <div className="landing-mobile-cards landing-mobile-only">
-          {RANK_BONUSES.map((b, i) => (
-            <div key={i} className="landing-mobile-card landing-mobile-card-row">
-              <strong>{RANK_BONUS_NAMES[i]}</strong>
-              <span className="gold">{b}</span>
+          {PLAN_RANK_BONUSES.map((r) => (
+            <div key={r.rank} className="landing-mobile-card">
+              <strong>{r.rank}</strong>
+              <span>Self ${r.selfUsd} · {r.directs} directs · team {r.team}</span>
+              <span className="landing-mobile-card-value gold">${r.bonusUsd} USDT</span>
             </div>
           ))}
         </div>
       </section>
 
       <section className="landing-section">
-        <h2>Monthly Salary Bonus</h2>
+        <h2>Salary Bonus (Monthly)</h2>
         <div className="landing-table-wrap landing-desktop-only">
           <table className="landing-table">
-            <thead><tr><th>Rank</th><th>Monthly Salary</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Rank</th>
+                <th>BTC3.0</th>
+                <th>Direct</th>
+                <th>Team Size</th>
+                <th>Salary (USDT)</th>
+              </tr>
+            </thead>
             <tbody>
-              {SALARY_AMOUNTS.map((s, i) => (
-                <tr key={i}><td>{SALARY_RANK_NAMES[i]}</td><td className="gold">{s} USDT</td></tr>
+              {PLAN_MONTHLY_SALARIES.map((r) => (
+                <tr key={r.rank}>
+                  <td>{r.rank}</td>
+                  <td>${r.selfUsd.toLocaleString()}</td>
+                  <td>{r.directs}</td>
+                  <td>{r.team.toLocaleString()}</td>
+                  <td className="gold">${r.salaryUsd.toLocaleString()}</td>
+                </tr>
               ))}
             </tbody>
           </table>
         </div>
         <div className="landing-mobile-cards landing-mobile-only">
-          {SALARY_AMOUNTS.map((s, i) => (
-            <div key={i} className="landing-mobile-card landing-mobile-card-row">
-              <strong>{SALARY_RANK_NAMES[i]}</strong>
-              <span className="gold">{s}/mo</span>
+          {PLAN_MONTHLY_SALARIES.map((r) => (
+            <div key={r.rank} className="landing-mobile-card landing-mobile-card-row">
+              <strong>{r.rank}</strong>
+              <span className="gold">${r.salaryUsd}/mo</span>
             </div>
           ))}
         </div>
@@ -222,7 +249,7 @@ function Landing({ onEnterApp }) {
             </div>
           ))}
         </div>
-        <p className="landing-copy">© 2026 AI EARN BTC3.0 Plan · BSC Testnet</p>
+        <p className="landing-copy">BTC3.0 — GROW TOGETHER, EARN TOGETHER · © 2026 AI EARN BTC3.0 Plan</p>
       </footer>
 
     </div>

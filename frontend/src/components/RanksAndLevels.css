@@ -12,6 +12,7 @@
    ========================================================= */
 
 .rl-tab-pane {
+  padding-bottom: 88px;
   --rl-bg-primary: #030712;
   --rl-bg-secondary: #070d1a;
   --rl-bg-card: #0a1120;
@@ -1677,69 +1678,316 @@
   }
 }
 
+.rl-subtab-nav {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.rl-subtab-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: rgba(8, 12, 22, 0.85);
+  color: #f8fafc;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.rl-subtab-btn.active {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  color: #0f0a04;
+  border-color: transparent;
+  box-shadow: 0 4px 16px rgba(251, 191, 36, 0.25);
+}
+
 .rl-subtab-btn.active:hover {
   filter: brightness(1.06);
 }
 
-
 /* =========================================================
-   LEVEL INCOME — REFERRAL STATS
+   REFERRAL PROGRAM TAB
    ========================================================= */
 
-.rl-referral-stats {
+.rl-referral-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rl-referral-card {
+  margin-bottom: 0 !important;
+}
+
+.rl-referral-hint {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--gm-text-secondary, #94a3b8);
+}
+
+.rl-link-copy-block {
+  margin-bottom: 0;
+  border-color: rgba(251, 191, 36, 0.35);
+  border-radius: 12px;
+  min-height: 48px;
+}
+
+.rl-tab-pane .rl-copy-input {
+  font-size: 0.72rem;
+  padding: 0 12px;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rl-level-income-list {
+  max-height: 320px;
+  margin-top: 8px;
+  margin-bottom: 16px;
+  border-color: rgba(251, 191, 36, 0.28);
+  padding: 8px 12px;
+}
+
+.rl-tab-pane .rl-level-row {
+  min-height: 40px;
+  font-size: 0.92rem;
+  color: #e2e8f0;
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.rl-tab-pane .rl-level-row .rl-level-pct {
+  font-weight: 800;
+  color: #fff;
+  font-size: 0.95rem;
+}
+
+.rl-referral-metrics {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-top: 4px;
 }
 
-.rl-referral-stat {
+.rl-referral-metric {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-  padding: 12px 14px;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 12px;
   border-radius: 12px;
-  background: rgba(13, 21, 36, 0.65);
-  border: 1px solid var(--rl-border);
+  background: rgba(7, 13, 26, 0.72);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  min-width: 0;
 }
 
-.rl-referral-stat-label {
+.rl-referral-metric-label {
+  display: block;
   font-size: 0.72rem;
-  line-height: 1.35;
-  color: var(--rl-text-secondary);
-  font-weight: 500;
+  color: var(--gm-text-secondary, #94a3b8);
+  margin-bottom: 4px;
 }
 
-.rl-referral-stat-value {
-  font-size: 1.15rem;
-  line-height: 1.2;
-  font-weight: 700;
-  color: var(--rl-gold);
+.rl-referral-metric-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--gold, #fbbf24);
   font-variant-numeric: tabular-nums;
 }
 
 @media (max-width: 640px) {
-  .rl-referral-stats {
+  .rl-referral-metrics {
     grid-template-columns: 1fr;
-    gap: 8px;
   }
 
-  .rl-referral-stat {
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 14px 16px;
+  .rl-tab-pane .rl-copy-input {
+    font-size: 0.65rem;
   }
 
-  .rl-referral-stat-label {
-    font-size: 0.82rem;
+  .rl-subtab-btn {
+    font-size: 0.75rem;
+    padding: 11px 8px;
+  }
+}
+
+/* =========================================================
+   RANK / SALARY TABLES
+   ========================================================= */
+
+.rl-table-section {
+  margin-bottom: 16px;
+}
+
+.rl-table-section.af-card-box {
+  padding: 16px 14px 18px;
+  border-color: rgba(251, 191, 36, 0.35);
+}
+
+.rl-section-title {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.rl-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  background: rgba(7, 13, 26, 0.65);
+}
+
+.rl-table {
+  width: 100%;
+  min-width: 620px;
+  border-collapse: collapse;
+}
+
+.rl-table th,
+.rl-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.rl-table th {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.rl-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.rl-claim-btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  color: #111;
+  font-weight: 800;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.rl-claim-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.rl-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.rl-status.locked {
+  color: #94a3b8;
+}
+
+.rl-status.claimed {
+  color: #10b981;
+}
+
+.rl-claim-salary-btn {
+  width: 100%;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(251, 191, 36, 0.45);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(217, 119, 6, 0.15));
+  color: #fbbf24;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.rl-desktop-only {
+  display: block;
+}
+
+.rl-mobile-only {
+  display: none;
+}
+
+.rl-rank-mobile-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rl-rank-mobile-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  background: rgba(7, 13, 26, 0.72);
+}
+
+.rl-rank-mobile-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+
+.rl-rank-mobile-grid {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.rl-rank-mobile-grid strong {
+  color: #f1f5f9;
+  font-weight: 700;
+  text-align: right;
+}
+
+.rl-rank-mobile-action {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+@media (max-width: 900px) {
+  .rl-desktop-only {
+    display: none;
   }
 
-  .rl-referral-stat-value {
-    font-size: 1.05rem;
-    flex-shrink: 0;
+  .rl-mobile-only {
+    display: flex;
+  }
+
+  .rl-table-section.af-card-box {
+    margin-bottom: 12px;
   }
 }
 

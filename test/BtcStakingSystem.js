@@ -78,29 +78,22 @@ describe("BtcStakingSystem", function () {
     });
   });
 
-  describe("Rank bonus", function () {
-    it("allows claiming bronze bonus when qualified", async function () {
-      await staking.connect(addr1).register(ethers.ZeroAddress);
+  describe("Rank bonus (AI EARN BTC3.0 plan tables)", function () {
+    it("stores poster-aligned bronze and silver bonuses", async function () {
+      const bronze = await staking.rankBonuses(0);
+      expect(bronze.minSelfUSD).to.equal(ethers.parseEther("500"));
+      expect(bronze.minDirects).to.equal(3n);
+      expect(bronze.minTeamSize).to.equal(10n);
+      expect(bronze.oneTimeBonusUSD).to.equal(ethers.parseEther("20"));
 
-      for (let i = 0; i < 2; i++) {
-        const user = (await ethers.getSigners())[i + 4] || addr2;
-        try {
-          await staking.connect(user).register(addr1.address);
-        } catch (_) {}
-      }
+      const silver = await staking.rankBonuses(1);
+      expect(silver.oneTimeBonusUSD).to.equal(ethers.parseEther("50"));
+    });
 
-      const stakeAmount = ethers.parseEther("200");
-      await btcToken.transfer(addr1.address, stakeAmount);
-      await btcToken.connect(addr1).approve(await staking.getAddress(), stakeAmount);
-      await staking.connect(addr1).stake(stakeAmount);
-
-      const qualified = await staking.qualifiesForRankBonus(addr1.address, 0);
-      if (qualified) {
-        const balBefore = await usdt.balanceOf(addr1.address);
-        await staking.connect(addr1).claimRankBonus(0);
-        const balAfter = await usdt.balanceOf(addr1.address);
-        expect(balAfter - balBefore).to.equal(ethers.parseEther("20"));
-      }
+    it("stores poster-aligned gold monthly salary", async function () {
+      const goldSalary = await staking.salaries(0);
+      expect(goldSalary.minSelfUSD).to.equal(ethers.parseEther("1500"));
+      expect(goldSalary.monthlySalaryUSD).to.equal(ethers.parseEther("50"));
     });
   });
 });

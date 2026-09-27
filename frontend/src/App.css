@@ -31,6 +31,12 @@
   --danger-color: #ef4444;
   --radius-lg: 14px;
   --radius-md: 12px;
+  /* Stacked FABs (chatbot + calculator) — shared horizontal & vertical rhythm */
+  --fab-size: 56px;
+  --fab-gap: 12px;
+  --fab-inset: 24px;
+  --fab-bottom-mobile: calc(var(--mobile-nav-height) + 12px);
+  --fab-bottom-desktop: 24px;
 }
 
 * {
@@ -568,21 +574,22 @@ input:checked + .switch-slider:before {
 
 .app-floating-calc-btn {
   position: fixed;
-  right: 24px;
-  bottom: calc(var(--mobile-nav-height) + 12px);
-  width: 56px;
-  height: 56px;
+  right: var(--fab-inset);
+  bottom: var(--fab-bottom-mobile);
+  width: var(--fab-size);
+  height: var(--fab-size);
   border-radius: 50%;
   background: var(--btn-gradient-strong);
   color: #1a1208;
-  border: none;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(251, 191, 36, 0.4);
+  box-shadow: 0 4px 20px rgba(232, 168, 56, 0.45);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 999;
+  z-index: 9998;
   -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
 }
 
 .app-floating-calc-btn span {
@@ -593,7 +600,7 @@ input:checked + .switch-slider:before {
 
 @media (min-width: 1025px) {
   .app-floating-calc-btn {
-    bottom: 24px;
+    bottom: var(--fab-bottom-desktop);
   }
 }
 

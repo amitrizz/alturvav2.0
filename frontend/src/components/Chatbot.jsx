@@ -11,56 +11,56 @@ const PRESETS = [
       "BTC3.O provides multiple Web3 earning channels including daily staking yields, a bonding curve minting mechanism, and team achievements.",
       "Our platform offers a complete Web3 experience combining DeFi staking, lucky draws, network referrers, and rank milestone rewards.",
       "BTC3.O is a decentralized portal designed to let users mint tokens, stake for yield, spin the lucky wheel, and climb affiliate ranks.",
-      "At its core, BTC3.O is a DeFi protocol with a bonding curve mint, 180% APR staking, lucky wheel draws, and level-based team business rewards.",
+      "At its core, BTC3.O is the AI EARN BTC3.0 plan on BEP20: mint, 365-day stake ROI tiers, 20-level income, rank USDT bonuses, and monthly salary.",
       "BTC3.O is an all-in-one reward platform where you can buy early, stake for daily payouts, spin the wheel, and invite team members.",
       "It is a utility-driven DeFi ecosystem that uses smart contracts to handle decentralized minting, staking yield pools, and rank milestone achievements.",
-      "BTC3.O is a community-first DeFi hub offering staking yields up to 3x cap, 15 referral levels, wheel prize pools, and rank daily salaries.",
+      "BTC3.O is a community-first DeFi hub offering 365-day ROI tiers, 20-level mint commissions, rank USDT bonuses, and monthly salary.",
       "Welcome to BTC3.O! A decentralized Web3 dashboard that merges bonding curve minting, staking nodes, referral rewards, and lucky draws."
     ]
   },
   {
     q: "How does Staking Yield work?",
     answers: [
-      "Invest $10–$10,000 for a 365-day cycle. Daily ROI depends on amount: 0.5% ($10–$499), 0.6% ($500–$2K), 0.75% ($2K–$5K), or 1.0% ($5K–$10K).",
-      "Staking pools offer a passive daily rate of 0.5% paid in tokens. Once you reach 3x your initial staked USD value, the stake completes.",
-      "Earn 180% APR by staking your tokens. Rewards accumulate daily and can be claimed anytime until you hit the 300% limit.",
-      "Staking pays out a stable 0.5% daily yield. Your stake continues earning until total claims equal 300% of your starting USD deposit.",
-      "By locking your tokens, you unlock passive daily yields of 0.5%. The maximum payout limit per stake is capped at 300% value.",
-      "Staking yield is computed at 0.5% daily. The smart contract limits your total claimed rewards to 3x your initial deposit value.",
-      "Lock tokens to start earning daily payouts at 180% APR. Once your claimed rewards hit the 300% USD limit, the staking period ends.",
-      "The platform rewards stakers with 0.5% daily interest (15% monthly). The stake reaches completion once you draw 300% total payouts.",
-      "Passive rewards accrue daily at a rate of 0.5% (180% annual percentage rate) with a maximum lifetime cap of 3x your stake size.",
-      "Enjoy a daily yield of 0.5% on your locked tokens. The contract automatically expires the stake once it delivers a 300% return."
+      "Stake $10–$10,000 (USD value) for a 365-day cycle. Daily ROI: 0.5% ($10–$499), 0.6% ($500–$2K), 0.75% ($2K–$5K), or 1.0% ($5K–$10K).",
+      "After you mint BTC3.O, stake tokens in the Stake tab. Rewards accrue daily by tier and can be claimed in BTC3.O tokens.",
+      "The 365-day investment cycle matches the plan poster. Principal unlocks via unstake after the cycle ends.",
+      "Higher deposits unlock higher daily ROI bands up to 1% per day on the top tier ($5,001–$10,000).",
+      "Mint activates your investment; staking starts the daily affiliate reward package (ROI) from the plan table.",
+      "Claim staking rewards from the Stake portal whenever rewards are available, until your stake completes or caps.",
+      "ROI rate is set when you stake based on the USD value of that stake position.",
+      "Minimum stake/mint is $10 USDT equivalent; maximum is $10,000 per the plan rules.",
+      "Team business from your downline mint and stake counts toward rank progress.",
+      "See exact ROI tiers on the landing page and Dashboard—they match the smart contract."
     ]
   },
   {
     q: "What is the Referral Program?",
     answers: [
-      "Our 20-level program pays: Level 1 = 8%, Levels 2–5 = 1%, Levels 6–10 = 0.5%, Levels 11–15 = 0.25%, Levels 16–20 = 0.1%.",
-      "Earn commissions up to 15 levels deep based on the staking volume of your network referrals.",
-      "Unlock affiliate payouts down to 15 tiers. You need active direct referrers to sequentially unlock deeper levels.",
-      "Refer friends to earn network percentages: Level 1 pays 8%, Level 2 pays 4%, Level 3 pays 2%, down to 0.25% on Level 15.",
-      "We offer a 15-level network program. Commissions are distributed instantly when your referrals register and stake.",
-      "The affiliate network awards direct commissions on Level 1 (8%) and Level 2 (4%), going down to Level 15 (0.25%).",
-      "Our referral program pays commissions up to 15 levels. Deeper tiers unlock as you refer more active users.",
-      "Earn passive commissions from your network: Level 1 offers 8%, Level 2 offers 4%, and levels 5-9 offer 0.5%.",
-      "Unlock up to 15 levels of network commissions. The deeper levels unlock based on the number of direct users you invite.",
-      "Earn recurring rewards when your referrals lock stakes. Payouts scale down 15 levels (starting at 8% for direct referrals)."
+      "Our 20-level program pays: Level 1 = 8%, Levels 2–5 = 1%, Levels 6–10 = 0.5%, Levels 11–15 = 0.25%, Levels 16–20 = 0.1% on team mint volume.",
+      "Level income is paid in BTC3.O tokens when your downline mints (activates investment). All 20 upline levels can earn per the plan table.",
+      "Refer friends after you register. When they mint USDT/BNB into BTC3.O, you receive your level percentage automatically.",
+      "Commissions follow the AI EARN BTC3.0 plan: 8% on level 1, then 1%, 0.5%, 0.25%, and 0.1% for deeper levels.",
+      "Mint activates investment and triggers level income for your referrer chain up to 20 levels deep.",
+      "Team business and rank progress count both mint and stake volume across your network.",
+      "Share your referral link from the Ranks tab. No extra unlock steps—levels pay on qualifying mint events.",
+      "Level percentages match the official poster: 8% / 1% / 0.5% / 0.25% / 0.1% bands across 20 levels.",
+      "Register first, then mint $10–$10,000 to activate. Your upline earns level income on that mint.",
+      "See full level income and rank tables on the landing page and Ranks & Levels screen."
     ]
   },
   {
     q: "How do Rank Rewards work?",
     answers: [
-      "Ranks Bronze to Elite Crown unlock one-time USDT bonuses ($20–$50K) based on self investment, directs, and team size. Gold+ ranks earn monthly USDT salary up to $10,000.",
-      "Achieving higher ranks based on team volume gives you a daily reward for 150 days plus physical assets (Hyundai, BMW, Mercedes).",
-      "Team business volume determines your rank. Higher ranks pay direct daily USD rewards up to 150 days and luxury cars.",
-      "Advance ranks by accumulating team volume (50% strong leg limit). Ranks yield guaranteed daily payouts for 150 days and car rewards.",
-      "Your rank increases with team staking volume. You will earn daily rank salaries for 150 days and milestone vehicles (Creta, BMW, Mercedes).",
-      "Accumulate team volume to reach ranks. Ranks pay guaranteed daily salaries (up to $35,000/day) for 150 days and physical luxury cars.",
-      "Ranks pay a daily allowance for up to 150 days. Milestone rewards include SUVs, BMWs, and Mercedes sedans based on volume.",
-      "Unlocking ranks awards daily salaries for 150 days. Ranks are based on team business and offer cars as milestone achievements.",
-      "Grow your network volume to climb ranks. Receive daily rank bonuses for 150 days and top vehicles (Hyundai SUV, BMW, Mercedes).",
-      "Ranks award daily rewards (up to $35k) for 150 days. Reach top milestones to win physical car awards like Hyundai, BMW, and Mercedes."
+      "Ranks Bronze to Elite Crown unlock one-time USDT bonuses ($20–$50K) based on self BTC3.0 volume, directs, and team size per the plan table.",
+      "Gold through Elite Crown can qualify for monthly USDT salary ($50–$10,000) claimable once every 30 days.",
+      "Rank requirements match the poster: e.g. Bronze $500 self / 3 directs / team 10 for $20 USDT bonus.",
+      "Salary ranks start at Gold ($1,500 self, 9 directs, team 100) for $50/month USDT.",
+      "Claim rank bonuses and monthly salary from the Ranks tab when qualified.",
+      "Self investment includes mint and stake USD credited on-chain toward rank progress.",
+      "Elite Crown rank bonus is $50,000 USDT one-time; Elite monthly salary is $10,000 USDT.",
+      "Team size counts your entire referral downline registered under you.",
+      "Rank bonuses pay in USDT from the contract reserve; salaries pay monthly in USDT.",
+      "Full rank and salary tables are on the landing page and Ranks & Levels dashboard."
     ]
   },
   {
@@ -96,16 +96,16 @@ const PRESETS = [
   {
     q: "What are Promo Coupons?",
     answers: [
-      "Promo Coupons are special promo codes that you can enter on the Mint page to double your minted token rewards.",
-      "A Promo Coupon is a discount or bonus key. Applying it during a Genesis Mint gives you 2x the standard token value.",
-      "Use coupons on the Genesis Mint tab. Enter a valid code to instantly double the amount of tokens you receive for your deposit.",
-      "Coupons are promotional tools. Enter them next to the mint amount to double your token allocation from the curve.",
-      "Enter coupon codes during Genesis Minting. They are designed to double your token balance rewards upon successful mint.",
-      "Coupons allow you to mint 2x the tokens for the same amount of USDT/BNB. Enter them directly in the mint form input.",
-      "These codes double your minted tokens. Get coupon keys from community promotional drops or affiliate leaders.",
-      "Promo Coupons give stakers double value on Genesis Minting. Apply a valid code to receive a 100% token bonus.",
-      "Simply copy-paste a coupon code into the promo input inside the Mint tab to double your output of tokens.",
-      "Applying coupon codes doubles your minted tokens instantly. It's the best way to maximize your starting balance."
+      "Promo coupons are optional codes added by the platform admin. Enter a valid code on the Mint tab to receive the coupon reward.",
+      "Coupons must be enabled on-chain before use. Invalid codes will be rejected by the smart contract.",
+      "After you register, you can apply a coupon from the Mint screen if you have a valid promotional code.",
+      "Coupon rewards are credited per contract rules when the code is accepted.",
+      "Ask your community leader or official channels for active coupon codes.",
+      "Coupons are separate from the standard mint curve—they are promotional extras only.",
+      "You still need to register and meet mint limits ($10–$10,000) when using coupons.",
+      "One coupon application is tracked per contract rules; use only official codes.",
+      "Coupon success appears in your Profile activity when the transaction confirms.",
+      "For coupon issues, verify you are on BSC Testnet and registered in the system."
     ]
   },
   {
@@ -126,16 +126,16 @@ const PRESETS = [
   {
     q: "Is there any penalty for unstaking?",
     answers: [
-      "Unstaking before your 3x payout cap is reached is subject to a contract fee of 10% on the remaining staked amount.",
-      "Yes, early unstaking incurs a 10% fee on your principal balance, which goes back into the reward pool to sustain the ecosystem.",
-      "An early unstake fee of 10% applies if you choose to withdraw your staked principal before achieving your 300% USD return limit.",
-      "To maintain pool health, unstaking your tokens before the 3x cap completes incurs a standard 10% smart contract fee.",
-      "Unstaking early carries a 10% protocol fee. Letting the stake run to its full 3x return prevents any principal fee.",
-      "Yes, you can unstake at any time, but doing so early triggers a 10% fee which is subtracted from your unstaked tokens.",
-      "If you unstake early, a 10% fee is applied to your principal. We advise letting your stakes compound to avoid the fee.",
-      "The platform charges a 10% early unstake penalty to secure liquidity. The penalty is waived once you achieve the 300% cap.",
-      "Unstaking before the 300% return is hit deducts a 10% tax. This tax is automatically sent to the staking pool.",
-      "Early unstake transactions trigger a 10% fee. Staking until the 3x cap is reached avoids any early exit penalty."
+      "Unstake is allowed after the 365-day cycle completes. You cannot unstake principal before the cycle ends.",
+      "The plan uses a 365-day investment cycle—wait until your stake end time, then unstake from the Stake tab.",
+      "Selling BTC3.O back via Profile swap may include platform fee rules shown in the app; unstake returns staked principal after 365 days.",
+      "Claim ROI anytime during the cycle; unstaking principal is separate and time-locked for 365 days.",
+      "Check days remaining on each stake in the Staking Portal before planning an unstake.",
+      "After 365 days, unstake returns your locked tokens per contract logic.",
+      "Early exit is not supported for staked principal before the cycle—plan for the full 365-day term.",
+      "Reward cap rules apply to claims during the cycle; see Stake details for your position.",
+      "For liquidity before unstake, review Profile swap options and fee breakdown.",
+      "Always confirm network (BSC Testnet) and wallet connection before unstake transactions."
     ]
   },
   {
@@ -238,7 +238,7 @@ function Chatbot() {
             <img src="/img2.jpeg" alt="promo2" className="cb-promo-img" />
             <img src="/img3.jpeg" alt="promo3" className="cb-promo-img" />
             <div className="cb-banner-overlay-text">
-              Earn 180% APR Staking
+              AI EARN BTC3.0 · Daily ROI up to 1%
             </div>
           </div>
 

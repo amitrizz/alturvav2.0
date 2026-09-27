@@ -100,25 +100,25 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         btcToken = IBtcToken(_btcToken);
         usdtToken = IERC20(_usdtToken);
 
-        rankBonuses[0] = RankBonusConfig("Bronze", 100 * 10**18, 2, 5, 20 * 10**18);
-        rankBonuses[1] = RankBonusConfig("Silver", 500 * 10**18, 5, 15, 100 * 10**18);
-        rankBonuses[2] = RankBonusConfig("Gold", 1000 * 10**18, 10, 50, 500 * 10**18);
-        rankBonuses[3] = RankBonusConfig("Diamond", 2500 * 10**18, 15, 100, 1500 * 10**18);
-        rankBonuses[4] = RankBonusConfig("Platinum", 5000 * 10**18, 20, 250, 5000 * 10**18);
-        rankBonuses[5] = RankBonusConfig("Sapphire", 10000 * 10**18, 30, 500, 10000 * 10**18);
-        rankBonuses[6] = RankBonusConfig("Ruby", 15000 * 10**18, 40, 1000, 20000 * 10**18);
-        rankBonuses[7] = RankBonusConfig("Emerald", 25000 * 10**18, 50, 2500, 30000 * 10**18);
-        rankBonuses[8] = RankBonusConfig("Crown", 50000 * 10**18, 75, 5000, 40000 * 10**18);
-        rankBonuses[9] = RankBonusConfig("Elite Crown", 100000 * 10**18, 100, 10000, 50000 * 10**18);
+        rankBonuses[0] = RankBonusConfig("Bronze", 500 * 10**18, 3, 10, 20 * 10**18);
+        rankBonuses[1] = RankBonusConfig("Silver", 1000 * 10**18, 6, 30, 50 * 10**18);
+        rankBonuses[2] = RankBonusConfig("Gold", 1500 * 10**18, 9, 100, 100 * 10**18);
+        rankBonuses[3] = RankBonusConfig("Diamond", 2500 * 10**18, 12, 300, 250 * 10**18);
+        rankBonuses[4] = RankBonusConfig("Platinum", 4000 * 10**18, 15, 800, 500 * 10**18);
+        rankBonuses[5] = RankBonusConfig("Sapphire", 7000 * 10**18, 18, 2500, 1200 * 10**18);
+        rankBonuses[6] = RankBonusConfig("Ruby", 15000 * 10**18, 21, 7500, 2500 * 10**18);
+        rankBonuses[7] = RankBonusConfig("Emerald", 25000 * 10**18, 24, 25000, 6600 * 10**18);
+        rankBonuses[8] = RankBonusConfig("Crown", 40000 * 10**18, 27, 75000, 16500 * 10**18);
+        rankBonuses[9] = RankBonusConfig("Elite Crown", 55000 * 10**18, 30, 250000, 50000 * 10**18);
 
-        salaries[0] = SalaryConfig("Gold", 1000 * 10**18, 10, 50, 50 * 10**18);
-        salaries[1] = SalaryConfig("Diamond", 2500 * 10**18, 15, 100, 200 * 10**18);
-        salaries[2] = SalaryConfig("Platinum", 5000 * 10**18, 20, 250, 500 * 10**18);
-        salaries[3] = SalaryConfig("Sapphire", 10000 * 10**18, 30, 500, 1000 * 10**18);
-        salaries[4] = SalaryConfig("Ruby", 15000 * 10**18, 40, 1000, 2500 * 10**18);
-        salaries[5] = SalaryConfig("Emerald", 25000 * 10**18, 50, 2500, 5000 * 10**18);
-        salaries[6] = SalaryConfig("Crown", 50000 * 10**18, 75, 5000, 7500 * 10**18);
-        salaries[7] = SalaryConfig("Elite Crown", 100000 * 10**18, 100, 10000, 10000 * 10**18);
+        salaries[0] = SalaryConfig("Gold", 1500 * 10**18, 9, 100, 50 * 10**18);
+        salaries[1] = SalaryConfig("Diamond", 2500 * 10**18, 12, 300, 80 * 10**18);
+        salaries[2] = SalaryConfig("Platinum", 4000 * 10**18, 12, 300, 120 * 10**18);
+        salaries[3] = SalaryConfig("Sapphire", 7000 * 10**18, 18, 2500, 350 * 10**18);
+        salaries[4] = SalaryConfig("Ruby", 15000 * 10**18, 21, 7500, 800 * 10**18);
+        salaries[5] = SalaryConfig("Emerald", 25000 * 10**18, 21, 25000, 1100 * 10**18);
+        salaries[6] = SalaryConfig("Crown", 40000 * 10**18, 27, 75000, 4800 * 10**18);
+        salaries[7] = SalaryConfig("Elite Crown", 55000 * 10**18, 30, 250000, 10000 * 10**18);
     }
 
     function getCurrentPrice() public view returns (uint256) {
@@ -170,6 +170,10 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         totalMintedTokens += btcAmount;
         btcToken.transfer(msg.sender, btcAmount);
 
+        users[msg.sender].totalSelfStakeUSD += netUSD;
+        _updateTeamBusiness(msg.sender, netUSD);
+        _payReferralCommissionOnInvestment(msg.sender, netUSD);
+
         emit Minted(msg.sender, _usdtAmount, btcAmount, price);
     }
 
@@ -191,6 +195,10 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         totalUSDValueMinted += netUSD;
         totalMintedTokens += btcAmount;
         btcToken.transfer(msg.sender, btcAmount);
+
+        users[msg.sender].totalSelfStakeUSD += netUSD;
+        _updateTeamBusiness(msg.sender, netUSD);
+        _payReferralCommissionOnInvestment(msg.sender, netUSD);
 
         emit Minted(msg.sender, msg.value, btcAmount, price);
     }
@@ -290,21 +298,25 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         }
 
         btcToken.transfer(msg.sender, tokens);
-        _payReferralCommission(msg.sender, tokens);
 
         emit RewardClaimed(msg.sender, _index, tokens, accruedUSD);
     }
 
-    function _payReferralCommission(address _user, uint256 _rewardTokens) internal {
+    function _payReferralCommissionOnInvestment(address _user, uint256 _investmentUSD) internal {
+        if (_investmentUSD == 0) return;
+
         address current = users[_user].referrer;
+        uint256 price = getCurrentPrice();
+        if (price == 0) return;
 
         for (uint256 i = 0; i < 20; i++) {
             if (current == address(0)) break;
 
-            if (users[current].directActiveCount >= (i + 1)) {
-                uint256 comm = (_rewardTokens * levelPercents[i]) / 10000;
-                if (comm > 0) {
-                    btcToken.transfer(current, comm);
+            uint256 commUSD = (_investmentUSD * levelPercents[i]) / 10000;
+            if (commUSD > 0) {
+                uint256 tokens = (commUSD * 10**18) / price;
+                if (tokens > 0 && btcToken.balanceOf(address(this)) >= tokens) {
+                    btcToken.transfer(current, tokens);
                 }
             }
 
@@ -377,7 +389,6 @@ contract BtcStakingSystem is Ownable, ReentrancyGuard {
         (uint256 pendingTokens, ) = getPendingReward(msg.sender, _index);
         if (pendingTokens > 0) {
             btcToken.transfer(msg.sender, pendingTokens);
-            _payReferralCommission(msg.sender, pendingTokens);
         }
 
         uint256 tokensToReturn = st.amountTokens;
