@@ -10,71 +10,40 @@ export const ERC20_ABI = [
   "function transferFrom(address from, address to, uint256 value) returns (bool)"
 ];
 
-export const BTC_STAKING_SYSTEM_ABI = [
-  "event Registered(address indexed user, address indexed referrer)",
-  "event Minted(address indexed user, uint256 usdtAmount, uint256 btcAmount, uint256 currentPrice)",
-  "event Staked(address indexed user, uint256 amountTokens, uint256 amountUSD, uint256 ratePerDay, uint256 endTime)",
-  "event Sold(address indexed user, uint256 btcAmount, uint256 usdtAmount, uint256 price)",
-  "event Unstaked(address indexed user, uint256 stakeIndex, uint256 tokenReturned, uint256 feeApplied)",
-  "event RewardClaimed(address indexed user, uint256 stakeIndex, uint256 rewardTokens, uint256 rewardUSD)",
-  "event RankBonusClaimed(address indexed user, uint256 rankIndex, uint256 bonusUSD)",
-  "event MonthlySalaryClaimed(address indexed user, uint256 salaryUSD)",
-  "event CouponApplied(address indexed user, string code, uint256 rewardUSD)",
-  "event WheelSpun(address indexed user, uint8 index, uint256 rewardAmount)",
-  "function getCurrentPrice() view returns (uint256)",
-  "function getRateByAmount(uint256 usdAmount) view returns (uint256)",
-  "function getQualifiedSalaryRank(address _user) view returns (uint256)",
-  "function qualifiesForRankBonus(address _user, uint256 _rankIndex) view returns (bool)",
-  "function register(address _referrer)",
-  "function mintTokens(uint256 _usdtAmount)",
-  "function mintTokensWithBNB() payable",
-  "function stake(uint256 _btcAmount)",
-  "function userStakes(address, uint256) view returns (uint256 amountTokens, uint256 amountUSD, uint256 startTime, uint256 endTime, uint256 lastClaimTime, uint256 rewardClaimedUSD, uint256 ratePerDay, bool active)",
-  "function users(address) view returns (address referrer, uint256 directActiveCount, uint256 directReferralsCount, uint256 teamSize, uint256 totalSelfStakeUSD, uint256 totalTeamBusinessUSD, uint256 lastSalaryClaimTime, uint256 highestSalaryRank, bool registered)",
-  "function rankBonuses(uint256) view returns (string name, uint256 minSelfUSD, uint256 minDirects, uint256 minTeamSize, uint256 oneTimeBonusUSD)",
-  "function salaries(uint256) view returns (string name, uint256 minSelfUSD, uint256 minDirects, uint256 minTeamSize, uint256 monthlySalaryUSD)",
-  "function rankBonusClaimed(address, uint256) view returns (bool)",
-  "function getPendingReward(address _user, uint256 _index) view returns (uint256 rewardTokens, uint256 rewardUSD)",
-  "function claimStakingReward(uint256 _index)",
-  "function claimRankBonus(uint256 _rankIndex)",
-  "function claimMonthlySalary()",
-  "function unstake(uint256 _index)",
-  "function sellTokens(uint256 _btcAmount)",
-  "function sellTokensForBNB(uint256 _btcAmount)",
-  "function withdrawUSDT(uint256 _amount)",
-  "function withdrawBNB(uint256 _amount)",
-  "function spinWheel()",
-  "function setSpinCost(uint256 _newCost)",
-  "function levelPercents(uint256) view returns (uint256)",
-  "function spinCost() view returns (uint256)",
-  "function totalUSDValueMinted() view returns (uint256)",
-  "function totalMintedTokens() view returns (uint256)",
-  "function START_PRICE() view returns (uint256)",
-  "function PRICE_STEP_VOLUME() view returns (uint256)",
-  "function PRICE_STEP_INCREASE() view returns (uint256)",
-  "function owner() view returns (address)",
-  "function applyCoupon(string _code)"
-];
+export const ALTRUVA_CORE_ABI = [
+  "event Registered(address indexed user, address indexed referrer, uint256 globalIndex)",
+  "event PackagePurchased(address indexed user, uint256 amountUSD, bool isReinvestment)",
+  "event SingleLegDistributed(address indexed source, address indexed recipient, uint256 amountUSD, uint256 level, bool isUpline)",
+  "event LevelCommissionDistributed(address indexed source, address indexed recipient, uint256 amountUSD, uint256 level)",
+  "event BinaryMatched(address indexed user, uint256 matchedUSD, uint256 rewardUSD)",
+  "event Withdrawn(address indexed user, uint256 sentToWalletUSD, uint256 autoReinvestUSD)",
+  "event CouponClaimed(address indexed user, uint256 rewardUSD)",
+  "event LeadershipBonusClaimed(address indexed user, uint256 amountUSD)",
 
-export const ROI_TIERS = [
-  { min: 10, max: 499, rate: 0.5 },
-  { min: 500, max: 2000, rate: 0.6 },
-  { min: 2001, max: 5000, rate: 0.75 },
-  { min: 5001, max: 10000, rate: 1.0 },
-];
+  "function registerAndActivate(address _referrer, uint256 _amountUSD, uint8 _preferredLeg) external",
+  "function registerAndBuy(address _sponsor, uint256 _amountUSD, uint8 _preferredLeg) external",
+  "function upgradePackage(uint256 _amountUSD) external",
+  "function setPreferredLeg(uint8 _preferredLeg) external",
+  "function withdraw(uint256 _amountUSD) external",
+  "function scratchCoupon() external returns (uint256 prizeUSD)",
+  "function claimLeadershipBonus() external returns (uint256 amountUSD)",
 
-export const LEVEL_COMMISSIONS = [
-  8, 1, 1, 1, 1,
-  0.5, 0.5, 0.5, 0.5, 0.5,
-  0.25, 0.25, 0.25, 0.25, 0.25,
-  0.1, 0.1, 0.1, 0.1, 0.1,
-];
+  "function users(address) view returns (bool registered, uint256 globalIndex, address referrer, uint256 totalPackageUSD, uint256 selfDepositUSD, uint256 selfReinvestUSD, uint256 registrationTime, uint256 directCount, uint256 directActiveCount, uint256 leftVolume, uint256 rightVolume, uint256 matchedVolume, uint8 preferredLeg, uint256 claimableEarnings, uint256 totalWithdrawnUSD, uint256 totalEarnedUSD)",
+  "function getSingleLegOpenLevels(address _user) view returns (uint256 halfLevels, uint256 totalLevels)",
+  "function getUserOpenLevels(address _user) view returns (uint256 halfLevels, uint256 totalLevels)",
+  "function globalUsers(uint256) view returns (address)",
+  "function getUserReferrals(address _user) view returns (address[])",
+  "function userCoupons(address) view returns (uint256)",
+  "function isNexusQualified(address _user) view returns (bool)",
+  "function isLegacyCrownQualified(address _user) view returns (bool)",
 
-export const RANK_BONUS_NAMES = [
-  "Bronze", "Silver", "Gold", "Diamond", "Platinum",
-  "Sapphire", "Ruby", "Emerald", "Crown", "Elite Crown"
-];
-
-export const SALARY_RANK_NAMES = [
-  "Gold", "Diamond", "Platinum", "Sapphire", "Ruby", "Emerald", "Crown", "Elite Crown"
+  "function totalCompanyVolumeUSD() view returns (uint256)",
+  "function totalReinvestVolumeUSD() view returns (uint256)",
+  "function totalWithdrawnSystemUSD() view returns (uint256)",
+  "function totalUsersCount() view returns (uint256)",
+  "function nexusPool() view returns (uint256)",
+  "function legacyCrownPool() view returns (uint256)",
+  "function jackpotPool() view returns (uint256)",
+  "function usdtToken() view returns (address)",
+  "function owner() view returns (address)"
 ];

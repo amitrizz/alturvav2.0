@@ -1,244 +1,272 @@
-import React, { useState } from "react";
-import { Flame, Layers, Users, Trophy, Compass, BookOpen, Crown, Coins, TrendingUp, ShieldAlert, Sparkles, Database, Wallet, X } from "lucide-react";
-import { chartPathFromPoints } from "../utils/platformStats";
-import "./Dashboard.css";
+import React, { useState } from 'react';
+import { 
+  Wallet, TrendingUp, Users, Award, Gift, ArrowUpRight, Copy, Check, 
+  ExternalLink, Sparkles, RefreshCw, Layers, ShieldCheck, ChevronRight 
+} from 'lucide-react';
+import AltruvaLogo from './AltruvaLogo';
 
-function DashboardStatCard({ label, value, icon: Icon, sub }) {
-  return (
-    <div className="db-stat-card ui-gold-card">
-      <div className="db-stat-main">
-        <span className="db-stat-label">{label}</span>
-        <h3 className="db-stat-value">{value}</h3>
-        {sub ? <span className="db-stat-sub">{sub}</span> : <span className="db-stat-sub db-stat-sub--empty">&nbsp;</span>}
-      </div>
-      <div className="db-stat-icon-gold" aria-hidden="true">
-        <Icon size={22} strokeWidth={2} />
-      </div>
-    </div>
-  );
-}
-
-function Dashboard({
-  tokenSymbol,
-  currentPrice,
-  totalUSDValueMinted,
-  totalMintedTokens,
-  tokenTotalSupply,
-  stakingTokenReserve,
-  totalRewardsPaidUSD,
-  mintChartData,
-  mintVolumeGrowth,
-  btcBalance,
-  setActiveTab,
-  registeredUsersCount,
-  setRanksSubTab,
-  setProfileSubTab
+export default function Dashboard({
+  address,
+  isConnected,
+  usdtBalance,
+  userData,
+  openLevels,
+  onOpenWithdraw,
+  onBuyPackage,
+  txLoading,
+  onNavigateTab,
+  showToast
 }) {
-  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
-  const supply = parseFloat(tokenTotalSupply) || 0;
-  const reserve = parseFloat(stakingTokenReserve) || 0;
-  const chart = chartPathFromPoints(mintChartData || []);
+  const [selectedPkg, setSelectedPkg] = useState(50);
+  const [sponsorInput, setSponsorInput] = useState('');
+  const [preferredLeg, setPreferredLeg] = useState(0); // 0=Left, 1=Right, 2=Auto
+  const [copied, setCopied] = useState(false);
 
-  const formatGrowth = (value) => {
-    if (value === null || value === undefined || Number.isNaN(value)) return null;
-    const sign = value >= 0 ? "▲" : "▼";
-    const cls = value >= 0 ? "text-green" : "text-red";
-    return { label: `${sign} ${Math.abs(value).toFixed(1)}%`, cls };
+  const referralUrl = typeof window !== 'undefined' && address 
+    ? `${window.location.origin}/?ref=${address}` 
+    : 'https://altruva.live/?ref=0x000...';
+
+  const copyReferral = () => {
+    navigator.clipboard.writeText(referralUrl);
+    setCopied(true);
+    showToast('Referral link copied to clipboard!');
+    setTimeout(() => setCopied(false), 2500);
   };
 
-  const volumeGrowth = formatGrowth(mintVolumeGrowth);
-
-  const goSell = () => {
-    setProfileSubTab?.("profile");
-    setActiveTab("affiliate");
-  };
+  const isRegistered = userData && userData.registered;
 
   return (
-    <div className="db-tab-pane">
-      <section className="db-trade-panel ui-gold-card">
-        <div className="db-trade-panel-header">DEPOSIT &amp; WITHDRAWAL TOKEN</div>
-        <div className="db-trade-panel-actions">
-          <button type="button" className="ui-btn-buy" onClick={() => setActiveTab("mint")}>
-            Deposit Token
-          </button>
-          <button type="button" className="ui-btn-sell" onClick={goSell}>
-            Withdrawal Token
-          </button>
-        </div>
-      </section>
-
-      <section className="db-stats-strip">
-        <DashboardStatCard
-          label="Price"
-          value={`$${parseFloat(currentPrice).toFixed(4)}`}
-          icon={Coins}
-          sub={<span className="text-green">+0.1% per $500 minted</span>}
-        />
-        <DashboardStatCard
-          label="Total Value Minted"
-          value={`$${parseFloat(totalUSDValueMinted).toFixed(2)}`}
-          icon={TrendingUp}
-        />
-        <DashboardStatCard
-          label="Remaining Mintable"
-          value={reserve.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-          icon={ShieldAlert}
-        />
-        <DashboardStatCard
-          label="Total Minted Supply"
-          value={parseFloat(totalMintedTokens).toFixed(2)}
-          icon={Sparkles}
-        />
-        <DashboardStatCard
-          label="Max Total Supply"
-          value={supply.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          icon={Database}
-        />
-        <DashboardStatCard
-          label="Your Balance"
-          value={btcBalance}
-          icon={Wallet}
-        />
-      </section>
-
-      <div className="db-dashboard-row-split">
-        {/* Ways of Income grid panel */}
-        <div className="db-card-box ui-gold-card">
-          <h3 className="db-card-title">Ways of Income</h3>
-          <div className="db-quick-actions-grid">
-            <div className="db-action-card" onClick={() => setActiveTab("mint")}>
-              <div className="db-action-card-header">
-                <Flame size={20} className="db-gold-icon" />
-                <h4>Genesis Minting</h4>
-              </div>
-              <p>Mint {tokenSymbol} starting at $0.50. Price rises 0.1% for every $500 minted.</p>
-              <span className="db-action-link">Mint Now &rarr;</span>
-            </div>
-            <div className="db-action-card" onClick={() => setActiveTab("stake")}>
-              <div className="db-action-card-header">
-                <Layers size={20} className="db-gold-icon" />
-                <h4>Staking Portal</h4>
-              </div>
-              <p>Stake your tokens and earn daily ROI based on your investment tier.</p>
-              <span className="db-action-link">Stake Now &rarr;</span>
-            </div>
-            <div className="db-action-card" onClick={() => { setRanksSubTab("referral"); setActiveTab("ranks"); }}>
-              <div className="db-action-card-header">
-                <Users size={20} className="db-gold-icon" />
-                <h4>Referral Income</h4>
-              </div>
-              <p>Earn commissions across 20 levels when your team grows.</p>
-              <span className="db-action-link">View Levels &rarr;</span>
-            </div>
-            <div className="db-action-card" onClick={() => { setRanksSubTab("rank"); setActiveTab("ranks"); }}>
-              <div className="db-action-card-header">
-                <Trophy size={20} className="db-gold-icon" />
-                <h4>Rank &amp; Salary</h4>
-              </div>
-              <p>Unlock rank bonuses and monthly salary rewards as you grow.</p>
-              <span className="db-action-link">View Ranks &rarr;</span>
-            </div>
-            <div className="db-action-card" onClick={() => setActiveTab("wheel")}>
-              <div className="db-action-card-header">
-                <Compass size={20} className="db-gold-icon" />
-                <h4>Lucky Wheel</h4>
-              </div>
-              <p>Spin the wheel for a chance to win bonus token rewards.</p>
-              <span className="db-action-link">Spin Now &rarr;</span>
-            </div>
-            <div className="db-action-card" onClick={() => setIsGuideModalOpen(true)}>
-              <div className="db-action-card-header">
-                <BookOpen size={20} className="db-gold-icon" />
-                <h4>How It Works</h4>
-              </div>
-              <p>Step-by-step guide to minting, staking, and earning on BTC3.0.</p>
-              <span className="db-action-link">Open Guide &rarr;</span>
-            </div>
+    <div className="dashboard-wrap">
+      {/* User Identity / Global Header */}
+      <div className="user-id-bar glass-panel">
+        <div className="id-left">
+          <div className="global-badge">
+            <span className="lbl">GLOBAL SINGLE LEG ID</span>
+            <strong className="id-val cyan-gradient-text">
+              #{userData?.globalIndex || (isConnected ? '104' : '---')}
+            </strong>
+          </div>
+          <div className="user-meta">
+            <span className="addr-txt">
+              {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'Wallet Not Connected'}
+            </span>
+            <span className={`status-pill ${isRegistered ? 'active' : 'inactive'}`}>
+              {isRegistered ? '● Active Member' : '○ Fresh Account'}
+            </span>
           </div>
         </div>
 
-        <div className="db-card-box ui-gold-card">
-          <h3 className="db-card-title">Platform Overview</h3>
-          <div className="db-chart-stats-row">
-            <div className="db-chart-col">
-              <span className="db-chart-stat-label">Total Volume</span>
-              <h4 className="db-chart-stat-val">${parseFloat(totalUSDValueMinted).toFixed(2)}</h4>
-              {volumeGrowth ? (
-                <span className={`db-chart-stat-change ${volumeGrowth.cls}`}>{volumeGrowth.label}</span>
-              ) : (
-                <span className="db-chart-stat-change" style={{ opacity: 0.5 }}>On-chain</span>
-              )}
-            </div>
-            <div className="db-chart-col">
-              <span className="db-chart-stat-label">Registered Users</span>
-              <h4 className="db-chart-stat-val">{registeredUsersCount}</h4>
-              <span className="db-chart-stat-change" style={{ opacity: 0.5 }}>On-chain</span>
-            </div>
-            <div className="db-chart-col">
-              <span className="db-chart-stat-label">Rewards Paid</span>
-              <h4 className="db-chart-stat-val">${parseFloat(totalRewardsPaidUSD || 0).toFixed(2)}</h4>
-              <span className="db-chart-stat-change" style={{ opacity: 0.5 }}>On-chain</span>
-            </div>
-          </div>
-          <div className="db-mock-chart-container">
-            <svg className="db-mock-svg-line" viewBox="0 0 300 120">
-              <path d={chart.path} fill="none" stroke="var(--gold)" strokeWidth="3" />
-              {mintChartData?.length > 0 && (
-                <circle cx={chart.dotX ?? 150} cy={chart.dotY} r="5" fill="var(--gold)" />
-              )}
-            </svg>
-            <div className="db-mock-chart-labels">
-              {(chart.labels?.length ? chart.labels : [getPastDateLabel(6), getPastDateLabel(4), getPastDateLabel(2), getPastDateLabel(0)]).map((label, i) => (
-                <span key={`${label}-${i}`}>{label}</span>
-              ))}
-            </div>
+        <div className="ref-link-box">
+          <span className="ref-lbl">YOUR DIRECT SPONSOR LINK</span>
+          <div className="ref-input-group">
+            <input type="text" readOnly value={referralUrl} />
+            <button className="copy-btn" onClick={copyReferral}>
+              {copied ? <Check size={16} className="green" /> : <Copy size={16} />}
+              {copied ? 'Copied' : 'Copy'}
+            </button>
           </div>
         </div>
       </div>
 
-      <div className="db-unlock-rewards-banner ui-gold-card">
-        <div className="db-banner-left-content">
-          <div className="db-banner-icon-bg">
-            <Crown size={24} className="db-gold-icon" />
+      {/* Financials & Balances Grid */}
+      <div className="stats-grid">
+        {/* Card 1: Claimable Balance */}
+        <div className="stat-card glass-panel highlight-card">
+          <div className="stat-top">
+            <span className="stat-label">AVAILABLE USDT EARNINGS</span>
+            <span className="stat-icon cyan-glow"><Wallet size={20} /></span>
           </div>
-          <div className="db-banner-text-details">
-            <h3>Unlock Higher Rewards</h3>
-            <p>Stake more, climb the ranks, and earn exclusive bonuses.</p>
+          <div className="stat-value-row">
+            <strong className="stat-amount cyan-gradient-text">
+              ${Number(userData?.claimableEarnings || 0).toFixed(2)}
+            </strong>
+            <span className="stat-cur">USDT</span>
+          </div>
+          <div className="stat-action-row">
+            <button 
+              className="quick-withdraw-btn"
+              onClick={onOpenWithdraw}
+              disabled={Number(userData?.claimableEarnings || 0) <= 0}
+            >
+              <RefreshCw size={14} /> Withdraw & Re-Invest
+            </button>
           </div>
         </div>
-        <button type="button" className="ui-btn-gold db-banner-action-btn" onClick={() => setActiveTab("ranks")}>
-          Explore Ranks & Levels &rarr;
-        </button>
+
+        {/* Card 2: Active Package & Open Levels */}
+        <div className="stat-card glass-panel">
+          <div className="stat-top">
+            <span className="stat-label">ACTIVE PACKAGE TIER</span>
+            <span className="stat-icon gold-glow"><Layers size={20} /></span>
+          </div>
+          <div className="stat-value-row">
+            <strong className="stat-amount gold-gradient-text">
+              ${Number(userData?.totalPackageUSD || 0).toFixed(0)}
+            </strong>
+            <span className="stat-cur">USDT</span>
+          </div>
+          <div className="stat-sub-info">
+            <span>Open Single Leg Reach: <strong>{openLevels.totalLevels || 30} Levels</strong></span>
+            <small>({openLevels.halfLevels || 15} UP + {openLevels.halfLevels || 15} DOWN)</small>
+          </div>
+        </div>
+
+        {/* Card 3: Total Income */}
+        <div className="stat-card glass-panel">
+          <div className="stat-top">
+            <span className="stat-label">CUMULATIVE EARNINGS</span>
+            <span className="stat-icon gold-glow"><TrendingUp size={20} /></span>
+          </div>
+          <div className="stat-value-row">
+            <strong className="stat-amount">
+              ${Number(userData?.totalEarnedUSD || 0).toFixed(2)}
+            </strong>
+            <span className="stat-cur">USDT</span>
+          </div>
+          <div className="stat-sub-info">
+            <span>Transferred to Wallet: ${Number(userData?.totalWithdrawnUSD || 0).toFixed(2)}</span>
+            <span>Auto Re-invested: ${Number(userData?.selfReinvestUSD || 0).toFixed(2)}</span>
+          </div>
+        </div>
+
+        {/* Card 4: Team & Referrals */}
+        <div className="stat-card glass-panel">
+          <div className="stat-top">
+            <span className="stat-label">COMMUNITY TEAM</span>
+            <span className="stat-icon cyan-glow"><Users size={20} /></span>
+          </div>
+          <div className="stat-value-row">
+            <strong className="stat-amount cyan-gradient-text">
+              {userData?.directCount || 0}
+            </strong>
+            <span className="stat-cur">Directs</span>
+          </div>
+          <div className="stat-sub-info">
+            <span>Active Directs: <strong>{userData?.directActiveCount || 0}</strong></span>
+            <span>Binary Matching: <strong>${Number(userData?.matchedVolume || 0).toFixed(0)}</strong></span>
+          </div>
+        </div>
       </div>
 
-      {isGuideModalOpen && (
-        <div className="db-guide-modal-overlay" onClick={() => setIsGuideModalOpen(false)}>
-          <div className="db-guide-modal ui-gold-card" onClick={(e) => e.stopPropagation()}>
-            <button type="button" className="db-guide-close" onClick={() => setIsGuideModalOpen(false)} aria-label="Close">
-              <X size={20} />
-            </button>
-            <h3>How BTC3.0 Works</h3>
-            <ol className="db-guide-list">
-              <li><strong>Connect Wallet:</strong> Click Connect in the header (WalletConnect on mobile).</li>
-              <li><strong>Genesis Mint:</strong> Deposit {tokenSymbol} with BNB or USDT on BSC Testnet.</li>
-              <li><strong>Stake:</strong> Lock tokens in the Staking Portal for daily ROI.</li>
-              <li><strong>Refer:</strong> Share your link from Ranks → Level Income.</li>
-              <li><strong>Rank Up:</strong> Hit team targets for one-time bonuses and monthly salary.</li>
-            </ol>
-            <button type="button" className="ui-btn-gold db-guide-cta" onClick={() => setIsGuideModalOpen(false)}>
-              Got it
-            </button>
+      {/* Package Activation / Upgrade Section */}
+      <div className="activation-section glass-panel">
+        <div className="sec-header">
+          <div className="sec-title-box">
+            <AltruvaLogo size={28} />
+            <div>
+              <h3>{isRegistered ? 'Upgrade / Top-Up Active Package' : 'Activate Community Package'}</h3>
+              <p>100% USDT BEP-20 Payment. Instantly unlocks global single leg depth and scratch coupons.</p>
+            </div>
+          </div>
+          <div className="wallet-bal-pill">
+            <span>Wallet USDT:</span> <strong>${Number(usdtBalance || 0).toFixed(2)}</strong>
           </div>
         </div>
-      )}
+
+        {/* Preset Packages */}
+        <div className="preset-pkgs-grid">
+          {[
+            { val: 25, tier: 'TIER 1', levels: '20 Levels (10 Up + 10 Down)', perks: '1% from 20 global single leg members' },
+            { val: 50, tier: 'TIER 2 (POPULAR)', levels: '30 Levels (15 Up + 15 Down)', perks: '30 Levels + 1 Scratch Coupon + Nexus Rank Eligibility' },
+            { val: 100, tier: 'TIER 3 (ELITE)', levels: '40 Levels (20 Up + 20 Down)', perks: 'Max 40 Levels + 2 Scratch Coupons + Legacy Crown Rank' },
+            { val: 500, tier: 'LEADER $500', levels: '40 Levels + 2 Coupons', perks: 'Maximum Single Leg & High Volume Team Matching' },
+            { val: 1000, tier: 'VIP $1,000', levels: '40 Levels + 2 Coupons', perks: 'VIP Leadership Pool & Accelerated Binary Growth' }
+          ].map(pkg => (
+            <div 
+              key={pkg.val}
+              className={`preset-pkg-card glass-panel ${selectedPkg === pkg.val ? 'selected' : ''}`}
+              onClick={() => setSelectedPkg(pkg.val)}
+            >
+              <div className="pkg-card-top">
+                <span className="p-tag">{pkg.tier}</span>
+                <span className="p-price gold-gradient-text">${pkg.val} USDT</span>
+              </div>
+              <strong className="p-levels">{pkg.levels}</strong>
+              <small className="p-perks">{pkg.perks}</small>
+            </div>
+          ))}
+        </div>
+
+        {/* Form controls (Sponsor & Preferred Leg) */}
+        {!isRegistered && (
+          <div className="reg-inputs-row">
+            <div className="input-group">
+              <label>Direct Sponsor / Referral Address:</label>
+              <input 
+                type="text" 
+                placeholder="0x... (Defaults to Root Sponsor if empty)"
+                value={sponsorInput}
+                onChange={e => setSponsorInput(e.target.value)}
+              />
+            </div>
+            <div className="input-group">
+              <label>Binary Placement Leg:</label>
+              <select value={preferredLeg} onChange={e => setPreferredLeg(Number(e.target.value))}>
+                <option value={0}>Left Team</option>
+                <option value={1}>Right Team</option>
+                <option value={2}>Auto-Balance (Recommended)</option>
+              </select>
+            </div>
+          </div>
+        )}
+
+        {/* Buy / Activate Button */}
+        <div className="activation-submit-row">
+          <button 
+            className="activate-btn"
+            onClick={() => onBuyPackage(selectedPkg, sponsorInput, preferredLeg)}
+            disabled={txLoading || selectedPkg < 25}
+          >
+            {txLoading ? (
+              <>Approving & Activating ${selectedPkg} USDT...</>
+            ) : (
+              <>
+                <ShieldCheck size={18} /> 
+                {isRegistered ? `Upgrade with $${selectedPkg} USDT` : `Activate Package for $${selectedPkg} USDT`}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* 5 Streams Quick Jump Section */}
+      <div className="streams-navigation-grid">
+        <div className="stream-nav-box glass-panel" onClick={() => onNavigateTab('singleLeg')}>
+          <div className="sn-top">
+            <span className="sn-badge">STREAM 1 (40%)</span>
+            <ChevronRight size={16} />
+          </div>
+          <h4>Global Single Leg</h4>
+          <p>40 levels chronological timeline. Earn 1% from uplines & downlines.</p>
+        </div>
+
+        <div className="stream-nav-box glass-panel" onClick={() => onNavigateTab('binary')}>
+          <div className="sn-top">
+            <span className="sn-badge gold">STREAM 2 & 3 (50%)</span>
+            <ChevronRight size={16} />
+          </div>
+          <h4>Binary & 9 Levels</h4>
+          <p>50:50 Team Performance matching + 9 working unilevel levels.</p>
+        </div>
+
+        <div className="stream-nav-box glass-panel" onClick={() => onNavigateTab('leadership')}>
+          <div className="sn-top">
+            <span className="sn-badge">STREAM 4 (5%)</span>
+            <ChevronRight size={16} />
+          </div>
+          <h4>Leadership Ranks</h4>
+          <p>Nexus (3%) & Legacy Crown (2%) daily pools with 50/50 carry forward.</p>
+        </div>
+
+        <div className="stream-nav-box glass-panel" onClick={() => onNavigateTab('scratch')}>
+          <div className="sn-top">
+            <span className="sn-badge gold">STREAM 5 (5%)</span>
+            <ChevronRight size={16} />
+          </div>
+          <h4>Scratch & Win</h4>
+          <p>Instant scratch cards & 250 winner jackpot pool ($1,000 top prize).</p>
+        </div>
+      </div>
     </div>
   );
 }
-
-function getPastDateLabel(daysAgo) {
-  const d = new Date();
-  d.setDate(d.getDate() - daysAgo);
-  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-export default Dashboard;

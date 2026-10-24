@@ -58,8 +58,8 @@ ReactDOM.createRoot(document.getElementById('root')).render(
             initialChain={bscTestnet}
             modalSize="compact"
             appInfo={{
-              appName: 'BTC3.O DEX',
-              learnMoreUrl: 'https://kchain.vercel.app',
+              appName: 'Altruva',
+              learnMoreUrl: 'https://altruva.live',
             }}
           >
             <App />

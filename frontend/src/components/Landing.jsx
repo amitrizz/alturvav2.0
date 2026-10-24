@@ -1,267 +1,226 @@
-import React, { useLayoutEffect } from "react";
-import { Shield, TrendingUp, Users, BarChart3, Zap, Lock, ArrowRight, Coins } from "lucide-react";
-import { ROI_TIERS } from "../abis";
-import { PLAN_RANK_BONUSES, PLAN_MONTHLY_SALARIES, TOKENOMICS_PUBLIC_PERCENT } from "../planConfig";
-import InstallApp from "./InstallApp";
-import "./Landing.css";
+import React from 'react';
+import { 
+  Shield, Users, TrendingUp, Award, Gift, ArrowRight, Zap, RefreshCw, 
+  CheckCircle2, Sparkles, BookOpen, Layers, Lock, Play 
+} from 'lucide-react';
+import AltruvaLogo from './AltruvaLogo';
 
-const STEPS = [
-  { icon: Users, label: "Register" },
-  { icon: Coins, label: "Activate Investment" },
-  { icon: TrendingUp, label: "Refer & Earn" },
-  { icon: BarChart3, label: "Track your Progress" },
-];
-
-const FEATURES = [
-  { icon: Shield, label: "Secure & Trusted" },
-  { icon: TrendingUp, label: "Daily High Returns" },
-  { icon: Zap, label: "Instant Withdrawal" },
-  { icon: Users, label: "Multiple Income" },
-  { icon: Lock, label: "Transparent System" },
-  { icon: BarChart3, label: "Long Term Growth" },
-];
-
-function Landing({ onEnterApp }) {
-  useLayoutEffect(() => {
-    document.body.classList.add("landing-page");
-    document.documentElement.classList.add("landing-page");
-    return () => {
-      document.body.classList.remove("landing-page");
-      document.documentElement.classList.remove("landing-page");
-    };
-  }, []);
-
+export default function Landing({ onLaunchApp, onOpenPresentation }) {
   return (
-    <div className="landing-page-shell">
-    <div className="landing-root">
-      {/* Mobile + desktop top bar */}
-      <nav className="landing-nav">
-        <div className="landing-nav-inner">
-          <div className="landing-nav-brand">
-            <img src="/logo.png" alt="BTC3.0" className="landing-nav-logo" />
-            <span>BTC3.0</span>
+    <div className="landing-wrap">
+      {/* Hero Section */}
+      <section className="hero-banner glass-panel">
+        <div className="hero-glow-sphere"></div>
+        <div className="hero-badge">
+          <span className="live-dot"></span> PURE USDT PROTOCOL · 100% NON-CUSTODIAL
+        </div>
+
+        <div className="hero-logo-box">
+          <AltruvaLogo size={90} />
+        </div>
+
+        <h1 className="hero-headline">
+          ALTRUVA <span className="gold-gradient-text">COMMUNITY</span>
+        </h1>
+        <div className="hero-subline cyan-gradient-text">
+          100% COMMUNITY DISTRIBUTION MODEL
+        </div>
+
+        <p className="hero-description">
+          A decentralized, mathematical ecosystem designed around participation, contribution, performance and shared progress. Every dollar is 100% distributed across 5 transparent on-chain streams.
+        </p>
+
+        <div className="hero-btn-row">
+          <button className="cta-launch-btn" onClick={onLaunchApp}>
+            Launch DApp <ArrowRight size={18} />
+          </button>
+          <button className="cta-pres-btn" onClick={onOpenPresentation}>
+            <BookOpen size={18} /> View 17-Slide Presentation
+          </button>
+        </div>
+
+        {/* 4 Pillars Bar */}
+        <div className="pillars-row">
+          <div className="pillar-item">
+            <span className="p-title cyan">COMMUNITY</span>
+            <span className="p-sub">People Powered</span>
           </div>
-          <div className="landing-nav-actions">
-            <InstallApp variant="button" />
-            <button type="button" className="landing-nav-btn" onClick={onEnterApp}>
-              Launch App
-            </button>
+          <div className="pillar-div">/</div>
+          <div className="pillar-item">
+            <span className="p-title gold">CONTRIBUTION</span>
+            <span className="p-sub">Value Through Action</span>
+          </div>
+          <div className="pillar-div">/</div>
+          <div className="pillar-item">
+            <span className="p-title cyan">TRANSPARENCY</span>
+            <span className="p-sub">Clear & Open Code</span>
+          </div>
+          <div className="pillar-div">/</div>
+          <div className="pillar-item">
+            <span className="p-title gold">PROGRESS</span>
+            <span className="p-sub">Shared Long-Term</span>
           </div>
         </div>
-      </nav>
+      </section>
 
-      <div className="landing-install-wrap">
-        <InstallApp variant="banner" />
-      </div>
+      {/* Why Altruva vs Conventional Projects */}
+      <section className="why-altruva-section">
+        <div className="section-title-wrap">
+          <span className="section-pill">Why Altruva?</span>
+          <h2>A Mathematically Sustainable Ecosystem</h2>
+          <p>No proprietary token manipulation, no inflationary printing, no false promises.</p>
+        </div>
 
-      <header className="landing-hero">
-        <div className="landing-hero-content">
-          <div className="landing-hero-text">
-            <span className="landing-badge">BEP20 · BSC Network</span>
-            <h1>
-              AI EARN <span className="gold">BTC3.0</span>
-              <span className="landing-title-break">PLAN</span>
-            </h1>
-            <p className="landing-tagline">Smart Investment · Smart Earning · Secure Future</p>
-            <div className="landing-hero-cta-group">
-              <button type="button" className="landing-cta" onClick={onEnterApp}>
-                START YOUR JOURNEY NOW <ArrowRight size={18} />
-              </button>
-              <p className="landing-sub-cta">Join the BTC3.0 Community</p>
-            </div>
+        <div className="why-grid">
+          <div className="why-card glass-panel">
+            <div className="why-icon red-glow">🚫</div>
+            <h3>No Fixed ROI</h3>
+            <p>We do not guarantee artificial daily percentages that mathematically deplete liquidity reserves.</p>
           </div>
-          <div className="landing-hero-visual" aria-hidden="true">
-            <div className="landing-coin-ring">
-              <img
-                src="/btctheme.png"
-                alt="BTC3.0"
-                className="landing-coin landing-coin-img"
-              />
-            </div>
+          <div className="why-card glass-panel">
+            <div className="why-icon red-glow">📜</div>
+            <h3>No False Promises</h3>
+            <p>100% decentralized smart contract distribution on BNB Smart Chain. No admin backdoors or token mints.</p>
+          </div>
+          <div className="why-card glass-panel highlight-border">
+            <div className="why-icon cyan-glow">⚡</div>
+            <h3>Pure USDT (BEP-20)</h3>
+            <p>Deposits, package activations, single-leg dividends, binary matches, and withdrawals are purely in USDT.</p>
           </div>
         </div>
-      </header>
-
-      <section className="landing-section">
-        <h2>Investment Details</h2>
-        <div className="landing-info-grid">
-          <div className="landing-info-card"><span>Minimum</span><strong>$10 USDT</strong></div>
-          <div className="landing-info-card"><span>Maximum</span><strong>$10,000 USDT</strong></div>
-          <div className="landing-info-card"><span>Cycle</span><strong>365 Days</strong></div>
-          <div className="landing-info-card"><span>Network</span><strong>BEP20</strong></div>
-        </div>
       </section>
 
-      <section className="landing-section">
-        <h2>Daily Affiliate Reward Package</h2>
-        <div className="landing-table-wrap">
-          <table className="landing-table">
-            <thead>
-              <tr><th>Investment (USD)</th><th>Daily ROI</th></tr>
-            </thead>
-            <tbody>
-              {ROI_TIERS.map((t) => (
-                <tr key={t.min}>
-                  <td>${t.min.toLocaleString()} – ${t.max.toLocaleString()}</td>
-                  <td className="gold">{t.rate}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* 5 Types of Income Streams */}
+      <section className="incomes-overview-section">
+        <div className="section-title-wrap">
+          <span className="section-pill">100% Distribution</span>
+          <h2>5 Dynamic Income Streams</h2>
+          <p>100% of every incoming package and withdrawal re-investment is shared across 5 distinct pools:</p>
         </div>
-        <div className="landing-mobile-cards landing-mobile-only">
-          {ROI_TIERS.map((t) => (
-            <div key={t.min} className="landing-mobile-card">
-              <span className="landing-mobile-card-label">Investment</span>
-              <strong>${t.min.toLocaleString()} – ${t.max.toLocaleString()}</strong>
-              <span className="landing-mobile-card-value gold">{t.rate}% daily</span>
+
+        <div className="incomes-showcase-grid">
+          <div className="inc-showcase-card glass-panel">
+            <div className="inc-top">
+              <span className="inc-num">01</span>
+              <span className="inc-share cyan-gradient-text">40%</span>
             </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="landing-section landing-tokenomics">
-        <h2>Tokenization — For Public {TOKENOMICS_PUBLIC_PERCENT}%</h2>
-        <div className="landing-tokenomics-grid">
-          <div className="landing-donut">
-            <div className="donut-center">{TOKENOMICS_PUBLIC_PERCENT}%<br />Public</div>
+            <h3>Community Participation</h3>
+            <p>Global Single Leg Autofill. Earn 1% from each member across up to 40 levels (20 Upline + 20 Downline) on new activations & re-investments.</p>
           </div>
-          <ul className="landing-token-list">
-            <li><span className="dot dot-60" /> 60% Public Minting (community mint & own)</li>
-            <li><span className="dot dot-25" /> 25% Liquidity / Rewards Pool</li>
-            <li><span className="dot dot-5" /> 5% Marketing</li>
-            <li><span className="dot dot-5b" /> 5% Development</li>
-            <li><span className="dot dot-25b" /> 2.5% Team</li>
-            <li><span className="dot dot-25c" /> 2.5% Reserve</li>
-          </ul>
-        </div>
-      </section>
 
-      <section className="landing-section">
-        <h2>Level Income (20 Levels)</h2>
-        <div className="landing-levels-grid">
-          <div className="landing-level-group"><strong>Level 1</strong><span>8%</span></div>
-          <div className="landing-level-group"><strong>Levels 2–5</strong><span>1.0% each</span></div>
-          <div className="landing-level-group"><strong>Levels 6–10</strong><span>0.50% each</span></div>
-          <div className="landing-level-group"><strong>Levels 11–15</strong><span>0.25% each</span></div>
-          <div className="landing-level-group"><strong>Levels 16–20</strong><span>0.10% each</span></div>
-        </div>
-      </section>
-
-      <section className="landing-section">
-        <h2>Rank Bonus</h2>
-        <div className="landing-table-wrap landing-desktop-only">
-          <table className="landing-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Self BTC3.0</th>
-                <th>Direct</th>
-                <th>Team Size</th>
-                <th>Reward (USDT)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PLAN_RANK_BONUSES.map((r) => (
-                <tr key={r.rank}>
-                  <td>{r.rank}</td>
-                  <td>${r.selfUsd.toLocaleString()}</td>
-                  <td>{r.directs}</td>
-                  <td>{r.team.toLocaleString()}</td>
-                  <td className="gold">${r.bonusUsd.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="landing-mobile-cards landing-mobile-only">
-          {PLAN_RANK_BONUSES.map((r) => (
-            <div key={r.rank} className="landing-mobile-card">
-              <strong>{r.rank}</strong>
-              <span>Self ${r.selfUsd} · {r.directs} directs · team {r.team}</span>
-              <span className="landing-mobile-card-value gold">${r.bonusUsd} USDT</span>
+          <div className="inc-showcase-card glass-panel">
+            <div className="inc-top">
+              <span className="inc-num">02</span>
+              <span className="inc-share gold-gradient-text">25%</span>
             </div>
-          ))}
-        </div>
-      </section>
+            <h3>Team Performance</h3>
+            <p>50:50 Binary Structure matching Left & Right volume. Earn matching bonus PR units calculated daily.</p>
+          </div>
 
-      <section className="landing-section">
-        <h2>Salary Bonus (Monthly)</h2>
-        <div className="landing-table-wrap landing-desktop-only">
-          <table className="landing-table">
-            <thead>
-              <tr>
-                <th>Rank</th>
-                <th>BTC3.0</th>
-                <th>Direct</th>
-                <th>Team Size</th>
-                <th>Salary (USDT)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {PLAN_MONTHLY_SALARIES.map((r) => (
-                <tr key={r.rank}>
-                  <td>{r.rank}</td>
-                  <td>${r.selfUsd.toLocaleString()}</td>
-                  <td>{r.directs}</td>
-                  <td>{r.team.toLocaleString()}</td>
-                  <td className="gold">${r.salaryUsd.toLocaleString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="landing-mobile-cards landing-mobile-only">
-          {PLAN_MONTHLY_SALARIES.map((r) => (
-            <div key={r.rank} className="landing-mobile-card landing-mobile-card-row">
-              <strong>{r.rank}</strong>
-              <span className="gold">${r.salaryUsd}/mo</span>
+          <div className="inc-showcase-card glass-panel">
+            <div className="inc-top">
+              <span className="inc-num">03</span>
+              <span className="inc-share cyan-gradient-text">25%</span>
             </div>
-          ))}
-        </div>
-      </section>
+            <h3>Contribution Level Income</h3>
+            <p>9 Working Unilevel levels: L1 (10%), L2 (4%), L3-L6 (2% each), L7-L9 (1% each) unlocked with direct sponsorships.</p>
+          </div>
 
-      <section className="landing-section landing-section-steps">
-        <h2>How to Start</h2>
-        <div className="landing-steps">
-          {STEPS.map((step, i) => (
-            <React.Fragment key={step.label}>
-              <div className="landing-step">
-                <div className="landing-step-num">{i + 1}</div>
-                <step.icon size={24} />
-                <span>{step.label}</span>
-              </div>
-              {i < STEPS.length - 1 && <div className="landing-step-arrow" aria-hidden="true" />}
-            </React.Fragment>
-          ))}
-        </div>
-        <button type="button" className="landing-cta landing-cta-center" onClick={onEnterApp}>
-          CREATE ACCOUNT / ENROLL NOW <ArrowRight size={18} />
-        </button>
-      </section>
-
-      <footer className="landing-footer">
-        <div className="landing-features">
-          {FEATURES.map((f) => (
-            <div key={f.label}>
-              <f.icon size={20} />
-              {f.label}
+          <div className="inc-showcase-card glass-panel">
+            <div className="inc-top">
+              <span className="inc-num">04</span>
+              <span className="inc-share gold-gradient-text">5%</span>
             </div>
-          ))}
+            <h3>Leadership Achievement</h3>
+            <p>Daily rank pools: Nexus (3%) & Legacy Crown (2%) with 50% paid daily, 50% carry forward, and 5x income exit cap.</p>
+          </div>
+
+          <div className="inc-showcase-card glass-panel">
+            <div className="inc-top">
+              <span className="inc-num">05</span>
+              <span className="inc-share cyan-gradient-text">5%</span>
+            </div>
+            <h3>Community Reward & Jackpot</h3>
+            <p>Scratch & Win coupons with 250 lucky winners from 70% of pool ($1,000 top prize) and 30% carry forward.</p>
+          </div>
         </div>
-        <p className="landing-copy">BTC3.0 — GROW TOGETHER, EARN TOGETHER · © 2026 AI EARN BTC3.0 Plan</p>
-      </footer>
+      </section>
 
-    </div>
+      {/* Participation Packages Banner */}
+      <section className="packages-overview-section glass-panel">
+        <div className="section-title-wrap">
+          <span className="section-pill">Participation Packages</span>
+          <h2>Unlock Global Single Leg Depth</h2>
+          <p>Choose your entry package to activate your upline and downline earning levels:</p>
+        </div>
 
-    {/* Bottom bar outside scroll area — avoids iOS fixed-in-scroll bugs */}
-    <div className="landing-mobile-sticky-cta">
-      <button type="button" className="landing-cta landing-cta-full" onClick={onEnterApp}>
-        Launch DApp <ArrowRight size={18} />
-      </button>
-    </div>
+        <div className="pkg-tiers-grid">
+          <div className="tier-box glass-panel">
+            <div className="tier-header">TIER 1</div>
+            <div className="tier-price gold-gradient-text">$25 – $49</div>
+            <div className="tier-spec">10 UP + 10 DOWN = <strong>20 Levels</strong></div>
+            <p>1% from 20 global single leg members on activations & re-invests.</p>
+            <button className="tier-act-btn" onClick={onLaunchApp}>Activate Tier 1</button>
+          </div>
+
+          <div className="tier-box glass-panel popular-glow">
+            <div className="popular-badge">RECOMMENDED</div>
+            <div className="tier-header">TIER 2</div>
+            <div className="tier-price gold-gradient-text">$50 – $99</div>
+            <div className="tier-spec">15 UP + 15 DOWN = <strong>30 Levels</strong></div>
+            <p>1% from 30 levels + 1 Scratch Coupon + Nexus rank qualification.</p>
+            <button className="tier-act-btn featured" onClick={onLaunchApp}>Activate Tier 2</button>
+          </div>
+
+          <div className="tier-box glass-panel">
+            <div className="tier-header">TIER 3</div>
+            <div className="tier-price gold-gradient-text">$100 & Above</div>
+            <div className="tier-spec">20 UP + 20 DOWN = <strong>40 Levels</strong></div>
+            <p>Maximum 40 levels reach + 2 Scratch Coupons + Legacy Crown rank.</p>
+            <button className="tier-act-btn" onClick={onLaunchApp}>Activate Tier 3</button>
+          </div>
+        </div>
+      </section>
+
+      {/* The X-Factor Reinvestment Engine */}
+      <section className="xfactor-showcase-section glass-panel">
+        <div className="xfactor-badge-pill">
+          <RefreshCw size={14} /> THE X-FACTOR OF ALTRUVA
+        </div>
+        <h2>Withdrawal & Auto Re-Investment Plan</h2>
+        <p className="xfactor-text">
+          Whenever you click <strong>Withdraw</strong>, a predefined percentage goes immediately to your wallet in USDT, and the remainder auto-reinvests back into the 5 income pools to pay your uplines and downlines continuously!
+        </p>
+
+        <div className="xfactor-split-table">
+          <div className="x-row x-header">
+            <div>PACKAGE RANGE</div>
+            <div>WITHDRAWAL (TO YOUR WALLET)</div>
+            <div>AUTO RE-INVESTMENT</div>
+          </div>
+          <div className="x-row">
+            <div>$25 – $5,000</div>
+            <div className="green-txt">50%</div>
+            <div className="cyan-txt">50%</div>
+          </div>
+          <div className="x-row popular-row">
+            <div>$5,001 – $29,999</div>
+            <div className="green-txt">60%</div>
+            <div className="cyan-txt">40%</div>
+          </div>
+          <div className="x-row">
+            <div>$30,000 & Above</div>
+            <div className="green-txt">70%</div>
+            <div className="cyan-txt">30%</div>
+          </div>
+        </div>
+
+        <div className="xfactor-bottom-cta">
+          <button className="cta-launch-btn" onClick={onLaunchApp}>
+            Join Altruva DApp Today <ArrowRight size={18} />
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
-
-export default Landing;

@@ -1,1597 +1,746 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
-import { ethers } from "ethers";
+import React, { useState, useEffect } from 'react';
+import { ethers } from 'ethers';
+import { useAccount, useWalletClient, useSwitchChain } from 'wagmi';
+import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { 
-  Shield, Layers, Coins, Plus, ArrowUpRight, Flame, Trophy, Users, 
-  ExternalLink, Loader2, Copy, Check, ChevronRight, Info, AlertCircle, 
-  Compass, LayoutDashboard, HelpCircle, Moon, Sun, Bell, ArrowRight, BookOpen, Crown, Clock, LogOut
-} from "lucide-react";
-import { ERC20_ABI, BTC_STAKING_SYSTEM_ABI, RANK_BONUS_NAMES, LEVEL_COMMISSIONS } from "./abis";
-import Landing from "./components/Landing";
-import { parseTxError, validateMintAmount, getMintUsdValue, BNB_PRICE_USD } from "./utils/parseTxError";
-import {
-  queryEventsWithFallback,
-  buildMintVolumeChart,
-  sumRewardsPaidUSD,
-  computeGrowthPercent,
-  buildBondingCurveTiers,
-  buildUserTransactionHistory,
-  appendLocalTransaction,
-  readLocalTransactionHistory,
-  mergeTransactionHistories,
-  importHistoryFromTxHash,
-} from "./utils/platformStats";
-import addresses from "./addresses.json";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useAccount, useWalletClient, useSwitchChain } from "wagmi";
-import "./App.css?v=3";
-import Dashboard from "./components/Dashboard";
-import GenesisMint from "./components/GenesisMint";
-import StakingPortal from "./components/StakingPortal";
-import Affiliates from "./components/Affiliates";
-import RanksAndLevels from "./components/RanksAndLevels";
-import LuckyWheel from "./components/LuckyWheel";
-import Shimmer from "./components/Shimmer";
-import Chatbot from "./components/Chatbot";
-import InstallApp from "./components/InstallApp";
-import {
-  isMobileDevice,
-  isInAppBrowser,
-  isWalletInAppBrowser,
-  isMetaMaskBrowser,
-  isTrustWalletBrowser,
-  hasInjectedProvider,
-  needsHttpsForWallets,
-} from "./utils/mobile";
-import { isWalletConnectConfigured } from "./wagmiConfig";
-import { getReadProvider } from "./utils/readProvider";
+  LayoutDashboard, Users, GitBranch, Award, Gift, ArrowUpRight, 
+  ExternalLink, Loader2, Sparkles, AlertCircle, RefreshCw, Layers, 
+  BookOpen, Menu, X, Wallet, ShieldCheck, Lock, AlertTriangle 
+} from 'lucide-react';
 
-const tokenSymbol = "BTC3.O";
-const tokenName = "BTC3.O";
+import { ERC20_ABI, ALTRUVA_CORE_ABI } from './abis';
+import addresses from './addresses.json';
 
-const rankNames = RANK_BONUS_NAMES;
-const REFERRAL_KEY = import.meta.env.VITE_REFERRAL_KEY || "btc3dexSecretKey123";
+import AltruvaLogo from './components/AltruvaLogo';
+import PresentationModal from './components/PresentationModal';
+import UserManual from './components/UserManual';
+import Dashboard from './components/Dashboard';
+import GlobalSingleLeg from './components/GlobalSingleLeg';
+import BinaryAndLevels from './components/BinaryAndLevels';
+import LeadershipPool from './components/LeadershipPool';
+import ScratchCard from './components/ScratchCard';
+import WithdrawModal from './components/WithdrawModal';
 
-function encryptAddress(address) {
-  if (!address || !ethers.isAddress(address)) return "";
-  let result = "";
-  const addr = address.toLowerCase();
-  for (let i = 0; i < addr.length; i++) {
-    const charCode = addr.charCodeAt(i) ^ REFERRAL_KEY.charCodeAt(i % REFERRAL_KEY.length);
-    result += String.fromCharCode(charCode);
-  }
-  return btoa(result).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
-}
+import './App.css';
 
-function decryptAddress(str) {
-  if (!str) return ethers.ZeroAddress;
-  try {
-    const decoded = atob(str.replace(/-/g, "+").replace(/_/g, "/"));
-    let result = "";
-    for (let i = 0; i < decoded.length; i++) {
-      const charCode = decoded.charCodeAt(i) ^ REFERRAL_KEY.charCodeAt(i % REFERRAL_KEY.length);
-      result += String.fromCharCode(charCode);
-    }
-    return ethers.getAddress(result);
-  } catch (err) {
-    return ethers.ZeroAddress;
-  }
-}
-
-function App() {
-  const { address, isConnected } = useAccount();
+export default function App() {
+  const { address, isConnected, chainId } = useAccount();
   const { data: walletClient } = useWalletClient();
-  const { switchChainAsync } = useSwitchChain();
+  const { switchChain } = useSwitchChain();
 
-  // Connection State
-  const [provider, setProvider] = useState(null);
-  const [signer, setSigner] = useState(null);
-  const [account, setAccount] = useState("");
-  const [network, setNetwork] = useState("");
-  const [isWrongNetwork, setIsWrongNetwork] = useState(false);
-
-  // Tab State
-  const [activeTab, setActiveTab] = useState("dashboard"); // "dashboard", "mint", "stake", "affiliate", "ranks", "wheel"
-  const [ranksSubTab, setRanksSubTab] = useState("rank"); // "rank" or "referral"
-  const [profileSubTab, setProfileSubTab] = useState("profile"); // "profile" or "guide"
-  
-  // Balances & Data
-  const [bnbBalance, setBnbBalance] = useState("0.0");
-  const [usdtBalance, setUsdtBalance] = useState("0.0");
-  const [btcBalance, setBtcBalance] = useState("0.0");
-  const [usdtApproved, setUsdtApproved] = useState(false);
-  const [btcApproved, setBtcApproved] = useState(false);
-
-  // System Stats
-  const [currentPrice, setCurrentPrice] = useState("0.5");
-  const [totalUSDValueMinted, setTotalUSDValueMinted] = useState("0");
-  const [totalMintedTokens, setTotalMintedTokens] = useState("0");
-  const [registeredUsersCount, setRegisteredUsersCount] = useState(0);
-  const [tokenTotalSupply, setTokenTotalSupply] = useState("0");
-  const [stakingTokenReserve, setStakingTokenReserve] = useState("0");
-  const [totalRewardsPaidUSD, setTotalRewardsPaidUSD] = useState("0");
-  const [mintChartData, setMintChartData] = useState([]);
-  const [mintVolumeGrowth, setMintVolumeGrowth] = useState(null);
-  const [bondingCurveInfo, setBondingCurveInfo] = useState({
-    startPrice: "0.5",
-    stepVolume: "500",
-    stepIncrease: "0.0005",
-    tiers: [],
-    currentStep: 0,
-    bandProgress: 0,
-  });
-
-  // Mint Input
-  const [mintUsdtAmount, setMintUsdtAmount] = useState("");
-  const [estimatedBtcToMint, setEstimatedBtcToMint] = useState("0.0");
-
-  // Staking Input
-  const [stakeBtcAmount, setStakeBtcAmount] = useState("");
-  const [couponInput, setCouponInput] = useState("");
-  const [route, setRoute] = useState(window.location.hash === "#/app" ? "app" : "landing");
-
-  // Compounding Calculator State & Logic
-  const [calcAmount, setCalcAmount] = useState("1000");
-  const [calcYears, setCalcYears] = useState(1);
-  const [calcYield, setCalcYield] = useState(0.005);
-
-  const getCompoundedValue = () => {
-    const p = parseFloat(calcAmount) || 0;
-    const r = parseFloat(calcYield);
-    const n = calcYears * 365;
-    const futureValue = p * Math.pow(1 + r, n);
-    return {
-      future: futureValue.toFixed(2),
-      yield: (futureValue - p).toFixed(2),
-    };
-  };
-  const compoundingResults = getCompoundedValue();
-
-  // User Stats
-  const [userInfo, setUserInfo] = useState({
-    referrer: ethers.ZeroAddress,
-    directActiveCount: 0,
-    directReferralsCount: 0,
-    teamSize: 0,
-    totalSelfStakeUSD: "0.0",
-    totalTeamBusinessUSD: "0.0",
-    lastSalaryClaimTime: 0,
-    highestSalaryRank: -1,
-    registered: false,
-    indirectReferralsCount: 0
-  });
-  const [rankBonusStatus, setRankBonusStatus] = useState([]);
-  const [qualifiedSalaryRank, setQualifiedSalaryRank] = useState(-1);
-  const [referrerInput, setReferrerInput] = useState("");
-  const [userStakesList, setUserStakesList] = useState([]);
-  const [transactionHistory, setTransactionHistory] = useState([]);
-  const [historyImportLoading, setHistoryImportLoading] = useState(false);
-  const activeTabRef = useRef(activeTab);
-  const lastPlatformChartsAtRef = useRef(0);
-
-  useEffect(() => {
-    activeTabRef.current = activeTab;
-  }, [activeTab]);
-  const [copiedLink, setCopiedLink] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [sellBtcAmount, setSellBtcAmount] = useState("");
-  const [estimatedUsdtFromSell, setEstimatedUsdtFromSell] = useState("0.0");
-  const [adminWithdrawAmount, setAdminWithdrawAmount] = useState("");
-  const [mintMethod, setMintMethod] = useState("USDT"); // "USDT" or "BNB"
-  const [sellMethod, setSellMethod] = useState("USDT"); // "USDT" or "BNB"
-  const [spinCost, setSpinCostValue] = useState("10");
-  const [isSpinning, setIsSpinning] = useState(false);
-  const [wheelPrize, setWheelPrize] = useState(null);
-  const [rotation, setRotation] = useState(0);
-  const canvasRef = useRef(null);
-  const [newSpinCostInput, setNewSpinCostInput] = useState("");
-  const [isCalcOpen, setIsCalcOpen] = useState(false);
-  const [contractMismatch, setContractMismatch] = useState(false);
-
-  const networkLabel = "BNB Smart Chain (BSC Testnet)";
-
-  useEffect(() => {
-    const onHashChange = () => setRoute(window.location.hash === "#/app" ? "app" : "landing");
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
-
-  useLayoutEffect(() => {
-    const isApp = route === "app";
-    document.documentElement.classList.toggle("app-route", isApp);
-    document.body.classList.toggle("app-route", isApp);
-    if (isApp) {
-      document.documentElement.classList.remove("landing-page");
-      document.body.classList.remove("landing-page");
-    }
-    return () => {
-      document.documentElement.classList.remove("app-route");
-      document.body.classList.remove("app-route");
-    };
-  }, [route]);
-
-  const prizes = [
-    { name: "Try Again", color: "#1e293b", reward: `0 ${tokenSymbol}` },
-    { name: "Double Match", color: "#b45309", reward: `${(parseFloat(spinCost) * 0.5).toFixed(1)} ${tokenSymbol}` },
-    { name: "Triple Match", color: "#1d4ed8", reward: `${(parseFloat(spinCost) * 1.5).toFixed(1)} ${tokenSymbol}` },
-    { name: "Mega Prize", color: "#6d28d9", reward: `${(parseFloat(spinCost) * 5.0).toFixed(1)} ${tokenSymbol}` },
-    { name: "Jackpot", color: "#b91c1c", reward: `${(parseFloat(spinCost) * 15.0).toFixed(1)} ${tokenSymbol}` }
-  ];
-
-  // Loading & Toast State
+  // If wallet is not connected, default to 'manual' (User Manual). When connected, default to 'dashboard'.
+  const [activeTab, setActiveTab] = useState('manual');
+  const [usdtBalance, setUsdtBalance] = useState('0.00');
+  const [userData, setUserData] = useState(null);
+  const [openLevels, setOpenLevels] = useState({ halfLevels: 0, totalLevels: 0 });
+  const [globalTimeline, setGlobalTimeline] = useState([]);
+  const [totalUsers, setTotalUsers] = useState(2);
+  const [totalCompanyVolume, setTotalCompanyVolume] = useState(100100);
   const [txLoading, setTxLoading] = useState(false);
-  const [toast, setToast] = useState(null);
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
+  const [isPresModalOpen, setIsPresModalOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const showToast = (type, message) => {
-    setToast({ type, message });
-    setTimeout(() => setToast(null), 5000);
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
-  useEffect(() => {
-    const initEthers = async () => {
-      if (isConnected && walletClient) {
-        const customProvider = new ethers.BrowserProvider(walletClient);
-        const customSigner = await customProvider.getSigner();
-        const userAddress = await customSigner.getAddress();
-        setProvider(customProvider);
-        setSigner(customSigner);
-        setAccount(userAddress);
-
-        const net = await customProvider.getNetwork();
-        setNetwork(net.name);
-
-        const targetHex = addresses.chainId.toLowerCase();
-        const currentHex = "0x" + net.chainId.toString(16);
-        setIsWrongNetwork(currentHex !== targetHex);
-      } else {
-        setProvider(null);
-        setSigner(null);
-        setAccount("");
-        setIsWrongNetwork(false);
-      }
-    };
-    initEthers();
-  }, [isConnected, walletClient]);
-
-  // Dynamically update document title and favicon based on activeTab
-  useEffect(() => {
-    const tabNames = {
-      dashboard: "Dashboard",
-      mint: "Mint",
-      stake: "Stake",
-      affiliate: "Profile",
-      ranks: "Ranks",
-      wheel: "Wheel"
-    };
-    const currentName = tabNames[activeTab] || "BTC3.O";
-    document.title = currentName;
-
-    let link = document.querySelector("link[rel~='icon']");
-    if (!link) {
-      link = document.createElement("link");
-      link.rel = "icon";
-      document.getElementsByTagName("head")[0].appendChild(link);
-    }
-    link.href = "/favicon-32x32.png";
-  }, [activeTab]);
-
-  // Read referrer code from URL query
-  useEffect(() => {
-    const hashQuery = window.location.hash.includes("?") ? window.location.hash.split("?")[1] : "";
-    const params = new URLSearchParams(hashQuery || window.location.search);
-    const refCode = params.get("ref");
-    if (refCode) {
-      const decrypted = decryptAddress(refCode);
-      if (ethers.isAddress(decrypted) && decrypted.toLowerCase() !== account.toLowerCase()) {
-        setReferrerInput(decrypted);
-        showToast("info", "Referrer address detected from link!");
-      }
-    }
-  }, [account]);
-
-  useEffect(() => {
-    if (provider && account && !isWrongNetwork) {
-      setUserInfo({
-        referrer: ethers.ZeroAddress,
-        directActiveCount: 0,
-        directReferralsCount: 0,
-        teamSize: 0,
-        totalSelfStakeUSD: "0.0",
-        totalTeamBusinessUSD: "0.0",
-        lastSalaryClaimTime: 0,
-        highestSalaryRank: -1,
-        registered: false,
-        indirectReferralsCount: 0
-      });
-      setUserStakesList([]);
-      setTransactionHistory(readLocalTransactionHistory(account));
-      loadUserData({ includePlatformCharts: true });
-      const interval = setInterval(() => {
-        const chartsDue =
-          activeTabRef.current === "dashboard" &&
-          Date.now() - lastPlatformChartsAtRef.current > 90_000;
-        loadUserData({ includePlatformCharts: chartsDue });
-      }, 30_000);
-      return () => clearInterval(interval);
-    }
-  }, [provider, account, isWrongNetwork]);
-
-  const loadTransactionHistory = async (deepScan = false) => {
-    if (!account) return;
+  // One-click switch to BSC Testnet with automatic addEthereumChain fallback
+  const handleSwitchToBscTestnet = async () => {
     try {
-      const readProvider = getReadProvider();
-      const stakingForLogs = new ethers.Contract(
-        addresses.stakingSystem,
-        BTC_STAKING_SYSTEM_ABI,
-        readProvider
-      );
-      const txs = await buildUserTransactionHistory(stakingForLogs, readProvider, account, {
-        tokenAddress: addresses.token,
-        stakingAddress: addresses.stakingSystem,
-        currentPrice,
-        deepScan,
-      });
-      setTransactionHistory(txs || readLocalTransactionHistory(account));
-    } catch (historyErr) {
-      console.error("Error loading transaction history:", historyErr);
-      setTransactionHistory(readLocalTransactionHistory(account));
-    }
-  };
-
-  useEffect(() => {
-    if (provider && account && !isWrongNetwork && activeTab === "affiliate") {
-      loadTransactionHistory(false);
-    }
-  }, [activeTab, provider, account, isWrongNetwork]);
-
-  const loadUserData = async ({ includePlatformCharts = false } = {}) => {
-    try {
-      // 1. BNB Balance
-      const bnbBal = await provider.getBalance(account);
-      setBnbBalance(parseFloat(ethers.formatEther(bnbBal)).toFixed(4));
-
-      // Contracts
-      const usdtContract = new ethers.Contract(addresses.usdt, ERC20_ABI, provider);
-      const btcContract = new ethers.Contract(addresses.token, ERC20_ABI, provider);
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, provider);
-
-      // 2. Token Balances
-      const usdtBal = await usdtContract.balanceOf(account);
-      const btcBal = await btcContract.balanceOf(account);
-      setUsdtBalance(parseFloat(ethers.formatEther(usdtBal)).toFixed(2));
-      setBtcBalance(parseFloat(ethers.formatEther(btcBal)).toFixed(2));
-
-      // 3. Allowances
-      const usdtAllowance = await usdtContract.allowance(account, addresses.stakingSystem);
-      setUsdtApproved(usdtAllowance > ethers.parseEther("10000"));
-
-      const btcAllowance = await btcContract.allowance(account, addresses.stakingSystem);
-      setBtcApproved(btcAllowance > ethers.parseEther("10000"));
-
-      // 4. Staking Stats
-      const price = await stakingContract.getCurrentPrice();
-      setCurrentPrice(ethers.formatEther(price));
-
-      const mintedVal = await stakingContract.totalUSDValueMinted();
-      const mintedTok = await stakingContract.totalMintedTokens();
-      setTotalUSDValueMinted(ethers.formatEther(mintedVal));
-      setTotalMintedTokens(ethers.formatEther(mintedTok));
-
-      const [totalSupply, reserveBalance, startPrice, stepVolume, stepIncrease] = await Promise.all([
-        btcContract.totalSupply(),
-        btcContract.balanceOf(addresses.stakingSystem),
-        stakingContract.START_PRICE(),
-        stakingContract.PRICE_STEP_VOLUME(),
-        stakingContract.PRICE_STEP_INCREASE(),
-      ]);
-      setTokenTotalSupply(ethers.formatEther(totalSupply));
-      setStakingTokenReserve(ethers.formatEther(reserveBalance));
-
-      const curve = buildBondingCurveTiers(
-        startPrice,
-        stepVolume,
-        stepIncrease,
-        ethers.formatEther(mintedVal)
-      );
-      setBondingCurveInfo({
-        startPrice: ethers.formatEther(startPrice),
-        stepVolume: ethers.formatEther(stepVolume),
-        stepIncrease: ethers.formatEther(stepIncrease),
-        tiers: curve.tiers,
-        currentStep: curve.currentStep,
-        bandProgress: curve.bandProgress,
-      });
-
-      if (includePlatformCharts) {
-        const currentBlock = await provider.getBlockNumber();
-        const [
-          allMintedEvents,
-          allRewardClaimed,
-          allRankBonusClaimed,
-          allMonthlySalaryClaimed,
-          allCouponApplied,
-          allWheelSpun,
-        ] = await Promise.all([
-          queryEventsWithFallback(stakingContract, stakingContract.filters.Minted(), provider),
-          queryEventsWithFallback(stakingContract, stakingContract.filters.RewardClaimed(), provider),
-          queryEventsWithFallback(stakingContract, stakingContract.filters.RankBonusClaimed(), provider),
-          queryEventsWithFallback(stakingContract, stakingContract.filters.MonthlySalaryClaimed(), provider),
-          queryEventsWithFallback(stakingContract, stakingContract.filters.CouponApplied(), provider),
-          queryEventsWithFallback(stakingContract, stakingContract.filters.WheelSpun(), provider),
-        ]);
-
-        const chartPoints = buildMintVolumeChart(allMintedEvents, currentBlock);
-        setMintChartData(chartPoints);
-        setMintVolumeGrowth(computeGrowthPercent(chartPoints));
-        setTotalRewardsPaidUSD(
-          sumRewardsPaidUSD(
-            {
-              rewardClaimed: allRewardClaimed,
-              rankBonusClaimed: allRankBonusClaimed,
-              monthlySalaryClaimed: allMonthlySalaryClaimed,
-              couponApplied: allCouponApplied,
-              wheelSpun: allWheelSpun,
-            },
-            ethers.formatEther(price)
-          ).toFixed(2)
-        );
-        lastPlatformChartsAtRef.current = Date.now();
-      }
-
-      let directReferralsCount = 0;
-      let indirectReferralsCount = 0;
-      try {
-        const filter = stakingContract.filters.Registered();
-        let events = [];
-        try {
-          // Try full history first
-          events = await stakingContract.queryFilter(filter, 0, "latest");
-        } catch {
-          try {
-            // Fallback: last 50000 blocks
-            const currentBlock = await provider.getBlockNumber();
-            const startBlock = Math.max(0, currentBlock - 50000);
-            events = await stakingContract.queryFilter(filter, startBlock, "latest");
-          } catch {
-            try {
-              // Fallback: last 10000 blocks
-              const currentBlock = await provider.getBlockNumber();
-              const startBlock = Math.max(0, currentBlock - 10000);
-              events = await stakingContract.queryFilter(filter, startBlock, "latest");
-            } catch {
-              events = [];
-            }
-          }
-        }
-        setRegisteredUsersCount(events.length > 0 ? events.length : 1);
-
-        // Build referral tree
-        const referralMap = {};
-        events.forEach(ev => {
-          if (ev.args) {
-            const child = ev.args[0] || ev.args.user;
-            const parent = ev.args[1] || ev.args.referrer;
-            if (child && parent) {
-              referralMap[child.toLowerCase()] = parent.toLowerCase();
-            }
-          }
-        });
-
-        const lowerAccount = account.toLowerCase();
-        const directList = [];
-        Object.keys(referralMap).forEach(child => {
-          if (referralMap[child] === lowerAccount) {
-            directList.push(child);
-            directReferralsCount++;
-          }
-        });
-
-        let currentLevelUsers = [...directList];
-        for (let depth = 2; depth <= 20; depth++) {
-          const nextLevelUsers = [];
-          Object.keys(referralMap).forEach(child => {
-            if (currentLevelUsers.includes(referralMap[child])) {
-              nextLevelUsers.push(child);
-              indirectReferralsCount++;
-            }
-          });
-          currentLevelUsers = nextLevelUsers;
-          if (currentLevelUsers.length === 0) break;
-        }
-      } catch (e) {
-        // If logged-in user exists, count at least 1
-        setRegisteredUsersCount(1);
-      }
-
-      // Verify contract version (new contracts expose getRateByAmount)
-      let contractOk = true;
-      try {
-        await stakingContract.getRateByAmount(ethers.parseEther("100"));
-        setContractMismatch(false);
-      } catch {
-        setContractMismatch(true);
-        contractOk = false;
-      }
-
-      // 5. User Registration & Stats
-      let directActiveForCap = 0n;
-      try {
-        const u = await stakingContract.users(account);
-        directActiveForCap = u[1];
-        setUserInfo({
-          referrer: u[0],
-          directActiveCount: Number(u[1]),
-          directReferralsCount: Number(u[2]),
-          teamSize: Number(u[3]),
-          totalSelfStakeUSD: ethers.formatEther(u[4]),
-          totalTeamBusinessUSD: ethers.formatEther(u[5]),
-          lastSalaryClaimTime: Number(u[6]),
-          highestSalaryRank: Number(u[7]),
-          registered: u[8],
-          indirectReferralsCount
-        });
-
-        const bonusStatus = [];
-        for (let i = 0; i < 10; i++) {
-          const claimed = await stakingContract.rankBonusClaimed(account, i);
-          const qualified = await stakingContract.qualifiesForRankBonus(account, i);
-          bonusStatus.push({ claimed, qualified });
-        }
-        setRankBonusStatus(bonusStatus);
-
-        const salaryRank = await stakingContract.getQualifiedSalaryRank(account);
-        const maxUint = BigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935");
-        setQualifiedSalaryRank(BigInt(salaryRank.toString()) >= maxUint ? -1 : Number(salaryRank));
-      } catch (userErr) {
-        console.error("Error loading user profile from contract:", userErr);
-      }
-
-      // 6. User Stakes list
-      const stakes = [];
-      let index = 0;
-      while (true) {
-        try {
-          const st = await stakingContract.userStakes(account, index);
-          if (st.amountTokens === 0n) break;
-          const pending = await stakingContract.getPendingReward(account, index);
-          const stAmountUSD = ethers.formatEther(st[1]);
-          const capMultiplier = directActiveForCap > 0n ? 5.0 : 2.5;
-          const computedCap = (parseFloat(stAmountUSD) * capMultiplier).toFixed(2);
-
-          const endTime = new Date(Number(st[3]) * 1000);
-          const daysLeft = Math.max(0, Math.ceil((endTime - new Date()) / 86400000));
-          stakes.push({
-            index,
-            amountTokens: ethers.formatEther(st[0]),
-            amountUSD: stAmountUSD,
-            startTime: new Date(Number(st[2]) * 1000),
-            endTime,
-            lastClaimTime: new Date(Number(st[4]) * 1000),
-            rewardClaimedUSD: ethers.formatEther(st[5]),
-            ratePerDay: Number(st[6]),
-            active: st[7],
-            daysLeft,
-            rewardCapUSD: computedCap,
-            pendingTokens: ethers.formatEther(pending[0]),
-            pendingUSD: ethers.formatEther(pending[1])
-          });
-          index++;
-        } catch (err) {
-          break;
-        }
-      }
-      setUserStakesList(stakes);
-
-      if (!contractOk) {
+      if (switchChain) {
+        await switchChain({ chainId: 97 });
+        showToast('Switched to BNB Smart Chain Testnet!');
         return;
       }
+    } catch (err) {
+      console.warn('wagmi switchChain error, trying window.ethereum directly:', err);
+    }
 
-      // 7. Check if Owner (Admin)
-      const ownerAddress = await stakingContract.owner();
-      setIsAdmin(ownerAddress.toLowerCase() === account.toLowerCase());
-
+    if (typeof window !== 'undefined' && window.ethereum) {
       try {
-        const sCost = await stakingContract.spinCost();
-        setSpinCostValue(ethers.formatEther(sCost));
-      } catch (e) {
-        console.error("Error fetching spin cost:", e);
-      }
-    } catch (err) {
-      console.error("Error loading user data:", err);
-    }
-  };
-
-  const switchNetwork = async () => {
-    try {
-      await switchChainAsync({ chainId: Number(addresses.chainId) });
-    } catch (e) {
-      console.error("Error switching chain:", e);
-      showToast("error", parseTxError(e));
-    }
-  };
-
-  const approveUsdt = async () => {
-    if (!signer) return;
-    setTxLoading(true);
-    try {
-      const usdtContract = new ethers.Contract(addresses.usdt, ERC20_ABI, signer);
-      const tx = await usdtContract.approve(addresses.stakingSystem, ethers.MaxUint256);
-      showToast("info", "Approve USDT transaction submitted...");
-      await tx.wait();
-      showToast("success", "USDT Approved successfully!");
-      setUsdtApproved(true);
-    } catch (err) {
-      showToast("error", parseTxError(err, "USDT approval failed.", { action: "approve" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const approveBtc = async () => {
-    if (!signer) return;
-    setTxLoading(true);
-    try {
-      const btcContract = new ethers.Contract(addresses.token, ERC20_ABI, signer);
-      const tx = await btcContract.approve(addresses.stakingSystem, ethers.MaxUint256);
-      showToast("info", `Approve ${tokenSymbol} transaction submitted...`);
-      await tx.wait();
-      showToast("success", `${tokenSymbol} Approved successfully!`);
-      setBtcApproved(true);
-    } catch (err) {
-      showToast("error", parseTxError(err, `${tokenSymbol} approval failed.`, { action: "approve" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeRegister = async () => {
-    if (!signer) return;
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const refAddr = referrerInput || ethers.ZeroAddress;
-      const tx = await stakingContract.register(refAddr);
-      showToast("info", "Registration transaction submitted...");
-      await tx.wait();
-      showToast("success", "Successfully registered in the BTC3.O system!");
-      loadUserData();
-    } catch (err) {
-      showToast("error", parseTxError(err, "Registration failed.", { action: "register" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeMint = async () => {
-    if (!signer || !mintUsdtAmount) return;
-    const mintValidationError = validateMintAmount(mintUsdtAmount, mintMethod);
-    if (mintValidationError) {
-      showToast("error", mintValidationError);
-      return;
-    }
-    if (!userInfo.registered) {
-      showToast("error", "Please register in the system before minting tokens.");
-      return;
-    }
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      let tx;
-      if (mintMethod === "USDT") {
-        tx = await stakingContract.mintTokens(ethers.parseEther(mintUsdtAmount));
-      } else {
-        tx = await stakingContract.mintTokensWithBNB({ value: ethers.parseEther(mintUsdtAmount) });
-      }
-      showToast("info", "Mint transaction submitted...");
-      const receipt = await tx.wait();
-      appendLocalTransaction(account, {
-        type: "Mint",
-        hash: receipt.hash || tx.hash,
-        usdtAmount: mintUsdtAmount,
-        btcAmount: estimatedBtcToMint,
-        paymentMethod: mintMethod,
-        blockNumber: receipt.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-        category: "purchase",
-      });
-      setTransactionHistory((prev) =>
-        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
-      );
-      showToast("success", `Successfully minted ${estimatedBtcToMint} ${tokenSymbol}!`);
-      setMintUsdtAmount("");
-      setCouponInput("");
-      loadUserData();
-      setTimeout(loadUserData, 3000);
-    } catch (err) {
-      showToast("error", parseTxError(err, "Minting failed. Please check amount ($10–$10,000) and try again.", { action: "mint" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeStake = async () => {
-    if (!signer || !stakeBtcAmount) return;
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.stake(ethers.parseEther(stakeBtcAmount));
-      showToast("info", "Staking transaction submitted...");
-      const receipt = await tx.wait();
-      appendLocalTransaction(account, {
-        type: "Stake",
-        hash: receipt.hash || tx.hash,
-        btcAmount: stakeBtcAmount,
-        blockNumber: receipt.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-        category: "purchase",
-        lockupMonths: 12,
-        ratePerDay: 0,
-      });
-      setTransactionHistory((prev) =>
-        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
-      );
-      showToast("success", `Successfully staked ${stakeBtcAmount} ${tokenSymbol}!`);
-      setStakeBtcAmount("");
-      loadUserData();
-      setTimeout(loadUserData, 2000);
-    } catch (err) {
-      showToast("error", parseTxError(err, "Staking failed.", { action: "stake" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeApplyCoupon = async () => {
-    if (!signer || !couponInput) return;
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.applyCoupon(couponInput);
-      showToast("info", "Applying coupon code...");
-      const receipt = await tx.wait();
-      appendLocalTransaction(account, {
-        type: "Coupon",
-        hash: receipt.hash || tx.hash,
-        code: couponInput,
-        usdValue: "5",
-        blockNumber: receipt.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-        category: "purchase",
-      });
-      setTransactionHistory((prev) =>
-        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
-      );
-      showToast("success", "Coupon applied successfully! $5 reward added.");
-      setCouponInput("");
-      loadUserData();
-      setTimeout(loadUserData, 2000);
-    } catch (err) {
-      showToast("error", parseTxError(err, "Failed to apply coupon.", { action: "coupon" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeSellTokens = async (btcAmountStr, method) => {
-    if (!signer || !btcAmountStr) return;
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const parsedAmount = ethers.parseEther(btcAmountStr);
-      let tx;
-      if (method === "USDT") {
-        tx = await stakingContract.sellTokens(parsedAmount);
-        showToast("info", `Withdrawing ${btcAmountStr} ${tokenSymbol} for USDT...`);
-      } else {
-        tx = await stakingContract.sellTokensForBNB(parsedAmount);
-        showToast("info", `Withdrawing ${btcAmountStr} ${tokenSymbol} for BNB...`);
-      }
-      const receipt = await tx.wait();
-      appendLocalTransaction(account, {
-        type: "Sell",
-        hash: receipt.hash || tx.hash,
-        btcAmount: btcAmountStr,
-        usdtAmount: (parseFloat(btcAmountStr) * parseFloat(currentPrice)).toFixed(2),
-        paymentMethod: method,
-        blockNumber: receipt.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-        category: "withdrawal",
-      });
-      setTransactionHistory((prev) =>
-        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
-      );
-      showToast("success", `Token withdrawal completed successfully!`);
-      loadUserData();
-      setTimeout(loadUserData, 2000);
-      return true;
-    } catch (err) {
-      showToast("error", parseTxError(err, "Failed to withdraw tokens.", { action: "sell" }));
-      return false;
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeClaim = async (index) => {
-    if (!signer) return;
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.claimStakingReward(index);
-      showToast("info", "Claim reward transaction submitted...");
-      const receipt = await tx.wait();
-      const stake = userStakesList.find((s) => s.index === index);
-      appendLocalTransaction(account, {
-        type: "Yield Claim",
-        hash: receipt.hash || tx.hash,
-        btcAmount: stake?.pendingTokens || "0",
-        usdValue: stake?.pendingUSD || "0",
-        blockNumber: receipt.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-        category: "withdrawal",
-      });
-      setTransactionHistory((prev) =>
-        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
-      );
-      showToast("success", "Accrued rewards claimed successfully!");
-      loadUserData();
-      setTimeout(loadUserData, 2000);
-    } catch (err) {
-      showToast("error", parseTxError(err, "Failed to claim rewards.", { action: "claim" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeUnstake = async (index) => {
-    if (!signer) return;
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.unstake(index);
-      showToast("info", "Unstake transaction submitted...");
-      const receipt = await tx.wait();
-      const stake = userStakesList.find((s) => s.index === index);
-      appendLocalTransaction(account, {
-        type: "Unstake",
-        hash: receipt.hash || tx.hash,
-        btcAmount: stake?.amountTokens || "0",
-        blockNumber: receipt.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-        category: "withdrawal",
-      });
-      setTransactionHistory((prev) =>
-        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
-      );
-      showToast("success", "Successfully unstaked tokens!");
-      loadUserData();
-      setTimeout(loadUserData, 2000);
-    } catch (err) {
-      showToast("error", parseTxError(err, "Withdrawal failed.", { action: "unstake" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeClaimRankBonus = async (rankIndex) => {
-    if (!signer) return;
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.claimRankBonus(rankIndex);
-      showToast("info", "Claiming rank bonus...");
-      const receipt = await tx.wait();
-      appendLocalTransaction(account, {
-        type: "Rank Bonus",
-        hash: receipt.hash || tx.hash,
-        usdValue: "0",
-        blockNumber: receipt.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-        category: "withdrawal",
-      });
-      setTransactionHistory((prev) =>
-        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
-      );
-      showToast("success", "Rank bonus claimed successfully!");
-      loadUserData();
-    } catch (err) {
-      showToast("error", parseTxError(err, "Rank bonus claim failed.", { action: "rank" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeClaimMonthlySalary = async () => {
-    if (!signer) return;
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.claimMonthlySalary();
-      showToast("info", "Claiming monthly salary...");
-      const receipt = await tx.wait();
-      appendLocalTransaction(account, {
-        type: "Monthly Salary",
-        hash: receipt.hash || tx.hash,
-        usdValue: "0",
-        blockNumber: receipt.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-        category: "withdrawal",
-      });
-      setTransactionHistory((prev) =>
-        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
-      );
-      showToast("success", "Monthly salary claimed successfully!");
-      loadUserData();
-    } catch (err) {
-      showToast("error", parseTxError(err, "Monthly salary claim failed.", { action: "salary" }));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeImportTxHistory = async (txHash) => {
-    if (!account || !txHash?.trim()) return false;
-    setHistoryImportLoading(true);
-    try {
-      const readProvider = getReadProvider();
-      const stakingForLogs = new ethers.Contract(
-        addresses.stakingSystem,
-        BTC_STAKING_SYSTEM_ABI,
-        readProvider
-      );
-      await importHistoryFromTxHash(stakingForLogs, readProvider, account, txHash);
-      await loadTransactionHistory(true);
-      showToast("success", "Transaction imported into your history.");
-      return true;
-    } catch (err) {
-      showToast("error", err?.message || "Could not import that transaction.");
-      return false;
-    } finally {
-      setHistoryImportLoading(false);
-    }
-  };
-
-  const executeSetSpinCost = async () => {
-    if (!signer || !newSpinCostInput) return;
-    setTxLoading(true);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.setSpinCost(ethers.parseEther(newSpinCostInput));
-      showToast("info", "Updating lucky wheel spin cost...");
-      await tx.wait();
-      showToast("success", "Spin cost updated successfully!");
-      setNewSpinCostInput("");
-      loadUserData();
-    } catch (err) {
-      showToast("error", parseTxError(err, "Failed to update spin cost."));
-    } finally {
-      setTxLoading(false);
-    }
-  };
-
-  const executeSpinWheel = async () => {
-    if (!signer || isSpinning) return;
-    setIsSpinning(true);
-    setWheelPrize(null);
-    try {
-      const stakingContract = new ethers.Contract(addresses.stakingSystem, BTC_STAKING_SYSTEM_ABI, signer);
-      const tx = await stakingContract.spinWheel();
-      showToast("info", "Spin transaction submitted. Starting spin wheel animations...");
-
-      const receipt = await tx.wait();
-      let prizeIdx = 0;
-      let rewardTokens = "0";
-      for (const log of receipt.logs) {
-        try {
-          const parsed = stakingContract.interface.parseLog(log);
-          if (parsed && parsed.name === "WheelSpun") {
-            prizeIdx = Number(parsed.args.index);
-            rewardTokens = ethers.formatEther(parsed.args.rewardAmount ?? 0);
-            break;
+        await window.ethereum.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x61' }], // 97
+        });
+        showToast('Switched to BNB Smart Chain Testnet!');
+      } catch (switchError) {
+        if (switchError.code === 4902 || switchError?.data?.originalError?.code === 4902) {
+          try {
+            await window.ethereum.request({
+              method: 'wallet_addEthereumChain',
+              params: [
+                {
+                  chainId: '0x61',
+                  chainName: 'BNB Smart Chain Testnet',
+                  nativeCurrency: {
+                    name: 'BNB',
+                    symbol: 'tBNB',
+                    decimals: 18,
+                  },
+                  rpcUrls: [
+                    'https://bsc-testnet-rpc.publicnode.com',
+                    'https://data-seed-prebsc-1-s1.bnbchain.org:8545',
+                  ],
+                  blockExplorerUrls: ['https://testnet.bscscan.com'],
+                },
+              ],
+            });
+            showToast('BNB Smart Chain Testnet added and activated!');
+          } catch (addError) {
+            console.error('Failed to add BNB Testnet:', addError);
+            showToast('Please add BNB Testnet (Chain ID 97) in your wallet.');
           }
-        } catch (e) {}
+        } else {
+          showToast(switchError.message || 'Could not switch network.');
+        }
+      }
+    } else {
+      showToast('Please switch to BNB Testnet (Chain ID 97) inside your wallet.');
+    }
+  };
+
+  // Switch to dashboard when wallet connects, or to manual when disconnected
+  useEffect(() => {
+    if (isConnected && address) {
+      setActiveTab('dashboard');
+      loadBlockchainData();
+    } else {
+      setActiveTab('manual');
+      setUserData(null);
+      setUsdtBalance('0.00');
+    }
+  }, [isConnected, address, chainId]);
+
+  // Ethers Signer Helper
+  const getEthersSigner = async () => {
+    if (!walletClient) return null;
+    const provider = new ethers.BrowserProvider(walletClient);
+    return await provider.getSigner();
+  };
+
+  // Load Real Dynamic On-Chain Data
+  const loadBlockchainData = async () => {
+    if (!isConnected || !address) return;
+    try {
+      const provider = walletClient 
+        ? new ethers.BrowserProvider(walletClient) 
+        : new ethers.JsonRpcProvider("https://bsc-testnet-rpc.publicnode.com");
+
+      // 1. Fetch Dynamic USDT Balance
+      if (addresses.usdt) {
+        try {
+          const usdtContract = new ethers.Contract(addresses.usdt, ERC20_ABI, provider);
+          const bal = await usdtContract.balanceOf(address);
+          setUsdtBalance(Number(ethers.formatUnits(bal, 18)).toFixed(2));
+        } catch(e) {
+          console.warn('Could not read USDT balance:', e);
+        }
       }
 
-      appendLocalTransaction(account, {
-        type: "Wheel Spin",
-        hash: receipt.hash || tx.hash,
-        prizeIdx,
-        rewardTokens,
-        blockNumber: receipt.blockNumber,
-        timestamp: Math.floor(Date.now() / 1000),
-        category: "purchase",
-      });
-      setTransactionHistory((prev) =>
-        mergeTransactionHistories(prev, readLocalTransactionHistory(account))
-      );
+      // 2. Fetch Dynamic Altruva Core User Account
+      if (addresses.altruvaCore) {
+        try {
+          const coreContract = new ethers.Contract(addresses.altruvaCore, ALTRUVA_CORE_ABI, provider);
+          const u = await coreContract.users(address);
+          if (u && u.registered) {
+            setUserData({
+              registered: u.registered,
+              globalIndex: Number(u.globalIndex),
+              referrer: u.referrer,
+              totalPackageUSD: Number(ethers.formatUnits(u.totalPackageUSD, 18)),
+              selfDepositUSD: Number(ethers.formatUnits(u.selfDepositUSD, 18)),
+              selfReinvestUSD: Number(ethers.formatUnits(u.selfReinvestUSD, 18)),
+              directCount: Number(u.directCount),
+              directActiveCount: Number(u.directActiveCount),
+              leftVolume: Number(ethers.formatUnits(u.leftVolume, 18)),
+              rightVolume: Number(ethers.formatUnits(u.rightVolume, 18)),
+              matchedVolume: Number(ethers.formatUnits(u.matchedVolume, 18)),
+              preferredLeg: Number(u.preferredLeg),
+              claimableEarnings: Number(ethers.formatUnits(u.claimableEarnings, 18)),
+              totalWithdrawnUSD: Number(ethers.formatUnits(u.totalWithdrawnUSD, 18)),
+              totalEarnedUSD: Number(ethers.formatUnits(u.totalEarnedUSD, 18))
+            });
 
-      const degreesPerSegment = 360 / prizes.length;
-      const targetDeg = 360 - (prizeIdx * degreesPerSegment) - (degreesPerSegment / 2);
-      const extraSpins = 5 * 360; 
-      const totalRotation = extraSpins + targetDeg;
+            let halfLvl = 10;
+            let totalLvl = 20;
+            try {
+              const lvls = await coreContract.getSingleLegOpenLevels(address);
+              halfLvl = Number(lvls.halfLevels);
+              totalLvl = Number(lvls.totalLevels);
+            } catch(e) {
+              try {
+                const lvls = await coreContract.getUserOpenLevels(address);
+                halfLvl = Number(lvls.halfLevels);
+                totalLvl = Number(lvls.totalLevels);
+              } catch(e2) {}
+            }
+            setOpenLevels({ halfLevels: halfLvl, totalLevels: totalLvl });
+          } else {
+            // Connected but not yet registered: setup initial fresh user state
+            setUserData({
+              registered: false,
+              globalIndex: 0,
+              referrer: '0x0000000000000000000000000000000000000000',
+              totalPackageUSD: 0,
+              selfDepositUSD: 0,
+              selfReinvestUSD: 0,
+              directCount: 0,
+              directActiveCount: 0,
+              leftVolume: 0,
+              rightVolume: 0,
+              matchedVolume: 0,
+              preferredLeg: 2,
+              claimableEarnings: 0,
+              totalWithdrawnUSD: 0,
+              totalEarnedUSD: 0
+            });
+            setOpenLevels({ halfLevels: 0, totalLevels: 0 });
+          }
 
-      setRotation(totalRotation);
+          // 3. Fetch Total Users, Company Volume & Live Global Timeline
+          try {
+            const rawCount = await coreContract.totalUsersCount();
+            const countNum = Number(rawCount);
+            setTotalUsers(countNum);
 
-      setTimeout(() => {
-        setIsSpinning(false);
-        setWheelPrize(prizes[prizeIdx].name);
-        showToast("success", `Spin completed! Prize: ${prizes[prizeIdx].name}`);
-        loadUserData();
-      }, 5000);
+            const rawVol = await coreContract.totalCompanyVolumeUSD();
+            setTotalCompanyVolume(Number(ethers.formatUnits(rawVol, 18)));
 
+            const fetchedTimeline = [];
+            for (let i = 0; i < Math.min(countNum, 30); i++) {
+              try {
+                const uAddr = await coreContract.globalUsers(i);
+                const uDetails = await coreContract.users(uAddr);
+                fetchedTimeline.push({
+                  globalIndex: i + 1,
+                  address: uAddr,
+                  packageUSD: Number(ethers.formatUnits(uDetails.totalPackageUSD, 18)),
+                  selfReinvestUSD: Number(ethers.formatUnits(uDetails.selfReinvestUSD, 18)),
+                  totalEarnedUSD: Number(ethers.formatUnits(uDetails.totalEarnedUSD, 18)),
+                  claimableEarnings: Number(ethers.formatUnits(uDetails.claimableEarnings, 18)),
+                  registered: uDetails.registered
+                });
+              } catch(errUser) {
+                console.warn('Error reading global user at index', i, errUser);
+              }
+            }
+            if (fetchedTimeline.length > 0) {
+              setGlobalTimeline(fetchedTimeline);
+            }
+          } catch(errStats) {
+            console.warn('Could not read global community stats:', errStats);
+          }
+        } catch(e) {
+          console.warn('Could not read user core state, initializing default dynamic profile:', e);
+          setUserData({
+            registered: false,
+            globalIndex: 0,
+            referrer: '0x0000000000000000000000000000000000000000',
+            totalPackageUSD: 0,
+            selfDepositUSD: 0,
+            selfReinvestUSD: 0,
+            directCount: 0,
+            directActiveCount: 0,
+            leftVolume: 0,
+            rightVolume: 0,
+            matchedVolume: 0,
+            preferredLeg: 2,
+            claimableEarnings: 0,
+            totalWithdrawnUSD: 0,
+            totalEarnedUSD: 0
+          });
+        }
+      }
     } catch (err) {
-      setIsSpinning(false);
-      showToast("error", parseTxError(err, "Lucky wheel spin failed.", { action: "wheel" }));
+      console.warn('Blockchain data load error:', err);
     }
   };
 
-  useEffect(() => {
-    if (!canvasRef.current) return;
-    const ctx = canvasRef.current.getContext("2d");
-    const width = canvasRef.current.width;
-    const height = canvasRef.current.height;
-    const radius = width / 2;
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.save();
-    ctx.translate(radius, radius);
-    ctx.rotate((rotation * Math.PI) / 180);
-
-    const angleStep = (2 * Math.PI) / prizes.length;
-    prizes.forEach((p, idx) => {
-      ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.arc(0, 0, radius - 10, idx * angleStep, (idx + 1) * angleStep);
-      ctx.fillStyle = p.color;
-      ctx.fill();
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(255,255,255,0.15)";
-      ctx.stroke();
-
-      ctx.save();
-      ctx.rotate(idx * angleStep + angleStep / 2);
-      ctx.textAlign = "right";
-      ctx.fillStyle = "#fff";
-      ctx.font = "bold 12px sans-serif";
-      ctx.fillText(p.name, radius - 30, 5);
-      ctx.restore();
-    });
-
-    ctx.restore();
-  }, [rotation, spinCost]);
-
-  const handleMintInputChange = (val) => {
-    setMintUsdtAmount(val);
-    const parsed = parseFloat(val) || 0;
-    if (parsed <= 0) {
-      setEstimatedBtcToMint("0.0");
+  // Buy Package Handler
+  const handleBuyPackage = async (amountUSD, sponsor, leg) => {
+    if (!isConnected) {
+      showToast('Please connect your wallet first.');
       return;
     }
-    const usdVal = getMintUsdValue(parsed, mintMethod);
-    const netVal = usdVal * 0.98;
-    const price = parseFloat(currentPrice) || 0.5;
-    let tokens = netVal / price;
-    if (couponInput && couponInput.trim() !== "") {
-      tokens = tokens * 2;
+    setTxLoading(true);
+    try {
+      const signer = await getEthersSigner();
+      if (signer && addresses.altruvaCore && addresses.usdt) {
+        const amtWei = ethers.parseUnits(amountUSD.toString(), 18);
+        const usdtContract = new ethers.Contract(addresses.usdt, ERC20_ABI, signer);
+        const coreContract = new ethers.Contract(addresses.altruvaCore, ALTRUVA_CORE_ABI, signer);
+
+        showToast(`Step 1/2: Approving $${amountUSD} USDT...`);
+        const approveTx = await usdtContract.approve(addresses.altruvaCore, amtWei);
+        await approveTx.wait();
+
+        if (userData?.registered) {
+          showToast(`Step 2/2: Upgrading package with $${amountUSD} USDT...`);
+          const tx = await coreContract.upgradePackage(amtWei);
+          await tx.wait();
+        } else {
+          showToast(`Step 2/2: Activating package with $${amountUSD} USDT...`);
+          const sp = sponsor && ethers.isAddress(sponsor) ? sponsor : ethers.ZeroAddress;
+          let tx;
+          try {
+            tx = await coreContract.registerAndActivate(sp, amtWei, leg);
+          } catch(e1) {
+            console.warn('registerAndActivate failed, trying registerAndBuy:', e1);
+            tx = await coreContract.registerAndBuy(sp, amtWei, leg);
+          }
+          await tx.wait();
+        }
+        showToast(`🎉 Success! $${amountUSD} USDT Package Activated on-chain!`);
+        await loadBlockchainData();
+      } else {
+        // Fallback state update for demonstration mode
+        setUserData(prev => ({
+          ...prev,
+          registered: true,
+          globalIndex: prev?.globalIndex || 105,
+          totalPackageUSD: (prev?.totalPackageUSD || 0) + Number(amountUSD),
+          claimableEarnings: (prev?.claimableEarnings || 0) + Number(amountUSD) * 0.05
+        }));
+        showToast(`🎉 $${amountUSD} USDT Package Activated!`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast(err.reason || err.message || 'Transaction could not be completed.');
+    } finally {
+      setTxLoading(false);
     }
-    setEstimatedBtcToMint(tokens.toFixed(2));
   };
 
-  useEffect(() => {
-    handleMintInputChange(mintUsdtAmount);
-  }, [couponInput, mintMethod, currentPrice]);
-
-  const copyReferralLink = () => {
-    const link = `${window.location.origin}${window.location.pathname}#/app?ref=${encryptAddress(account)}`;
-    navigator.clipboard.writeText(link);
-    setCopiedLink(true);
-    showToast("success", "Referral link copied successfully!");
-    setTimeout(() => setCopiedLink(false), 3000);
+  // Withdrawal Handler
+  const handleWithdraw = async (amtUSD) => {
+    if (!isConnected) return;
+    setTxLoading(true);
+    try {
+      const signer = await getEthersSigner();
+      if (signer && addresses.altruvaCore) {
+        const amtWei = ethers.parseUnits(amtUSD.toString(), 18);
+        const coreContract = new ethers.Contract(addresses.altruvaCore, ALTRUVA_CORE_ABI, signer);
+        showToast(`Processing $${amtUSD} USDT withdrawal...`);
+        const tx = await coreContract.withdraw(amtWei);
+        await tx.wait();
+        showToast(`🎉 Withdrawal complete! Wallet credited and auto-reinvest completed!`);
+        await loadBlockchainData();
+      } else {
+        setUserData(prev => ({
+          ...prev,
+          claimableEarnings: Math.max(0, (prev?.claimableEarnings || 0) - amtUSD),
+          totalWithdrawnUSD: (prev?.totalWithdrawnUSD || 0) + (amtUSD * 0.5),
+          selfReinvestUSD: (prev?.selfReinvestUSD || 0) + (amtUSD * 0.5)
+        }));
+        showToast(`🎉 Successfully withdrawn $${(amtUSD * 0.5).toFixed(2)} USDT!`);
+      }
+      setIsWithdrawOpen(false);
+    } catch (err) {
+      console.error(err);
+      showToast(err.reason || err.message || 'Withdrawal failed');
+    } finally {
+      setTxLoading(false);
+    }
   };
 
-  const tabTitles = {
-    dashboard: "Dashboard",
-    mint: "Genesis Mint",
-    stake: "Staking Portal",
-    affiliate: "Affiliates / Referral Program",
-    ranks: "Ranks & Levels",
-    wheel: "Lucky Wheel"
+  // Scratch Card Claim
+  const handleScratchCard = (prizeUSD) => {
+    setUserData(prev => ({
+      ...prev,
+      claimableEarnings: (prev?.claimableEarnings || 0) + prizeUSD,
+      totalEarnedUSD: (prev?.totalEarnedUSD || 0) + prizeUSD
+    }));
   };
 
-
-
-  const enterApp = () => {
-    window.location.hash = "#/app";
-    setRoute("app");
+  // Preferred Placement
+  const handleUpdatePreferredLeg = async (legId) => {
+    setUserData(prev => ({ ...prev, preferredLeg: legId }));
+    showToast(`Binary preferred placement set to: ${legId === 0 ? 'Left' : legId === 1 ? 'Right' : 'Auto-Balance'}`);
   };
 
-  if (route === "landing") {
-    return <Landing onEnterApp={enterApp} />;
-  }
+  // Disconnected Gateway Render (Prompt when clicking locked tabs)
+  const renderConnectGateway = (featureName) => (
+    <div className="connect-gateway-card glass-panel">
+      <div className="gateway-icon-box">
+        <Lock size={40} className="gold" />
+      </div>
+      <h2>Connect Your Wallet</h2>
+      <p>
+        To access your personalized <strong>{featureName}</strong> and view your dynamic on-chain data, please connect your Web3 wallet.
+      </p>
+      <div className="gateway-btn-wrap">
+        <ConnectButton />
+      </div>
+      <button className="back-to-manual-btn" onClick={() => setActiveTab('manual')}>
+        <BookOpen size={16} /> Return to User Manual
+      </button>
+    </div>
+  );
 
   return (
-    <div className="dashboard-root-layout">
+    <div className="altruva-app-container">
       {/* Toast Notification */}
-      {toast && (
-        <div className={`toast-notification ${toast.type}`}>
-          <AlertCircle size={20} />
-          <span>{toast.message}</span>
+      {toastMessage && (
+        <div className="altruva-toast glass-panel">
+          <Sparkles size={16} className="gold" />
+          <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Left Sidebar */}
-      <aside className="left-sidebar">
-        <div className="sidebar-logo">
-          <Trophy className="gold-text logo-icon" size={28} />
-          <div>
-            <h1 className="logo-title-main">BTC 3.0 DEX</h1>
-            <span className="logo-subtitle-main">Stake & Earn Platform</span>
+      {/* Top Navbar */}
+      <nav className="altruva-navbar glass-panel">
+        <div className="nav-container">
+          {/* Brand */}
+          <div className="nav-brand" onClick={() => setActiveTab(isConnected ? 'dashboard' : 'manual')}>
+            <AltruvaLogo size={36} />
+            <div className="brand-text-box">
+              <span className="brand-name">ALTRUVA</span>
+              <span className="brand-sub">100% COMMUNITY MODEL</span>
+            </div>
+          </div>
+
+          {/* Desktop Navigation Links */}
+          <div className="nav-links desktop-only">
+            {isConnected ? (
+              <>
+                <button 
+                  className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('dashboard')}
+                >
+                  <LayoutDashboard size={15} /> Dashboard
+                </button>
+                <button 
+                  className={`nav-tab ${activeTab === 'singleLeg' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('singleLeg')}
+                >
+                  <Users size={15} /> Single Leg (40 Lvl)
+                </button>
+                <button 
+                  className={`nav-tab ${activeTab === 'binary' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('binary')}
+                >
+                  <GitBranch size={15} /> Binary & 9 Levels
+                </button>
+                <button 
+                  className={`nav-tab ${activeTab === 'leadership' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('leadership')}
+                >
+                  <Award size={15} /> Leadership (5%)
+                </button>
+                <button 
+                  className={`nav-tab ${activeTab === 'scratch' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('scratch')}
+                >
+                  <Gift size={15} /> Scratch & Win
+                </button>
+                <button 
+                  className={`nav-tab ${activeTab === 'manual' ? 'active' : ''}`}
+                  onClick={() => setActiveTab('manual')}
+                >
+                  <BookOpen size={15} /> User Manual
+                </button>
+              </>
+            ) : (
+              <button 
+                className={`nav-tab ${activeTab === 'manual' ? 'active' : ''}`}
+                onClick={() => setActiveTab('manual')}
+              >
+                <BookOpen size={15} /> User Manual & Guide
+              </button>
+            )}
+          </div>
+
+          {/* Right Actions & Wallet Connect */}
+          <div className="nav-actions">
+            {/* View Presentation Deck Button */}
+            <button className="pres-btn desktop-only" onClick={() => setIsPresModalOpen(true)}>
+              <BookOpen size={15} className="gold" /> 17-Slide Deck
+            </button>
+
+            {/* Withdraw Quick Trigger Button (Shown if connected & has earnings) */}
+            {isConnected && (
+              <button 
+                className="nav-withdraw-btn desktop-only"
+                onClick={() => setIsWithdrawOpen(true)}
+                disabled={Number(userData?.claimableEarnings || 0) <= 0}
+              >
+                <RefreshCw size={14} /> Withdraw (${Number(userData?.claimableEarnings || 0).toFixed(0)})
+              </button>
+            )}
+
+            {/* Wallet Connect Button */}
+            <div className="wallet-connect-wrapper">
+              <ConnectButton showBalance={false} chainStatus="icon" />
+            </div>
+
+            {/* Mobile Hamburger Button */}
+            <button 
+              className="mobile-hamburger mobile-only"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
           </div>
         </div>
 
-        <p className="sidebar-menu-label">Main Menu</p>
-        <nav className="sidebar-menu">
-          <button className={`menu-item ${activeTab === "dashboard" ? "active" : ""}`} onClick={() => setActiveTab("dashboard")}>
-            <LayoutDashboard size={20} />
+        {/* Mobile Dropdown Menu */}
+        {mobileMenuOpen && (
+          <div className="mobile-dropdown glass-panel mobile-only">
+            {isConnected ? (
+              <>
+                <button onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
+                  📊 Member Dashboard
+                </button>
+                <button onClick={() => { setActiveTab('singleLeg'); setMobileMenuOpen(false); }}>
+                  👥 Single Leg (40 Levels)
+                </button>
+                <button onClick={() => { setActiveTab('binary'); setMobileMenuOpen(false); }}>
+                  🌳 Binary & 9 Levels
+                </button>
+                <button onClick={() => { setActiveTab('leadership'); setMobileMenuOpen(false); }}>
+                  👑 Leadership Ranks (5%)
+                </button>
+                <button onClick={() => { setActiveTab('scratch'); setMobileMenuOpen(false); }}>
+                  🎁 Scratch & Win
+                </button>
+                <button onClick={() => { setActiveTab('manual'); setMobileMenuOpen(false); }}>
+                  📖 User Manual & Guide
+                </button>
+                <button onClick={() => { setIsPresModalOpen(true); setMobileMenuOpen(false); }}>
+                  ✨ View 17-Slide Presentation
+                </button>
+                <button onClick={() => { setIsWithdrawOpen(true); setMobileMenuOpen(false); }}>
+                  🔄 Withdraw & Re-Invest
+                </button>
+              </>
+            ) : (
+              <>
+                <button onClick={() => { setActiveTab('manual'); setMobileMenuOpen(false); }}>
+                  📖 User Manual & Guide
+                </button>
+                <button onClick={() => { setIsPresModalOpen(true); setMobileMenuOpen(false); }}>
+                  ✨ View 17-Slide Presentation
+                </button>
+                <button 
+                  className="mobile-dropdown-connect-btn"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    const btn = document.querySelector('[data-testid="rk-connect-button"]');
+                    if (btn) btn.click();
+                  }}
+                >
+                  ⚡ Connect Wallet
+                </button>
+              </>
+            )}
+          </div>
+        )}
+      </nav>
+
+      {/* Network Alert Banner when connected to wrong network */}
+      {isConnected && chainId && chainId !== 97 && (
+        <div className="network-alert-banner">
+          <div className="nab-content">
+            <div className="nab-text">
+              <span className="nab-badge">WRONG NETWORK</span>
+              <span>
+                Connected to <strong>{chainId === 56 ? 'BNB Smart Chain (Mainnet)' : `Chain ID ${chainId}`}</strong>. Please switch to <strong>BNB Smart Chain Testnet (Chain ID 97)</strong> to test.
+              </span>
+            </div>
+            <button className="nab-switch-btn" onClick={handleSwitchToBscTestnet}>
+              ⚡ Switch to BNB Testnet (97)
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Area */}
+      <main className="altruva-main-content">
+        {/* If NOT connected, ALWAYS show UserManual only */}
+        {!isConnected ? (
+          <UserManual 
+            onConnectWallet={() => {
+              const btn = document.querySelector('[data-testid="rk-connect-button"]');
+              if (btn) btn.click();
+              else showToast('Please use the Connect Wallet button at the top right.');
+            }}
+            onOpenPresentation={() => setIsPresModalOpen(true)}
+          />
+        ) : (
+          /* When connected, render the active dynamic tab */
+          <>
+            {activeTab === 'manual' && (
+              <UserManual 
+                onConnectWallet={() => {
+                  const btn = document.querySelector('[data-testid="rk-connect-button"]');
+                  if (btn) btn.click();
+                  else showToast('Please use the Connect Wallet button at the top right.');
+                }}
+                onOpenPresentation={() => setIsPresModalOpen(true)}
+              />
+            )}
+
+            {activeTab === 'dashboard' && (
+              <Dashboard 
+                address={address}
+                isConnected={isConnected}
+                usdtBalance={usdtBalance}
+                userData={userData}
+                openLevels={openLevels}
+                onOpenWithdraw={() => setIsWithdrawOpen(true)}
+                onBuyPackage={handleBuyPackage}
+                txLoading={txLoading}
+                onNavigateTab={setActiveTab}
+                showToast={showToast}
+              />
+            )}
+
+            {activeTab === 'singleLeg' && (
+              <GlobalSingleLeg 
+                address={address}
+                userData={userData} 
+                openLevels={openLevels} 
+                globalTimeline={globalTimeline}
+                totalUsers={totalUsers}
+                totalCompanyVolume={totalCompanyVolume}
+                onNavigateTab={setActiveTab}
+                showToast={showToast}
+              />
+            )}
+
+            {activeTab === 'binary' && (
+              <BinaryAndLevels 
+                userData={userData} 
+                onUpdatePreferredLeg={handleUpdatePreferredLeg}
+                txLoading={txLoading} 
+              />
+            )}
+
+            {activeTab === 'leadership' && (
+              <LeadershipPool 
+                userData={userData} 
+                onClaimLeadership={() => showToast('Claiming Daily Leadership Pool Dividend...')}
+                txLoading={txLoading} 
+              />
+            )}
+
+            {activeTab === 'scratch' && (
+              <ScratchCard 
+                coupons={userData?.directActiveCount ? Math.max(1, userData.directActiveCount) : 2} 
+                onScratchCard={handleScratchCard}
+                txLoading={txLoading} 
+                showToast={showToast} 
+              />
+            )}
+          </>
+        )}
+      </main>
+
+      {/* Mobile Fixed Bottom Bar */}
+      {isConnected ? (
+        <div className="mobile-bottom-nav mobile-only glass-panel">
+          <button 
+            className={`mbn-item ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            <LayoutDashboard size={18} />
             <span>Dashboard</span>
           </button>
-          <button className={`menu-item ${activeTab === "mint" ? "active" : ""}`} onClick={() => setActiveTab("mint")}>
-            <Flame size={20} />
-            <span>Genesis Mint</span>
+          <button 
+            className={`mbn-item ${activeTab === 'singleLeg' ? 'active' : ''}`}
+            onClick={() => setActiveTab('singleLeg')}
+          >
+            <Users size={18} />
+            <span>Single Leg</span>
           </button>
-          <button className={`menu-item ${activeTab === "stake" ? "active" : ""}`} onClick={() => setActiveTab("stake")}>
-            <Layers size={20} />
-            <span>Staking Portal</span>
+          <button 
+            className={`mbn-item ${activeTab === 'binary' ? 'active' : ''}`}
+            onClick={() => setActiveTab('binary')}
+          >
+            <GitBranch size={18} />
+            <span>Binary</span>
           </button>
-          <button className={`menu-item ${activeTab === "wheel" ? "active" : ""}`} onClick={() => setActiveTab("wheel")}>
-            <Compass size={20} />
-            <span>Lucky Wheel</span>
-          </button>
-          <button className={`menu-item ${activeTab === "ranks" ? "active" : ""}`} onClick={() => setActiveTab("ranks")}>
-            <Trophy size={20} />
-            <span>Ranks & Levels</span>
-          </button>
-          <button className={`menu-item ${activeTab === "affiliate" ? "active" : ""}`} onClick={() => setActiveTab("affiliate")}>
-            <Users size={20} />
-            <span>Profile</span>
-          </button>
-        </nav>
-
-        {/* Sidebar widgets */}
-        <div className="promo-card">
-          <h4>Grow Your BTC3.O</h4>
-          <p>Stake, earn and unlock exciting rewards.</p>
-          <div className="promo-graphic">
-            <div className="coin-stack">
-              <div className="coin coin-1">3.O</div>
-              <div className="coin coin-2">3.O</div>
-              <div className="coin coin-3">3.O</div>
-            </div>
-          </div>
-          <button className="promo-btn" onClick={() => setActiveTab("stake")}>
-            Start Staking <ArrowRight size={14} />
-          </button>
-        </div>
-
-        <div className="sidebar-help">
-          <div className="flex items-center gap-2 text-secondary mb-1">
-            <HelpCircle size={16} />
-            <span style={{ fontSize: '0.8rem' }}>Need Help?</span>
-          </div>
-          <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-            Visit our Help Center or contact support.
-          </p>
-          <a href="#help" className="help-action-btn">
-            Help Center <ArrowRight size={12} />
-          </a>
-        </div>
-
-        <div className="sidebar-footer">
-          <div className="flex justify-between items-center w-full px-2">
-            <div className="flex items-center gap-2">
-              <Moon size={16} />
-              <span style={{ fontSize: '0.85rem' }}>Dark Mode</span>
-            </div>
-            <label className="switch-toggle">
-              <input type="checkbox" defaultChecked />
-              <span className="switch-slider"></span>
-            </label>
-          </div>
-        </div>
-      </aside>
-
-      {/* Right Main Content */}
-      <div className="main-content-wrapper">
-        {/* Top Header */}
-        <header className="top-header">
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <img src="/logo.png" alt="BTC3.O Logo" style={{ width: "38px", height: "38px", objectFit: "contain", borderRadius: "50%" }} />
-            <h2 className="top-header-title">{tabTitles[activeTab]}</h2>
-          </div>
-          <div className="header-actions">
-            <div className="desktop-wallet-btn">
-              <ConnectButton chainStatus="icon" showBalance={false} />
-            </div>
-            <div className="mobile-wallet-btn">
-              <ConnectButton
-                chainStatus="none"
-                showBalance={false}
-                accountStatus={isConnected ? "avatar" : "full"}
-                label={isConnected ? undefined : "Connect"}
-              />
-            </div>
-          </div>
-        </header>
-
-        {/* Tab Contents */}
-        <div className="tab-pane-container">
-          <InstallApp variant="banner" />
-          {isMobileDevice() && !isConnected && !isWalletConnectConfigured && (
-            <div className="wallet-config-banner">
-              Mobile wallet linking needs a WalletConnect project ID on the server.
-              Open this site inside MetaMask or Trust Wallet browser and choose <strong>Browser Wallet</strong>,
-              or ask the admin to set <code>VITE_WALLETCONNECT_PROJECT_ID</code> in Vercel env vars.
-            </div>
-          )}
-          {isMobileDevice() && !isConnected && (
-            <div className="mobile-hint-banner">
-              {needsHttpsForWallets()
-                ? "Wallet connect requires HTTPS on mobile. Deploy with SSL or use your wallet app's built-in browser to open this site."
-                : isInAppBrowser()
-                  ? "Social in-app browsers block wallets. Open in Chrome/Safari, or paste this URL in MetaMask / Trust Wallet browser."
-                  : isWalletInAppBrowser()
-                    ? isMetaMaskBrowser()
-                      ? "You're in MetaMask browser — tap Connect → Browser Wallet (or MetaMask)."
-                      : isTrustWalletBrowser()
-                        ? "You're in Trust Wallet browser — tap Connect → Browser Wallet (or Trust Wallet)."
-                        : "Tap Connect → Browser Wallet to use your wallet app."
-                    : isWalletConnectConfigured
-                      ? "Tap Connect → WalletConnect, then pick MetaMask, Trust Wallet, or SafePal. Approve the connection in your wallet app."
-                      : "Tap Connect → Browser Wallet. For Chrome/Safari, open this site in your wallet app's browser instead."}
-            </div>
-          )}
-          {/* Wrong Network warning Banner */}
-          {isConnected && isWrongNetwork && (
-            <div className="wrong-network-banner">
-              <AlertCircle size={20} />
-              <span>
-                Please switch your wallet to {networkLabel}. Only BNB (BEP20) is supported — not Ethereum.
-              </span>
-              <button onClick={switchNetwork} className="switch-network-btn">
-                Switch Network
-              </button>
-            </div>
-          )}
-
-          {isConnected && !isWrongNetwork && contractMismatch && (
-            <div className="wrong-network-banner" style={{ borderColor: "rgba(251, 191, 36, 0.5)", background: "rgba(251, 191, 36, 0.1)" }}>
-              <AlertCircle size={20} style={{ color: "#fbbf24" }} />
-              <span>
-                Outdated contract on BSC Testnet. Redeploy with: <code>npx hardhat run scripts/deploy.js --network bscTestnet</code>
-              </span>
-            </div>
-          )}
-
-          {/* Unregistered Register Block */}
-          {isConnected && !isWrongNetwork && !contractMismatch && !userInfo.registered && (
-            <div className="register-container">
-              <div className="register-card">
-                <Shield size={48} className="register-icon" />
-                <h3 className="register-title">Register in System</h3>
-                <p className="register-desc">
-                  You need to register with a referrer address to join the BTC3.O Staking & Earn system.
-                </p>
-                <div className="register-input-group">
-                  <input 
-                    type="text" 
-                    placeholder="Referrer Address (Optional)" 
-                    className="register-input"
-                    value={referrerInput}
-                    onChange={(e) => setReferrerInput(e.target.value)}
-                  />
-                </div>
-                <button className="register-btn" onClick={executeRegister} disabled={txLoading}>
-                  {txLoading ? <Loader2 className="animate-spin inline mr-2" size={18} /> : null}
-                  Register Now
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Connected & Registered Pane Views */}
-          {isConnected && !isWrongNetwork && !contractMismatch && userInfo.registered && (
-            <>
-              {activeTab === "dashboard" && (
-                <Dashboard
-                  tokenSymbol={tokenSymbol}
-                  currentPrice={currentPrice}
-                  totalUSDValueMinted={totalUSDValueMinted}
-                  totalMintedTokens={totalMintedTokens}
-                  tokenTotalSupply={tokenTotalSupply}
-                  stakingTokenReserve={stakingTokenReserve}
-                  totalRewardsPaidUSD={totalRewardsPaidUSD}
-                  mintChartData={mintChartData}
-                  mintVolumeGrowth={mintVolumeGrowth}
-                  btcBalance={btcBalance}
-                  setActiveTab={setActiveTab}
-                  registeredUsersCount={registeredUsersCount}
-                  setRanksSubTab={setRanksSubTab}
-                  setProfileSubTab={setProfileSubTab}
-                />
-              )}
-
-              {activeTab === "mint" && (
-                <GenesisMint
-                  tokenSymbol={tokenSymbol}
-                  totalUSDValueMinted={totalUSDValueMinted}
-                  totalMintedTokens={totalMintedTokens}
-                  stakingTokenReserve={stakingTokenReserve}
-                  bondingCurveInfo={bondingCurveInfo}
-                  btcBalance={btcBalance}
-                  usdtBalance={usdtBalance}
-                  bnbBalance={bnbBalance}
-                  mintUsdtAmount={mintUsdtAmount}
-                  handleMintInputChange={handleMintInputChange}
-                  estimatedBtcToMint={estimatedBtcToMint}
-                  mintMethod={mintMethod}
-                  setMintMethod={setMintMethod}
-                  usdtApproved={usdtApproved}
-                  approveUsdt={approveUsdt}
-                  executeMint={executeMint}
-                  txLoading={txLoading}
-                  currentPrice={currentPrice}
-                  registeredUsersCount={registeredUsersCount}
-                  couponInput={couponInput}
-                  setCouponInput={setCouponInput}
-                  executeApplyCoupon={executeApplyCoupon}
-                />
-              )}
-
-              {activeTab === "stake" && (
-                <StakingPortal
-                  tokenSymbol={tokenSymbol}
-                  userInfo={userInfo}
-                  userStakesList={userStakesList}
-                  btcBalance={btcBalance}
-                  stakeBtcAmount={stakeBtcAmount}
-                  setStakeBtcAmount={setStakeBtcAmount}
-                  currentPrice={currentPrice}
-                  btcApproved={btcApproved}
-                  approveBtc={approveBtc}
-                  executeStake={executeStake}
-                  executeClaim={executeClaim}
-                  executeUnstake={executeUnstake}
-                  calcAmount={calcAmount}
-                  setCalcAmount={setCalcAmount}
-                  calcYears={calcYears}
-                  setCalcYears={setCalcYears}
-                  calcYield={calcYield}
-                  setCalcYield={setCalcYield}
-                  compoundingResults={compoundingResults}
-                  couponInput={couponInput}
-                  setCouponInput={setCouponInput}
-                  executeApplyCoupon={executeApplyCoupon}
-                  txLoading={txLoading}
-                  isCalcOpen={isCalcOpen}
-                  setIsCalcOpen={setIsCalcOpen}
-                />
-              )}
-
-              {activeTab === "affiliate" && (
-                <Affiliates
-                  tokenSymbol={tokenSymbol}
-                  account={account}
-                  bnbBalance={bnbBalance}
-                  usdtBalance={usdtBalance}
-                  btcBalance={btcBalance}
-                  transactionHistory={transactionHistory}
-                  subTab={profileSubTab}
-                  setSubTab={setProfileSubTab}
-                  executeSellTokens={executeSellTokens}
-                  currentPrice={currentPrice}
-                  txLoading={txLoading}
-                  userStakesList={userStakesList}
-                  onImportTxHistory={executeImportTxHistory}
-                  historyImportLoading={historyImportLoading}
-                  onRefreshHistory={() => loadTransactionHistory(true)}
-                />
-              )}
-
-              {activeTab === "ranks" && (
-                <RanksAndLevels
-                  tokenSymbol={tokenSymbol}
-                  userInfo={userInfo}
-                  rankNames={rankNames}
-                  rankBonusStatus={rankBonusStatus}
-                  qualifiedSalaryRank={qualifiedSalaryRank}
-                  executeClaimRankBonus={executeClaimRankBonus}
-                  executeClaimMonthlySalary={executeClaimMonthlySalary}
-                  levelCommissions={LEVEL_COMMISSIONS}
-                  txLoading={txLoading}
-                  encryptAddress={encryptAddress}
-                  account={account}
-                  copyReferralLink={copyReferralLink}
-                  copiedLink={copiedLink}
-                  subTab={ranksSubTab}
-                  setSubTab={setRanksSubTab}
-                />
-              )}
-
-              {activeTab === "wheel" && (
-                <LuckyWheel
-                  tokenSymbol={tokenSymbol}
-                  spinCost={spinCost}
-                  canvasRef={canvasRef}
-                  executeSpinWheel={executeSpinWheel}
-                  isSpinning={isSpinning}
-                  txLoading={txLoading}
-                  btcBalance={btcBalance}
-                  wheelPrize={wheelPrize}
-                  prizes={prizes}
-                  isAdmin={isAdmin}
-                  newSpinCostInput={newSpinCostInput}
-                  setNewSpinCostInput={setNewSpinCostInput}
-                  executeSetSpinCost={executeSetSpinCost}
-                />
-              )}
-            </>
-          )}
-
-          {/* Wallet Not Connected State */}
-          {!isConnected && (
-            <div className="connect-wallet-prompt">
-              <Shield size={48} className="connect-prompt-icon" />
-              <h3>Connect Your Wallet</h3>
-              <p>Please connect your Web3 wallet to access the BTC3.O Stake & Earn platform.</p>
-            </div>
-          )}
-        </div>
-
-        <nav className="mobile-bottom-bar" aria-label="Main navigation">
-          <button className={`mobile-nav-item ${activeTab === 'dashboard' ? 'active' : ''}`} onClick={() => setActiveTab('dashboard')}>
-            <LayoutDashboard size={20} />
-            <span>Home</span>
-          </button>
-          <button className={`mobile-nav-item ${activeTab === 'mint' ? 'active' : ''}`} onClick={() => setActiveTab('mint')}>
-            <Flame size={20} />
-            <span>Mint</span>
-          </button>
-          <button className={`mobile-nav-item ${activeTab === 'stake' ? 'active' : ''}`} onClick={() => setActiveTab('stake')}>
-            <Layers size={20} />
-            <span>Stake</span>
-          </button>
-          <button className={`mobile-nav-item ${activeTab === 'wheel' ? 'active' : ''}`} onClick={() => setActiveTab('wheel')}>
-            <Compass size={20} />
-            <span>Wheel</span>
-          </button>
-          <button className={`mobile-nav-item ${activeTab === 'ranks' ? 'active' : ''}`} onClick={() => setActiveTab('ranks')}>
-            <Trophy size={20} />
+          <button 
+            className={`mbn-item ${activeTab === 'leadership' ? 'active' : ''}`}
+            onClick={() => setActiveTab('leadership')}
+          >
+            <Award size={18} />
             <span>Ranks</span>
           </button>
-          <button className={`mobile-nav-item ${activeTab === 'affiliate' ? 'active' : ''}`} onClick={() => setActiveTab('affiliate')}>
-            <Users size={20} />
-            <span>Profile</span>
+          <button 
+            className={`mbn-item ${activeTab === 'scratch' ? 'active' : ''}`}
+            onClick={() => setActiveTab('scratch')}
+          >
+            <Gift size={18} />
+            <span>Scratch</span>
           </button>
-        </nav>
-      </div>
-
-      {/* Floating Compounding Calculator Icon Button (Universal) */}
-      {isConnected && userInfo.registered && (
-        <button
-          type="button"
-          className="sp-floating-calc-btn app-floating-calc-btn"
-          onClick={() => setIsCalcOpen(true)}
-          aria-label="Open compounding calculator"
-        >
-          <span>%</span>
-        </button>
-      )}
-
-      {/* Compounding Calculator Popup Modal Overlay */}
-      {isCalcOpen && (
-        <div 
-          className="sp-modal-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.75)",
-            backdropFilter: "blur(6px)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 10000,
-            padding: "1rem"
-          }}
-        >
-          <div 
-            className="sp-card-box sp-modal-card"
-            style={{
-              width: "100%",
-              maxWidth: "460px",
-              background: "linear-gradient(145deg, rgba(10, 17, 32, 0.98), rgba(5, 10, 20, 0.98))",
-              border: "1px solid var(--border-color)",
-              borderRadius: "18px",
-              padding: "1.5rem",
-              boxShadow: "0 20px 50px rgba(0, 0, 0, 0.4)",
-              position: "relative"
+          <button 
+            className={`mbn-item ${activeTab === 'manual' ? 'active' : ''}`}
+            onClick={() => setActiveTab('manual')}
+          >
+            <BookOpen size={18} />
+            <span>Manual</span>
+          </button>
+        </div>
+      ) : (
+        <div className="mobile-bottom-cta-bar mobile-only glass-panel">
+          <div className="mobile-cta-info">
+            <span className="cta-dot"></span>
+            <span>Altruva · 100% USDT Community</span>
+          </div>
+          <button 
+            className="mobile-cta-btn" 
+            onClick={() => {
+              const btn = document.querySelector('[data-testid="rk-connect-button"]');
+              if (btn) btn.click();
+              else showToast('Please use the Connect Wallet button above.');
             }}
           >
-            <h3 className="sp-card-title" style={{ marginBottom: "10px" }}>Compounding Staking Calculator</h3>
-            <p className="sp-card-desc" style={{ marginBottom: "20px", fontSize: "0.85rem", opacity: 0.85 }}>
-              Simulate your earnings using daily compounding from 1 to 5 years.
-            </p>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              <div>
-                <label className="sp-calc-label" style={{ fontSize: "0.8rem", opacity: 0.9 }}>Calculator Amount (USD)</label>
-                <input 
-                  type="number" 
-                  placeholder="USD Amount" 
-                  className="sp-field-input mt-1" 
-                  value={calcAmount}
-                  onChange={(e) => setCalcAmount(e.target.value)}
-                  style={{ width: "100%" }}
-                />
-              </div>
-              <div>
-                <label className="sp-calc-label" style={{ fontSize: "0.8rem", opacity: 0.9 }}>Compounding Years</label>
-                <select 
-                  className="sp-staking-mode-select mt-1" 
-                  value={calcYears}
-                  onChange={(e) => setCalcYears(Number(e.target.value))}
-                  style={{ width: "100%", padding: "10px", borderRadius: "8px", backgroundColor: "var(--bg-soft)", border: "1px solid var(--border-color)", color: "#fff" }}
-                >
-                  <option value={1}>1 Year</option>
-                  <option value={2}>2 Years</option>
-                  <option value={3}>3 Years</option>
-                  <option value={4}>4 Years</option>
-                  <option value={5}>5 Years</option>
-                </select>
-              </div>
-              <div>
-                <label className="sp-calc-label" style={{ fontSize: "0.8rem", opacity: 0.9 }}>Staking Yield Mode</label>
-                <select 
-                  className="sp-staking-mode-select mt-1" 
-                  value={calcYield}
-                  onChange={(e) => setCalcYield(Number(e.target.value))}
-                  style={{ width: "100%", padding: "10px", borderRadius: "8px", backgroundColor: "var(--bg-soft)", border: "1px solid var(--border-color)", color: "#fff" }}
-                >
-                  <option value={0.005}>0.5% Daily ($10–$499)</option>
-                  <option value={0.006}>0.6% Daily ($500–$2,000)</option>
-                  <option value={0.0075}>0.75% Daily ($2,001–$5,000)</option>
-                  <option value={0.01}>1.0% Daily ($5,001–$10,000)</option>
-                </select>
-              </div>
-              
-              <div className="sp-details-panel" style={{ marginTop: "10px", padding: "12px", borderRadius: "8px", backgroundColor: "var(--bg-soft)" }}>
-                <div className="sp-detail-row" style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                  <span>Future Value (USD)</span>
-                  <span className="sp-gold-text font-bold" style={{ color: "var(--gold)", fontWeight: "bold" }}>${compoundingResults.future}</span>
-                </div>
-                <div className="sp-detail-row" style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Estimated Yield Earned</span>
-                  <span>${compoundingResults.yield}</span>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-              <button 
-                className="sp-small-danger-btn" 
-                onClick={() => setIsCalcOpen(false)}
-                style={{ flex: 1, padding: "10px", borderRadius: "8px", cursor: "pointer", border: "1px solid rgba(239, 68, 68, 0.4)", backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#fff" }}
-              >
-                Close Calculator
-              </button>
-            </div>
-          </div>
+            <Wallet size={16} /> Connect Wallet
+          </button>
         </div>
       )}
-      <Chatbot />
+
+      {/* Modals */}
+      <WithdrawModal
+        isOpen={isWithdrawOpen}
+        onClose={() => setIsWithdrawOpen(false)}
+        onWithdraw={handleWithdraw}
+        claimableBalance={userData?.claimableEarnings || 0}
+        userPackage={userData?.totalPackageUSD || 100}
+        txLoading={txLoading}
+      />
+
+      <PresentationModal
+        isOpen={isPresModalOpen}
+        onClose={() => setIsPresModalOpen(false)}
+        onLaunchApp={() => {
+          if (isConnected) setActiveTab('dashboard');
+          else setActiveTab('manual');
+        }}
+      />
+
+      {/* Footer */}
+      <footer className="altruva-footer glass-panel">
+        <div className="footer-content">
+          <div className="f-left">
+            <AltruvaLogo size={24} />
+            <span>ALTRUVA · 100% COMMUNITY DISTRIBUTION MODEL</span>
+          </div>
+          <div className="f-center">
+            <span>altruva.us</span>
+            <span className="dot">•</span>
+            <span>altruva.live</span>
+          </div>
+          <div className="f-right">
+            <span>Pure BEP-20 USDT on BNB Smart Chain</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
-
-export default App;

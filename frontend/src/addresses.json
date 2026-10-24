@@ -1,8 +1,8 @@
 {
   "chainId": "0x61",
+  "network": "BSC Testnet",
   "usdt": "0xcC54199B539EeA878510103F5D4a8CfD61C57Bb9",
-  "token": "0xDc261785b306130015147e71FD4CD5eF4BF0A714",
-  "stakingSystem": "0xcAb08a492DAB8161bf472540Bd62F10013d59231",
-  "tokenName": "BTC 3.0",
-  "tokenSymbol": "BTC 3.0"
+  "altruvaCore": "0xC653113ca00B7F33f6f662a1EfBB7F4a6DfC00A3",
+  "tokenSymbol": "USDT",
+  "currency": "USDT"
 }

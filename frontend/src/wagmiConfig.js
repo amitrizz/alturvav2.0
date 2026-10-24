@@ -9,7 +9,7 @@ import {
   injectedWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import { http } from "wagmi";
-import { bscTestnet } from "wagmi/chains";
+import { bscTestnet, bsc } from "wagmi/chains";
 
 const PLACEHOLDER_PROJECT_IDS = new Set([
   "88c9df409ffc9779df52c80333333333",
@@ -24,22 +24,25 @@ export const isWalletConnectConfigured = Boolean(
 );
 
 const appOrigin =
-  typeof window !== "undefined" ? window.location.origin : "https://kchain.vercel.app";
+  typeof window !== "undefined" ? window.location.origin : "https://altruva.live";
 const appUrl = `${appOrigin}/`;
-const appIcon = `${appOrigin}/pwa-192x192.png`;
+const appIcon = `${appOrigin}/favicon-32x32.png`;
 
 const BSC_TESTNET_RPC =
   import.meta.env.VITE_BSC_TESTNET_RPC || "https://bsc-testnet-rpc.publicnode.com";
+const BSC_MAINNET_RPC =
+  import.meta.env.VITE_BSC_RPC || "https://binance.llamarpc.com";
 
 export const wagmiConfig = getDefaultConfig({
-  appName: "BTC3.O DEX",
-  appDescription: "Mint, stake, and earn on BSC Testnet with BTC3.0",
+  appName: "Altruva",
+  appDescription: "Altruva 100% Community Distribution Model in USDT on BNB Smart Chain",
   appUrl,
   appIcon,
   projectId: walletConnectProjectId,
-  chains: [bscTestnet],
+  chains: [bscTestnet, bsc],
   transports: {
     [bscTestnet.id]: http(BSC_TESTNET_RPC),
+    [bsc.id]: http(BSC_MAINNET_RPC),
   },
   ssr: false,
   wallets: [
@@ -58,8 +61,8 @@ export const wagmiConfig = getDefaultConfig({
   ],
   walletConnectParameters: {
     metadata: {
-      name: "BTC3.O DEX",
-      description: "Mint, stake, and earn on BSC Testnet with BTC3.0",
+      name: "Altruva",
+      description: "100% Community Distribution Model in USDT on BNB Smart Chain",
       url: appUrl,
       icons: [appIcon],
     },

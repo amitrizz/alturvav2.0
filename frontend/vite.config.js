@@ -46,6 +46,7 @@ export default defineConfig({
     port: 5180,
     strictPort: true,
     host: true,
+    allowedHosts: true,
   },
   build: {
     target: ['es2018', 'chrome64', 'firefox67', 'safari12', 'edge79'],
