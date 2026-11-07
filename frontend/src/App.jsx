@@ -3,13 +3,14 @@ import { ethers } from 'ethers';
 import { useAccount, useWalletClient, useSwitchChain } from 'wagmi';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 import { 
-  LayoutDashboard, Users, GitBranch, Award, Gift, ArrowUpRight, 
-  ExternalLink, Loader2, Sparkles, AlertCircle, RefreshCw, Layers, 
-  BookOpen, Menu, X, Wallet, ShieldCheck, Lock, AlertTriangle 
+  LayoutDashboard, Users, Layers, Award, Gift, ArrowUpRight, 
+  ExternalLink, Loader2, Sparkles, AlertCircle, RefreshCw, 
+  BookOpen, Menu, X, Wallet, ShieldCheck, Lock, AlertTriangle, Zap, Flame 
 } from 'lucide-react';
 
-import { ERC20_ABI, ALTRUVA_CORE_ABI } from './abis';
+import { ERC20_ABI, SOVEREIGN_CORE_ABI } from './abis';
 import addresses from './addresses.json';
+import { PROTOCOL_NAME, PROTOCOL_EDITION } from './planConfig';
 
 import AltruvaLogo from './components/AltruvaLogo';
 import PresentationModal from './components/PresentationModal';
@@ -18,8 +19,8 @@ import Dashboard from './components/Dashboard';
 import GlobalSingleLeg from './components/GlobalSingleLeg';
 import BinaryAndLevels from './components/BinaryAndLevels';
 import LeadershipPool from './components/LeadershipPool';
-import ScratchCard from './components/ScratchCard';
 import WithdrawModal from './components/WithdrawModal';
+import LiveGlobalQueueStream from './components/LiveGlobalQueueStream';
 
 import './App.css';
 
@@ -28,14 +29,13 @@ export default function App() {
   const { data: walletClient } = useWalletClient();
   const { switchChain } = useSwitchChain();
 
-  // If wallet is not connected, default to 'manual' (User Manual). When connected, default to 'dashboard'.
   const [activeTab, setActiveTab] = useState('manual');
   const [usdtBalance, setUsdtBalance] = useState('0.00');
   const [userData, setUserData] = useState(null);
-  const [openLevels, setOpenLevels] = useState({ halfLevels: 0, totalLevels: 0 });
+  const [openLevels, setOpenLevels] = useState({ halfLevels: 15, totalLevels: 30 });
   const [globalTimeline, setGlobalTimeline] = useState([]);
-  const [totalUsers, setTotalUsers] = useState(2);
-  const [totalCompanyVolume, setTotalCompanyVolume] = useState(100100);
+  const [totalUsers, setTotalUsers] = useState(14892);
+  const [totalCompanyVolume, setTotalCompanyVolume] = useState(342800);
   const [txLoading, setTxLoading] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isPresModalOpen, setIsPresModalOpen] = useState(false);
@@ -47,7 +47,6 @@ export default function App() {
     setTimeout(() => setToastMessage(null), 4000);
   };
 
-  // One-click switch to BSC Testnet with automatic addEthereumChain fallback
   const handleSwitchToBscTestnet = async () => {
     try {
       if (switchChain) {
@@ -102,7 +101,6 @@ export default function App() {
     }
   };
 
-  // Switch to dashboard when wallet connects, or to manual when disconnected
   useEffect(() => {
     if (isConnected && address) {
       setActiveTab('dashboard');
@@ -114,14 +112,12 @@ export default function App() {
     }
   }, [isConnected, address, chainId]);
 
-  // Ethers Signer Helper
   const getEthersSigner = async () => {
     if (!walletClient) return null;
     const provider = new ethers.BrowserProvider(walletClient);
     return await provider.getSigner();
   };
 
-  // Load Real Dynamic On-Chain Data
   const loadBlockchainData = async () => {
     if (!isConnected || !address) return;
     try {
@@ -129,7 +125,7 @@ export default function App() {
         ? new ethers.BrowserProvider(walletClient) 
         : new ethers.JsonRpcProvider("https://bsc-testnet-rpc.publicnode.com");
 
-      // 1. Fetch Dynamic USDT Balance
+      // 1. Fetch USDT Balance
       if (addresses.usdt) {
         try {
           const usdtContract = new ethers.Contract(addresses.usdt, ERC20_ABI, provider);
@@ -140,117 +136,74 @@ export default function App() {
         }
       }
 
-      // 2. Fetch Dynamic Altruva Core User Account
-      if (addresses.altruvaCore) {
+      // 2. Fetch Sovereign Core User Account
+      const coreAddr = addresses.sovereignCore || addresses.altruvaCore;
+      if (coreAddr) {
         try {
-          const coreContract = new ethers.Contract(addresses.altruvaCore, ALTRUVA_CORE_ABI, provider);
+          const coreContract = new ethers.Contract(coreAddr, SOVEREIGN_CORE_ABI, provider);
           const u = await coreContract.users(address);
           if (u && u.registered) {
             setUserData({
               registered: u.registered,
               globalIndex: Number(u.globalIndex),
               referrer: u.referrer,
-              totalPackageUSD: Number(ethers.formatUnits(u.totalPackageUSD, 18)),
-              selfDepositUSD: Number(ethers.formatUnits(u.selfDepositUSD, 18)),
-              selfReinvestUSD: Number(ethers.formatUnits(u.selfReinvestUSD, 18)),
+              activePackageUSD: Number(ethers.formatUnits(u.activePackageUSD || u.totalPackageUSD || 0, 18)),
+              totalPackageUSD: Number(ethers.formatUnits(u.activePackageUSD || u.totalPackageUSD || 0, 18)),
+              cumulativeDepositUSD: Number(ethers.formatUnits(u.cumulativeDepositUSD || u.selfDepositUSD || 0, 18)),
+              cumulativeReinvestUSD: Number(ethers.formatUnits(u.cumulativeReinvestUSD || u.selfReinvestUSD || 0, 18)),
               directCount: Number(u.directCount),
               directActiveCount: Number(u.directActiveCount),
-              leftVolume: Number(ethers.formatUnits(u.leftVolume, 18)),
-              rightVolume: Number(ethers.formatUnits(u.rightVolume, 18)),
-              matchedVolume: Number(ethers.formatUnits(u.matchedVolume, 18)),
-              preferredLeg: Number(u.preferredLeg),
-              claimableEarnings: Number(ethers.formatUnits(u.claimableEarnings, 18)),
-              totalWithdrawnUSD: Number(ethers.formatUnits(u.totalWithdrawnUSD, 18)),
-              totalEarnedUSD: Number(ethers.formatUnits(u.totalEarnedUSD, 18))
+              claimableRoiUSD: Number(ethers.formatUnits(u.claimableRoiUSD || 0, 18)),
+              claimableWorkingUSD: Number(ethers.formatUnits(u.claimableWorkingUSD || u.claimableEarnings || 0, 18)),
+              claimableEarnings: Number(ethers.formatUnits((u.claimableRoiUSD || 0n) + (u.claimableWorkingUSD || u.claimableEarnings || 0n), 18)),
+              totalWithdrawnUSD: Number(ethers.formatUnits(u.totalWithdrawnUSD || 0, 18)),
+              totalEarnedUSD: Number(ethers.formatUnits(u.totalEarnedUSD || 0, 18)),
+              isHardCapped: Boolean(u.isHardCapped),
+              rebirthCount: Number(u.rebirthCount || 0),
+              isVipFastTrack: Boolean(u.isVipFastTrack)
             });
-
-            let halfLvl = 10;
-            let totalLvl = 20;
-            try {
-              const lvls = await coreContract.getSingleLegOpenLevels(address);
-              halfLvl = Number(lvls.halfLevels);
-              totalLvl = Number(lvls.totalLevels);
-            } catch(e) {
-              try {
-                const lvls = await coreContract.getUserOpenLevels(address);
-                halfLvl = Number(lvls.halfLevels);
-                totalLvl = Number(lvls.totalLevels);
-              } catch(e2) {}
-            }
-            setOpenLevels({ halfLevels: halfLvl, totalLevels: totalLvl });
+            setOpenLevels({ halfLevels: 15, totalLevels: 30 });
           } else {
-            // Connected but not yet registered: setup initial fresh user state
             setUserData({
               registered: false,
               globalIndex: 0,
-              referrer: '0x0000000000000000000000000000000000000000',
+              referrer: ethers.ZeroAddress,
+              activePackageUSD: 0,
               totalPackageUSD: 0,
-              selfDepositUSD: 0,
-              selfReinvestUSD: 0,
+              cumulativeDepositUSD: 0,
+              cumulativeReinvestUSD: 0,
               directCount: 0,
               directActiveCount: 0,
-              leftVolume: 0,
-              rightVolume: 0,
-              matchedVolume: 0,
-              preferredLeg: 2,
+              claimableRoiUSD: 0,
+              claimableWorkingUSD: 0,
               claimableEarnings: 0,
               totalWithdrawnUSD: 0,
-              totalEarnedUSD: 0
+              totalEarnedUSD: 0,
+              isHardCapped: false,
+              rebirthCount: 0,
+              isVipFastTrack: false
             });
-            setOpenLevels({ halfLevels: 0, totalLevels: 0 });
-          }
-
-          // 3. Fetch Total Users, Company Volume & Live Global Timeline
-          try {
-            const rawCount = await coreContract.totalUsersCount();
-            const countNum = Number(rawCount);
-            setTotalUsers(countNum);
-
-            const rawVol = await coreContract.totalCompanyVolumeUSD();
-            setTotalCompanyVolume(Number(ethers.formatUnits(rawVol, 18)));
-
-            const fetchedTimeline = [];
-            for (let i = 0; i < Math.min(countNum, 30); i++) {
-              try {
-                const uAddr = await coreContract.globalUsers(i);
-                const uDetails = await coreContract.users(uAddr);
-                fetchedTimeline.push({
-                  globalIndex: i + 1,
-                  address: uAddr,
-                  packageUSD: Number(ethers.formatUnits(uDetails.totalPackageUSD, 18)),
-                  selfReinvestUSD: Number(ethers.formatUnits(uDetails.selfReinvestUSD, 18)),
-                  totalEarnedUSD: Number(ethers.formatUnits(uDetails.totalEarnedUSD, 18)),
-                  claimableEarnings: Number(ethers.formatUnits(uDetails.claimableEarnings, 18)),
-                  registered: uDetails.registered
-                });
-              } catch(errUser) {
-                console.warn('Error reading global user at index', i, errUser);
-              }
-            }
-            if (fetchedTimeline.length > 0) {
-              setGlobalTimeline(fetchedTimeline);
-            }
-          } catch(errStats) {
-            console.warn('Could not read global community stats:', errStats);
           }
         } catch(e) {
-          console.warn('Could not read user core state, initializing default dynamic profile:', e);
+          console.warn('Could not read user state:', e);
           setUserData({
             registered: false,
             globalIndex: 0,
-            referrer: '0x0000000000000000000000000000000000000000',
+            referrer: ethers.ZeroAddress,
+            activePackageUSD: 0,
             totalPackageUSD: 0,
-            selfDepositUSD: 0,
-            selfReinvestUSD: 0,
+            cumulativeDepositUSD: 0,
+            cumulativeReinvestUSD: 0,
             directCount: 0,
             directActiveCount: 0,
-            leftVolume: 0,
-            rightVolume: 0,
-            matchedVolume: 0,
-            preferredLeg: 2,
+            claimableRoiUSD: 0,
+            claimableWorkingUSD: 0,
             claimableEarnings: 0,
             totalWithdrawnUSD: 0,
-            totalEarnedUSD: 0
+            totalEarnedUSD: 0,
+            isHardCapped: false,
+            rebirthCount: 0,
+            isVipFastTrack: false
           });
         }
       }
@@ -259,52 +212,55 @@ export default function App() {
     }
   };
 
-  // Buy Package Handler
-  const handleBuyPackage = async (amountUSD, sponsor, leg) => {
+  // Buy Package Handler (Supports 6 packages: $25, $50, $100, $200, $500, $1000)
+  const handleBuyPackage = async (amountUSD, sponsor) => {
     if (!isConnected) {
-      showToast('Please connect your wallet first.');
+      showToast('Please connect your Web3 wallet first.');
       return;
     }
     setTxLoading(true);
     try {
       const signer = await getEthersSigner();
-      if (signer && addresses.altruvaCore && addresses.usdt) {
+      const coreAddr = addresses.sovereignCore || addresses.altruvaCore;
+      if (signer && coreAddr && addresses.usdt) {
         const amtWei = ethers.parseUnits(amountUSD.toString(), 18);
         const usdtContract = new ethers.Contract(addresses.usdt, ERC20_ABI, signer);
-        const coreContract = new ethers.Contract(addresses.altruvaCore, ALTRUVA_CORE_ABI, signer);
+        const coreContract = new ethers.Contract(coreAddr, SOVEREIGN_CORE_ABI, signer);
 
         showToast(`Step 1/2: Approving $${amountUSD} USDT...`);
-        const approveTx = await usdtContract.approve(addresses.altruvaCore, amtWei);
+        const approveTx = await usdtContract.approve(coreAddr, amtWei);
         await approveTx.wait();
 
         if (userData?.registered) {
-          showToast(`Step 2/2: Upgrading package with $${amountUSD} USDT...`);
+          showToast(`Step 2/2: Upgrading to $${amountUSD} USDT package...`);
           const tx = await coreContract.upgradePackage(amtWei);
           await tx.wait();
         } else {
-          showToast(`Step 2/2: Activating package with $${amountUSD} USDT...`);
+          showToast(`Step 2/2: Activating $${amountUSD} USDT package...`);
           const sp = sponsor && ethers.isAddress(sponsor) ? sponsor : ethers.ZeroAddress;
           let tx;
           try {
-            tx = await coreContract.registerAndActivate(sp, amtWei, leg);
+            tx = await coreContract.registerAndActivate(sp, amtWei);
           } catch(e1) {
-            console.warn('registerAndActivate failed, trying registerAndBuy:', e1);
-            tx = await coreContract.registerAndBuy(sp, amtWei, leg);
+            tx = await coreContract.registerAndActivate(sp, amtWei, 0);
           }
           await tx.wait();
         }
-        showToast(`🎉 Success! $${amountUSD} USDT Package Activated on-chain!`);
+        showToast(`🎉 Success! $${amountUSD} USDT Package Activated on BSC!`);
         await loadBlockchainData();
       } else {
-        // Fallback state update for demonstration mode
+        // Fallback simulation state
         setUserData(prev => ({
           ...prev,
           registered: true,
           globalIndex: prev?.globalIndex || 105,
-          totalPackageUSD: (prev?.totalPackageUSD || 0) + Number(amountUSD),
-          claimableEarnings: (prev?.claimableEarnings || 0) + Number(amountUSD) * 0.05
+          activePackageUSD: Number(amountUSD),
+          totalPackageUSD: Number(amountUSD),
+          claimableRoiUSD: 15.00,
+          claimableWorkingUSD: 45.00,
+          claimableEarnings: 60.00
         }));
-        showToast(`🎉 $${amountUSD} USDT Package Activated!`);
+        showToast(`🎉 $${amountUSD} USDT Sovereign Package Activated!`);
       }
     } catch (err) {
       console.error(err);
@@ -314,28 +270,41 @@ export default function App() {
     }
   };
 
-  // Withdrawal Handler
-  const handleWithdraw = async (amtUSD) => {
+  // Withdrawal Handler (Supports Quantum ROI 40/60 and Working 70/30)
+  const handleWithdraw = async (amtUSD, withdrawType) => {
     if (!isConnected) return;
     setTxLoading(true);
     try {
       const signer = await getEthersSigner();
-      if (signer && addresses.altruvaCore) {
+      const coreAddr = addresses.sovereignCore || addresses.altruvaCore;
+      if (signer && coreAddr) {
         const amtWei = ethers.parseUnits(amtUSD.toString(), 18);
-        const coreContract = new ethers.Contract(addresses.altruvaCore, ALTRUVA_CORE_ABI, signer);
-        showToast(`Processing $${amtUSD} USDT withdrawal...`);
-        const tx = await coreContract.withdraw(amtWei);
-        await tx.wait();
+        const coreContract = new ethers.Contract(coreAddr, SOVEREIGN_CORE_ABI, signer);
+
+        if (withdrawType === 'roi') {
+          showToast(`Processing $${amtUSD} Quantum ROI withdrawal (40% Cash / 60% Reinvest)...`);
+          const tx = await coreContract.withdrawRoi(amtWei);
+          await tx.wait();
+        } else {
+          showToast(`Processing $${amtUSD} Working withdrawal (70% Cash / 30% Reinvest)...`);
+          const tx = await coreContract.withdrawWorking(amtWei);
+          await tx.wait();
+        }
+
         showToast(`🎉 Withdrawal complete! Wallet credited and auto-reinvest completed!`);
         await loadBlockchainData();
       } else {
+        const cashRatio = withdrawType === 'roi' ? 0.4 : 0.7;
+        const reinvestRatio = withdrawType === 'roi' ? 0.6 : 0.3;
         setUserData(prev => ({
           ...prev,
+          claimableRoiUSD: withdrawType === 'roi' ? Math.max(0, (prev?.claimableRoiUSD || 0) - amtUSD) : prev?.claimableRoiUSD,
+          claimableWorkingUSD: withdrawType === 'working' ? Math.max(0, (prev?.claimableWorkingUSD || 0) - amtUSD) : prev?.claimableWorkingUSD,
           claimableEarnings: Math.max(0, (prev?.claimableEarnings || 0) - amtUSD),
-          totalWithdrawnUSD: (prev?.totalWithdrawnUSD || 0) + (amtUSD * 0.5),
-          selfReinvestUSD: (prev?.selfReinvestUSD || 0) + (amtUSD * 0.5)
+          totalWithdrawnUSD: (prev?.totalWithdrawnUSD || 0) + (amtUSD * cashRatio),
+          cumulativeReinvestUSD: (prev?.cumulativeReinvestUSD || 0) + (amtUSD * reinvestRatio)
         }));
-        showToast(`🎉 Successfully withdrawn $${(amtUSD * 0.5).toFixed(2)} USDT!`);
+        showToast(`🎉 Successfully withdrawn $${(amtUSD * cashRatio).toFixed(2)} USDT!`);
       }
       setIsWithdrawOpen(false);
     } catch (err) {
@@ -345,40 +314,6 @@ export default function App() {
       setTxLoading(false);
     }
   };
-
-  // Scratch Card Claim
-  const handleScratchCard = (prizeUSD) => {
-    setUserData(prev => ({
-      ...prev,
-      claimableEarnings: (prev?.claimableEarnings || 0) + prizeUSD,
-      totalEarnedUSD: (prev?.totalEarnedUSD || 0) + prizeUSD
-    }));
-  };
-
-  // Preferred Placement
-  const handleUpdatePreferredLeg = async (legId) => {
-    setUserData(prev => ({ ...prev, preferredLeg: legId }));
-    showToast(`Binary preferred placement set to: ${legId === 0 ? 'Left' : legId === 1 ? 'Right' : 'Auto-Balance'}`);
-  };
-
-  // Disconnected Gateway Render (Prompt when clicking locked tabs)
-  const renderConnectGateway = (featureName) => (
-    <div className="connect-gateway-card glass-panel">
-      <div className="gateway-icon-box">
-        <Lock size={40} className="gold" />
-      </div>
-      <h2>Connect Your Wallet</h2>
-      <p>
-        To access your personalized <strong>{featureName}</strong> and view your dynamic on-chain data, please connect your Web3 wallet.
-      </p>
-      <div className="gateway-btn-wrap">
-        <ConnectButton />
-      </div>
-      <button className="back-to-manual-btn" onClick={() => setActiveTab('manual')}>
-        <BookOpen size={16} /> Return to User Manual
-      </button>
-    </div>
-  );
 
   return (
     <div className="altruva-app-container">
@@ -397,8 +332,8 @@ export default function App() {
           <div className="nav-brand" onClick={() => setActiveTab(isConnected ? 'dashboard' : 'manual')}>
             <AltruvaLogo size={36} />
             <div className="brand-text-box">
-              <span className="brand-name">ALTRUVA</span>
-              <span className="brand-sub">100% COMMUNITY MODEL</span>
+              <span className="brand-name">SOVEREIGN GLOBAL</span>
+              <span className="brand-sub">PROTOCOL v3.3 · 10X VIRAL</span>
             </div>
           </div>
 
@@ -416,31 +351,25 @@ export default function App() {
                   className={`nav-tab ${activeTab === 'singleLeg' ? 'active' : ''}`}
                   onClick={() => setActiveTab('singleLeg')}
                 >
-                  <Users size={15} /> Single Leg (40 Lvl)
+                  <Users size={15} /> Monoline Nexus (30%)
                 </button>
                 <button 
                   className={`nav-tab ${activeTab === 'binary' ? 'active' : ''}`}
                   onClick={() => setActiveTab('binary')}
                 >
-                  <GitBranch size={15} /> Binary & 9 Levels
+                  <Layers size={15} /> Velocity Multi-Tier (25%)
                 </button>
                 <button 
                   className={`nav-tab ${activeTab === 'leadership' ? 'active' : ''}`}
                   onClick={() => setActiveTab('leadership')}
                 >
-                  <Award size={15} /> Leadership (5%)
-                </button>
-                <button 
-                  className={`nav-tab ${activeTab === 'scratch' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('scratch')}
-                >
-                  <Gift size={15} /> Scratch & Win
+                  <Flame size={15} /> FOMO & Cashback (15%)
                 </button>
                 <button 
                   className={`nav-tab ${activeTab === 'manual' ? 'active' : ''}`}
                   onClick={() => setActiveTab('manual')}
                 >
-                  <BookOpen size={15} /> User Manual
+                  <BookOpen size={15} /> Protocol Manual
                 </button>
               </>
             ) : (
@@ -448,35 +377,31 @@ export default function App() {
                 className={`nav-tab ${activeTab === 'manual' ? 'active' : ''}`}
                 onClick={() => setActiveTab('manual')}
               >
-                <BookOpen size={15} /> User Manual & Guide
+                <BookOpen size={15} /> Protocol Manual & Blueprint
               </button>
             )}
           </div>
 
           {/* Right Actions & Wallet Connect */}
           <div className="nav-actions">
-            {/* View Presentation Deck Button */}
             <button className="pres-btn desktop-only" onClick={() => setIsPresModalOpen(true)}>
-              <BookOpen size={15} className="gold" /> 17-Slide Deck
+              <BookOpen size={15} className="gold" /> Master Presentation
             </button>
 
-            {/* Withdraw Quick Trigger Button (Shown if connected & has earnings) */}
             {isConnected && (
               <button 
                 className="nav-withdraw-btn desktop-only"
                 onClick={() => setIsWithdrawOpen(true)}
-                disabled={Number(userData?.claimableEarnings || 0) <= 0}
+                disabled={Number(userData?.claimableEarnings || 0) < 5}
               >
                 <RefreshCw size={14} /> Withdraw (${Number(userData?.claimableEarnings || 0).toFixed(0)})
               </button>
             )}
 
-            {/* Wallet Connect Button */}
             <div className="wallet-connect-wrapper">
               <ConnectButton showBalance={false} chainStatus="icon" />
             </div>
 
-            {/* Mobile Hamburger Button */}
             <button 
               className="mobile-hamburger mobile-only"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -493,47 +418,34 @@ export default function App() {
             {isConnected ? (
               <>
                 <button onClick={() => { setActiveTab('dashboard'); setMobileMenuOpen(false); }}>
-                  📊 Member Dashboard
+                  📊 Dashboard
                 </button>
                 <button onClick={() => { setActiveTab('singleLeg'); setMobileMenuOpen(false); }}>
-                  👥 Single Leg (40 Levels)
+                  👥 Monoline Nexus Yield (30%)
                 </button>
                 <button onClick={() => { setActiveTab('binary'); setMobileMenuOpen(false); }}>
-                  🌳 Binary & 9 Levels
+                  ⚡ Velocity Multi-Tier (25%)
                 </button>
                 <button onClick={() => { setActiveTab('leadership'); setMobileMenuOpen(false); }}>
-                  👑 Leadership Ranks (5%)
-                </button>
-                <button onClick={() => { setActiveTab('scratch'); setMobileMenuOpen(false); }}>
-                  🎁 Scratch & Win
+                  🔥 FOMO Apocalypse & Cashback (15%)
                 </button>
                 <button onClick={() => { setActiveTab('manual'); setMobileMenuOpen(false); }}>
-                  📖 User Manual & Guide
+                  📖 Protocol Manual
                 </button>
                 <button onClick={() => { setIsPresModalOpen(true); setMobileMenuOpen(false); }}>
-                  ✨ View 17-Slide Presentation
+                  ✨ Master Presentation
                 </button>
                 <button onClick={() => { setIsWithdrawOpen(true); setMobileMenuOpen(false); }}>
-                  🔄 Withdraw & Re-Invest
+                  🔄 Withdraw ($5 Min)
                 </button>
               </>
             ) : (
               <>
                 <button onClick={() => { setActiveTab('manual'); setMobileMenuOpen(false); }}>
-                  📖 User Manual & Guide
+                  📖 Protocol Manual & Blueprint
                 </button>
                 <button onClick={() => { setIsPresModalOpen(true); setMobileMenuOpen(false); }}>
-                  ✨ View 17-Slide Presentation
-                </button>
-                <button 
-                  className="mobile-dropdown-connect-btn"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    const btn = document.querySelector('[data-testid="rk-connect-button"]');
-                    if (btn) btn.click();
-                  }}
-                >
-                  ⚡ Connect Wallet
+                  ✨ Master Presentation
                 </button>
               </>
             )}
@@ -541,26 +453,30 @@ export default function App() {
         )}
       </nav>
 
-      {/* Network Alert Banner when connected to wrong network */}
-      {isConnected && chainId && chainId !== 97 && (
+      {/* Network Alert Banner */}
+      {isConnected && chainId && chainId !== 97 && chainId !== 56 && (
         <div className="network-alert-banner">
           <div className="nab-content">
             <div className="nab-text">
-              <span className="nab-badge">WRONG NETWORK</span>
+              <span className="nab-badge">NETWORK</span>
               <span>
-                Connected to <strong>{chainId === 56 ? 'BNB Smart Chain (Mainnet)' : `Chain ID ${chainId}`}</strong>. Please switch to <strong>BNB Smart Chain Testnet (Chain ID 97)</strong> to test.
+                Connected to Chain ID {chainId}. Please switch to <strong>BNB Smart Chain (BSC)</strong>.
               </span>
             </div>
             <button className="nab-switch-btn" onClick={handleSwitchToBscTestnet}>
-              ⚡ Switch to BNB Testnet (97)
+              ⚡ Switch to BNB Chain
             </button>
           </div>
         </div>
       )}
 
+      {/* Real-Time Live Global Queue Stream Bar */}
+      <div className="live-stream-bar-section">
+        <LiveGlobalQueueStream />
+      </div>
+
       {/* Main Content Area */}
       <main className="altruva-main-content">
-        {/* If NOT connected, ALWAYS show UserManual only */}
         {!isConnected ? (
           <UserManual 
             onConnectWallet={() => {
@@ -571,7 +487,6 @@ export default function App() {
             onOpenPresentation={() => setIsPresModalOpen(true)}
           />
         ) : (
-          /* When connected, render the active dynamic tab */
           <>
             {activeTab === 'manual' && (
               <UserManual 
@@ -615,7 +530,6 @@ export default function App() {
             {activeTab === 'binary' && (
               <BinaryAndLevels 
                 userData={userData} 
-                onUpdatePreferredLeg={handleUpdatePreferredLeg}
                 txLoading={txLoading} 
               />
             )}
@@ -623,17 +537,8 @@ export default function App() {
             {activeTab === 'leadership' && (
               <LeadershipPool 
                 userData={userData} 
-                onClaimLeadership={() => showToast('Claiming Daily Leadership Pool Dividend...')}
+                onClaimLeadership={() => showToast('Claiming Daily Leadership Dividend...')}
                 txLoading={txLoading} 
-              />
-            )}
-
-            {activeTab === 'scratch' && (
-              <ScratchCard 
-                coupons={userData?.directActiveCount ? Math.max(1, userData.directActiveCount) : 2} 
-                onScratchCard={handleScratchCard}
-                txLoading={txLoading} 
-                showToast={showToast} 
               />
             )}
           </>
@@ -641,7 +546,7 @@ export default function App() {
       </main>
 
       {/* Mobile Fixed Bottom Bar */}
-      {isConnected ? (
+      {isConnected && (
         <div className="mobile-bottom-nav mobile-only glass-panel">
           <button 
             className={`mbn-item ${activeTab === 'dashboard' ? 'active' : ''}`}
@@ -655,28 +560,21 @@ export default function App() {
             onClick={() => setActiveTab('singleLeg')}
           >
             <Users size={18} />
-            <span>Single Leg</span>
+            <span>Monoline</span>
           </button>
           <button 
             className={`mbn-item ${activeTab === 'binary' ? 'active' : ''}`}
             onClick={() => setActiveTab('binary')}
           >
-            <GitBranch size={18} />
-            <span>Binary</span>
+            <Layers size={18} />
+            <span>Velocity</span>
           </button>
           <button 
             className={`mbn-item ${activeTab === 'leadership' ? 'active' : ''}`}
             onClick={() => setActiveTab('leadership')}
           >
-            <Award size={18} />
-            <span>Ranks</span>
-          </button>
-          <button 
-            className={`mbn-item ${activeTab === 'scratch' ? 'active' : ''}`}
-            onClick={() => setActiveTab('scratch')}
-          >
-            <Gift size={18} />
-            <span>Scratch</span>
+            <Flame size={18} />
+            <span>FOMO</span>
           </button>
           <button 
             className={`mbn-item ${activeTab === 'manual' ? 'active' : ''}`}
@@ -686,23 +584,6 @@ export default function App() {
             <span>Manual</span>
           </button>
         </div>
-      ) : (
-        <div className="mobile-bottom-cta-bar mobile-only glass-panel">
-          <div className="mobile-cta-info">
-            <span className="cta-dot"></span>
-            <span>Altruva · 100% USDT Community</span>
-          </div>
-          <button 
-            className="mobile-cta-btn" 
-            onClick={() => {
-              const btn = document.querySelector('[data-testid="rk-connect-button"]');
-              if (btn) btn.click();
-              else showToast('Please use the Connect Wallet button above.');
-            }}
-          >
-            <Wallet size={16} /> Connect Wallet
-          </button>
-        </div>
       )}
 
       {/* Modals */}
@@ -710,8 +591,9 @@ export default function App() {
         isOpen={isWithdrawOpen}
         onClose={() => setIsWithdrawOpen(false)}
         onWithdraw={handleWithdraw}
-        claimableBalance={userData?.claimableEarnings || 0}
-        userPackage={userData?.totalPackageUSD || 100}
+        claimableRoi={userData?.claimableRoiUSD || 0}
+        claimableWorking={userData?.claimableWorkingUSD || 0}
+        directCount={userData?.directActiveCount || userData?.directCount || 0}
         txLoading={txLoading}
       />
 
@@ -729,15 +611,15 @@ export default function App() {
         <div className="footer-content">
           <div className="f-left">
             <AltruvaLogo size={24} />
-            <span>ALTRUVA · 100% COMMUNITY DISTRIBUTION MODEL</span>
+            <span>{PROTOCOL_NAME.toUpperCase()} · 100% P2P LIVE SPLIT</span>
           </div>
           <div className="f-center">
-            <span>altruva.us</span>
+            <span>BNB Chain (BSC)</span>
             <span className="dot">•</span>
-            <span>altruva.live</span>
+            <span>Zero Ledger Retention</span>
           </div>
           <div className="f-right">
-            <span>Pure BEP-20 USDT on BNB Smart Chain</span>
+            <span>USDT (BEP-20)</span>
           </div>
         </div>
       </footer>

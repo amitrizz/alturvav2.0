@@ -4,309 +4,254 @@ import "./Chatbot.css";
 
 const PRESETS = [
   {
-    q: "What is BTC3.O?",
+    q: "What is Sovereign Global Protocol v3.3?",
     answers: [
-      "BTC3.O is the AI EARN BTC3.0 PLAN — a DeFi platform with 365-day investments, ROI by amount ($10–$10K), 20-level referral income, rank bonuses, and monthly USDT salary.",
-      "It is an innovative smart contract ecosystem built for dynamic token minting, passive staking payouts, and affiliate network rewards.",
-      "BTC3.O provides multiple Web3 earning channels including daily staking yields, a bonding curve minting mechanism, and team achievements.",
-      "Our platform offers a complete Web3 experience combining DeFi staking, lucky draws, network referrers, and rank milestone rewards.",
-      "BTC3.O is a decentralized portal designed to let users mint tokens, stake for yield, spin the lucky wheel, and climb affiliate ranks.",
-      "At its core, BTC3.O is the AI EARN BTC3.0 plan on BEP20: mint, 365-day stake ROI tiers, 20-level income, rank USDT bonuses, and monthly salary.",
-      "BTC3.O is an all-in-one reward platform where you can deposit early, stake for daily payouts, spin the wheel, and invite team members.",
-      "It is a utility-driven DeFi ecosystem that uses smart contracts to handle decentralized minting, staking yield pools, and rank milestone achievements.",
-      "BTC3.O is a community-first DeFi hub offering 365-day ROI tiers, 20-level mint commissions, rank USDT bonuses, and monthly salary.",
-      "Welcome to BTC3.O! A decentralized Web3 dashboard that merges bonding curve minting, staking nodes, referral rewards, and lucky draws."
+      "Sovereign Global Protocol v3.3 (Master Final Architecture & 10X Viral Edition) is a 100% decentralized, peer-to-peer (P2P) mathematical protocol on BNB Chain (BSC) operating purely in USDT (BEP-20) with gas paid in BNB. No funds are retained in the contract ledger.",
+      "The protocol features 6 entry packages ($25, $50, $100, $200, $500, $1,000) with 100% live split across 5 automated community pools: 30% Quantum ROI, 30% Monoline Nexus, 25% Velocity Gen, 10% Cashback, and 5% FOMO Jackpot.",
+      "Built with Genesis Admin Triangle Chain (top 3 fixed IDs) and zero protocol retention, guaranteeing 100% transparent on-chain mathematical liquidity.",
+      "Enjoy unlimited multiple IDs from single or multiple wallets, dynamic compression, a 300% Hard-Cap Re-Birth Loop, and instant viral FOMO triggers."
     ]
   },
   {
-    q: "How does Staking Yield work?",
+    q: "How does the Time-Bomb Quantum ROI (30% Pool) work?",
     answers: [
-      "Stake $10–$10,000 (USD value) for a 365-day cycle. Daily ROI: 0.5% ($10–$499), 0.6% ($500–$2K), 0.75% ($2K–$5K), or 1.0% ($5K–$10K).",
-      "After you mint BTC3.O, stake tokens in the Stake tab. Rewards accrue daily by tier and can be claimed in BTC3.O tokens.",
-      "The 365-day investment cycle matches the plan poster. Principal unlocks via unstake after the cycle ends.",
-      "Higher deposits unlock higher daily ROI bands up to 1% per day on the top tier ($5,001–$10,000).",
-      "Mint activates your investment; staking starts the daily affiliate reward package (ROI) from the plan table.",
-      "Claim staking rewards from the Stake portal whenever rewards are available, until your stake completes or caps.",
-      "ROI rate is set when you stake based on the USD value of that stake position.",
-      "Minimum stake/mint is $10 USDT equivalent; maximum is $10,000 per the plan rules.",
-      "Team business from your downline mint and stake counts toward rank progress.",
-      "See exact ROI tiers on the landing page and Dashboard—they match the smart contract."
+      "Quantum ROI is a global passive yield pool with a 2X (200%) cap. You earn 3.0% daily for the first 10 days, followed by 1.0% daily thereafter.",
+      "Viral Reset Mechanism: Sponsoring 1 new direct referral immediately resets the 3.0% daily yield for another 10 days!",
+      "Withdrawal Terms: Quantum ROI withdrawals are ALWAYS unlocked with ZERO direct sponsor condition. The withdrawal ratio is 40% Cash sent to your wallet and 60% Auto Re-invested back into the 5 pools.",
+      "Minimum withdrawal is strictly $5 USDT, processed on-chain in real-time."
     ]
   },
   {
-    q: "What is the Referral Program?",
+    q: "What is Monoline Nexus Yield (30% Pool)?",
     answers: [
-      "Our 20-level program pays: Level 1 = 8%, Levels 2–5 = 1%, Levels 6–10 = 0.5%, Levels 11–15 = 0.25%, Levels 16–20 = 0.1% on team mint volume.",
-      "Level income is paid in BTC3.O tokens when your downline mints (activates investment). All 20 upline levels can earn per the plan table.",
-      "Refer friends after you register. When they mint USDT/BNB into BTC3.O, you receive your level percentage automatically.",
-      "Commissions follow the AI EARN BTC3.0 plan: 8% on level 1, then 1%, 0.5%, 0.25%, and 0.1% for deeper levels.",
-      "Mint activates investment and triggers level income for your referrer chain up to 20 levels deep.",
-      "Team business and rank progress count both mint and stake volume across your network.",
-      "Share your referral link from the Ranks tab. No extra unlock steps—levels pay on qualifying mint events.",
-      "Level percentages match the official poster: 8% / 1% / 0.5% / 0.25% / 0.1% bands across 20 levels.",
-      "Register first, then mint $10–$10,000 to activate. Your upline earns level income on that mint.",
-      "See full level income and rank tables on the landing page and Ranks & Levels screen."
+      "Every member is positioned chronologically in a global single leg (Monoline ID #1, #2, #3...).",
+      "You earn a 1% commission on package activations and auto-reinvestments from 15 active wallets above you and 15 active wallets below you (30 wallets total = 30% yield).",
+      "Dynamic Compression: Inactive or retired accounts are automatically skipped so you always earn from 30 active wallets!",
+      "Breakage or out-of-bounds shares are securely captured by the Genesis Admin Triangle."
     ]
   },
   {
-    q: "How do Rank Rewards work?",
+    q: "How does Velocity Multi-Tier (25% Pool) pay out?",
     answers: [
-      "Ranks Bronze to Elite Crown unlock one-time USDT bonuses ($20–$50K) based on self BTC3.0 volume, directs, and team size per the plan table.",
-      "Gold through Elite Crown can qualify for monthly USDT salary ($50–$10,000) claimable once every 30 days.",
-      "Rank requirements match the poster: e.g. Bronze $500 self / 3 directs / team 10 for $20 USDT bonus.",
-      "Salary ranks start at Gold ($1,500 self, 9 directs, team 100) for $50/month USDT.",
-      "Claim rank bonuses and monthly salary from the Ranks tab when qualified.",
-      "Self investment includes mint and stake USD credited on-chain toward rank progress.",
-      "Elite Crown rank bonus is $50,000 USDT one-time; Elite monthly salary is $10,000 USDT.",
-      "Team size counts your entire referral downline registered under you.",
-      "Rank bonuses pay in USDT from the contract reserve; salaries pay monthly in USDT.",
-      "Full rank and salary tables are on the landing page and Ranks & Levels dashboard."
+      "Velocity is a 9-level generation unilevel model: Level 1 pays 13% fixed, Level 2 pays 3%, Level 3 pays 2%, and Levels 4 through 9 pay 1% each (total 25%).",
+      "Unlock Rules: Level 1 is unlocked with 0 directs; Levels 2–3 require 1 active direct; Levels 4–6 require 2 active directs; Levels 7–9 require 3 active directs.",
+      "Direct commission of 13% on Level 1 is credited instantly on every activation and upgrade.",
+      "Working ledger withdrawal unlocks once you achieve at least 3 active direct referrals."
     ]
   },
   {
-    q: "What is the Lucky Wheel spin cost?",
+    q: "What is the 10-Minute Ghost Position?",
     answers: [
-      "Spinning costs 10 tokens. Payout matches: Double (5 tokens), Triple (15 tokens), Mega (50 tokens), and Jackpot (150 tokens).",
-      "Each spin costs 10 BTC3.O. Instant wins include Double Match (5 tokens), Mega (50 tokens), and Jackpot (150 tokens) prizes.",
-      "Spend 10 tokens to spin. Prizes range from Double Match (5 tokens), Triple (15 tokens), up to a 150 token Jackpot!",
-      "A wheel spin costs 10 tokens. You can win up to 150 tokens (Jackpot) with a 50% overall probability of hitting a match.",
-      "Spin for 10 BTC3.O. Rewards are: Double Match (5 tokens), Triple Match (15 tokens), Mega (50 tokens), and Jackpot (150 tokens).",
-      "Every draw costs 10 tokens. Win instant prizes: 5 tokens (Double), 15 tokens (Triple), 50 tokens (Mega), or 150 tokens (Jackpot).",
-      "Spin cost is 10 tokens. Multipliers pay out instant rewards of 5, 15, 50, or 150 tokens directly to your wallet.",
-      "Play the wheel for 10 tokens. Win instant prizes like the 50 token Mega draw or the 150 token Jackpot payout!",
-      "Spin the Lucky Wheel for 10 tokens. Possible rewards: 5 tokens, 15 tokens, 50 tokens, or the grand 150 token Jackpot.",
-      "Each draw consumes 10 tokens. Hit matching segments to win instant payouts of 5, 15, 50, or 150 tokens."
+      "Upon connecting your Web3 wallet without paying, the smart contract locks a temporary Ghost Position in the Global Monoline.",
+      "A reverse countdown timer (09:59) displays live global turnover and new participants queuing underneath you in real time.",
+      "If you activate before the timer expires, you secure that monoline slot and its underlying volume. If not activated, the slot and queue are permanently deleted."
     ]
   },
   {
-    q: "How do I register on the platform?",
+    q: "How do I qualify for the 72H Alpha Cashback Surge (10%)?",
     answers: [
-      "To register, connect your Web3 wallet and perform a minting transaction or ask your sponsor for their referral link to join.",
-      "Registration is simple. Connect your wallet, enter a sponsor address if prompted, and complete a Genesis Mint or Stake action.",
-      "Just connect your wallet to the platform! If you came via a referral link, the sponsor address will automatically bind when you register.",
-      "You register automatically by connecting your MetaMask/TrustWallet and carrying out your first token mint or stake transaction.",
-      "Simply connect your wallet, load BNB or USDT, and perform a mint. This automatically registers your address in our contract database.",
-      "The system registers your wallet address on the blockchain as soon as you interact with the minting contract for the first time.",
-      "Connect your Web3 browser wallet, make sure you have enough gas fees, and interact with the platform to trigger automatic registration.",
-      "To register, connect your wallet and input your sponsor's referral address. Your profile will be instantly saved in the contract.",
-      "Registration triggers automatically on your first smart contract transaction. Make sure your sponsor's link is active.",
-      "No sign-up form is needed! Connect your decentralized wallet, execute a mint or stake, and you are officially registered."
+      "Sponsor 3 active direct members within 72 hours of your package activation.",
+      "Achieving this mission unlocks an instant 100% refund of your joining package amount directly into your wallet!",
+      "If the 72-hour mission fails, the 10% pool allocation rolls safely into the Community Airdrop Pool."
     ]
   },
   {
-    q: "What are Promo Coupons?",
+    q: "What is the FOMO Apocalypse Jackpot (5% Pool)?",
     answers: [
-      "Promo coupons are optional codes added by the platform admin. Enter a valid code on the Mint tab to receive the coupon reward.",
-      "Coupons must be enabled on-chain before use. Invalid codes will be rejected by the smart contract.",
-      "After you register, you can apply a coupon from the Mint screen if you have a valid promotional code.",
-      "Coupon rewards are credited per contract rules when the code is accepted.",
-      "Ask your community leader or official channels for active coupon codes.",
-      "Coupons are separate from the standard mint curve—they are promotional extras only.",
-      "You still need to register and meet mint limits ($10–$10,000) when using coupons.",
-      "One coupon application is tracked per contract rules; use only official codes.",
-      "Coupon success appears in your Profile activity when the transaction confirms.",
-      "For coupon issues, verify you are on BSC Testnet and registered in the system."
+      "It is an automated 24-hour countdown jackpot pool funded by 5% of all ecosystem volume.",
+      "Settlement Rule: 70% of the jackpot is shared equally among the last 50 paid users, and 30% is split among the top 3 direct sponsors of that round.",
+      "The countdown resets every 24 hours to spark perpetual global onboarding pressure."
     ]
   },
   {
-    q: "How can I withdraw my earnings?",
+    q: "What is the 300% Hard-Cap and Re-Birth Loop?",
     answers: [
-      "Withdraw your staking yield and affiliate rewards directly from the Stake and Ranks tabs. Payouts go straight to your wallet.",
-      "Claim rewards by clicking 'Claim' in the Staking Portal or Ranks panel. Payouts are transferred directly to your Web3 wallet.",
-      "Go to your dashboard or the respective Stake/Rank tab. Click the claim button to send your earnings directly to your connected wallet.",
-      "Withdrawals are decentralized. Just click the claim buttons on the tabs to receive your yields and rank bonuses instantly.",
-      "Earnings accumulate in the smart contract. You can withdraw them by triggering the claim functions on the Staking or Ranks panels.",
-      "All yield and referral earnings can be withdrawn to your wallet at any time by executing the claim transaction in the interface.",
-      "Simply click the 'Claim' button in the active stake details box or ranks dashboard to withdraw earnings directly to your address.",
-      "Withdrawals are processed instantly on the blockchain. Click Claim, approve the gas fee, and the tokens will hit your wallet.",
-      "You can withdraw your accumulated rewards at any moment. The smart contract transfers them to your wallet instantly.",
-      "Yields, commissions, and rank bonuses can be withdrawn via the claim buttons. There are no manual holds or delay times."
+      "No-Overflow Rule: Total cumulative earnings from all streams are capped at 300% (3X) of your active package tier. Any overflow diverts to the Stability Pool.",
+      "Re-Birth Loop: Once 3X is reached, your old ID is retired, and the contract deducts the package amount from your final payout to spawn a new Re-Birth ID at the bottom of the Monoline.",
+      "Smart Re-Birth Queue Jump: Leaders with 3+ directs in the last 30 days have their Re-Birth ID pushed into the priority VIP Fast-Track Slot!"
     ]
   },
   {
-    q: "Is there any penalty for unstaking?",
+    q: "What are the Withdrawal Rules and Speed-Decay Engine?",
     answers: [
-      "Unstake is allowed after the 365-day cycle completes. You cannot unstake principal before the cycle ends.",
-      "The plan uses a 365-day investment cycle—wait until your stake end time, then unstake from the Stake tab.",
-      "Withdrawing BTC3.O via Profile may include platform fee rules shown in the app; unstake returns staked principal after 365 days.",
-      "Claim ROI anytime during the cycle; unstaking principal is separate and time-locked for 365 days.",
-      "Check days remaining on each stake in the Staking Portal before planning an unstake.",
-      "After 365 days, unstake returns your locked tokens per contract logic.",
-      "Early exit is not supported for staked principal before the cycle—plan for the full 365-day term.",
-      "Reward cap rules apply to claims during the cycle; see Stake details for your position.",
-      "For liquidity before unstake, review Profile swap options and fee breakdown.",
-      "Always confirm network (BSC Testnet) and wallet connection before unstake transactions."
+      "Global Minimum Withdrawal: $5 USDT.",
+      "Quantum ROI: Always unlocked (40% Cash / 60% Auto Re-invest).",
+      "Working Network: Locked until you have 3 active direct referrals. Once unlocked, the ratio is 70% Cash / 30% Auto Re-invest.",
+      "Speed-Decay: If no new direct is sponsored in 14 days, payout speed temporarily drops from 50% to 10%. Sponsoring 1 new direct instantly restores 100% speed.",
+      "30-Day Maintenance: Maintain 1 active direct per 30 days to keep the 70/30 ratio, otherwise it temporarily adjusts to 50/50."
     ]
   },
   {
-    q: "How can I track my network referrals?",
+    q: "What is the Admin Genesis Triangle and Dynamic Infinity Override?",
     answers: [
-      "Go to the Ranks tab and select the 'Referral Program' subtab. You will find your link, team tree metrics, and commission history.",
-      "You can track your referrals on the Referral Program subtab under Ranks, which displays your referral link and level statistics.",
-      "Your team statistics are located in the Referral Program section of the Ranks tab. You can view level-by-level metrics there.",
-      "Open the Ranks tab, select the Referral subtab, and review your total downline volume, active direct referrals, and payout logs.",
-      "Your dashboard and the Ranks/Referral subtab show your complete downline logs, active referrers count, and team staking volume.",
-      "Check the Ranks & Levels page under Referral Program to view your direct partners, downline team count, and unlocked levels.",
-      "Track your referral progress on the Ranks tab (Referral subtab). It logs all level allocations and strong leg calculations.",
-      "Visit the Referral Program section under Ranks to see your active referral statistics, total team volume, and commissions.",
-      "Referral counts and tier payouts are visible under the Ranks tab. Scroll down to the referral program section to track your team.",
-      "The Referral subtab in the Ranks page provides a level-by-level team list, total downline staking volume, and network commissions."
+      "Genesis Triangle: The top 3 fixed IDs are hardcoded to the admin team, capturing all unearned spillovers, breakage, and overflow funds.",
+      "Dynamic Infinity Override: When leaders build 4 or more directs, an infinity override triggers on all lifetime turnover (4–10 directs: 5%, 11–25 directs: 7%, 26+ directs: 10% Master Royalty) channeled to the Admin Master Wallet."
     ]
   }
 ];
 
-function Chatbot() {
+export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { sender: "bot", text: "Hello! I am your BTC3.O Assistant. How can I help you generate rewards today?" }
+    {
+      sender: "bot",
+      text: "👋 Welcome to Sovereign Global Protocol v3.3 AI Assistant! Ask me anything about our 6 packages, 5 community pools, 10-minute Ghost Position, 72H Cashback Surge, 300% Re-Birth Loop, or withdrawal matrix."
+    }
   ]);
-  const [customInput, setCustomInput] = useState("");
-  const [isThinking, setIsThinking] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const chatEndRef = useRef(null);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages, isThinking]);
+    if (isOpen) scrollToBottom();
+  }, [messages, isOpen]);
 
-  const handleSendQuestion = (questionText) => {
-    if (!questionText.trim()) return;
+  const handleSend = (textToSend) => {
+    const query = textToSend || input;
+    if (!query.trim()) return;
 
-    // Add user message
-    const userMsg = { sender: "user", text: questionText };
-    setMessages(prev => [...prev, userMsg]);
-    setCustomInput("");
-    setIsThinking(true);
-
-    // Look for preset answers or generate a generic reply
-    const foundPreset = PRESETS.find(p => p.q.toLowerCase() === questionText.toLowerCase() || questionText.toLowerCase().includes(p.q.toLowerCase().substring(0, 15)));
-    
-    // Varrying thinking time: random delay between 800ms and 2300ms
-    const randomDelay = Math.floor(Math.random() * (2300 - 800 + 1)) + 800;
+    const userMsg = { sender: "user", text: query };
+    setMessages((prev) => [...prev, userMsg]);
+    if (!textToSend) setInput("");
+    setLoading(true);
 
     setTimeout(() => {
-      setIsThinking(false);
-      
-      let replyText = "That is a great question! For detailed information regarding this DeFi contract feature, you can also consult our official Docs & Guides modal on the Dashboard page.";
-      
-      if (foundPreset && foundPreset.answers) {
-        // Randomly pick one of the 10 answers
-        const randIdx = Math.floor(Math.random() * foundPreset.answers.length);
-        replyText = foundPreset.answers[randIdx];
+      let botResponse = "I'm your Sovereign Global Protocol v3.3 AI guide! Check the User Manual for complete formulas or select one of the suggested topics below.";
+
+      const lower = query.toLowerCase();
+
+      if (lower.includes("package") || lower.includes("tier") || lower.includes("deposit") || lower.includes("25") || lower.includes("1000")) {
+        botResponse = "Sovereign Global Protocol v3.3 offers 6 packages: $25, $50, $100, $200, $500, and $1,000 USDT. Each package unlocks 15 Up + 15 Down monoline reach, 2X ROI Cap, and 300% (3X) Hard-Cap.";
+      } else if (lower.includes("roi") || lower.includes("quantum") || lower.includes("passive") || lower.includes("3%")) {
+        botResponse = "Time-Bomb Quantum ROI (30% Pool) pays 3% daily for the first 10 days, then 1% daily up to a 200% (2X) cap. Sponsoring 1 new direct resets the 3% daily rate for another 10 days! ROI withdrawals are always unlocked at 40% Cash / 60% Re-invest.";
+      } else if (lower.includes("monoline") || lower.includes("single leg") || lower.includes("nexus") || lower.includes("15")) {
+        botResponse = "Monoline Nexus Yield (30% Pool) pays 1% each from 15 active wallets above you and 15 active wallets below you (30% total). Dynamic compression automatically skips non-active IDs so you always earn from 30 active wallets.";
+      } else if (lower.includes("velocity") || lower.includes("level") || lower.includes("unilevel") || lower.includes("generation") || lower.includes("13%")) {
+        botResponse = "Velocity Multi-Tier Bonus (25% Pool) spans 9 generation levels: L1 pays 13% fixed (0 directs req), L2 pays 3% (1 direct), L3 pays 2% (1 direct), L4-L6 pay 1% each (2 directs), and L7-L9 pay 1% each (3 directs).";
+      } else if (lower.includes("ghost") || lower.includes("10-minute") || lower.includes("timer")) {
+        botResponse = "The 10-Minute Ghost Position temporarily reserves your slot in the Global Monoline with a 09:59 reverse countdown timer as soon as you connect your wallet. Activate before the timer hits 00:00 or your position and incoming queue volume are permanently deleted!";
+      } else if (lower.includes("cashback") || lower.includes("72h") || lower.includes("72 hour") || lower.includes("refund")) {
+        botResponse = "72H Alpha Cashback Surge (10% Pool): Sponsor 3 active direct members within 72 hours of your activation to receive an instant 100% refund of your joining fee!";
+      } else if (lower.includes("fomo") || lower.includes("jackpot") || lower.includes("24h")) {
+        botResponse = "FOMO Apocalypse Jackpot (5% Pool) is a 24-hour countdown pool: 70% is shared equally among the last 50 paid users, and 30% is split among the top 3 direct sponsors of that round!";
+      } else if (lower.includes("hard cap") || lower.includes("rebirth") || lower.includes("re-birth") || lower.includes("300%") || lower.includes("3x")) {
+        botResponse = "Zero-Leak 300% Hard-Cap: When your total income reaches 300% (3X) of your package, your ID retires and auto-spawns a new Re-Birth ID at the bottom of the Monoline (or VIP Fast-Track queue if you have 3+ directs in 30 days).";
+      } else if (lower.includes("withdraw") || lower.includes("payout") || lower.includes("min") || lower.includes("5")) {
+        botResponse = "Global minimum withdrawal is $5 USDT. ROI withdrawals are always unlocked (40% Cash / 60% Re-invest). Working network earnings are locked until you have 3 direct referrals, unlocking at 70% Cash / 30% Re-invest.";
+      } else if (lower.includes("admin") || lower.includes("triangle") || lower.includes("override") || lower.includes("royalty")) {
+        botResponse = "The Genesis Admin Triangle consists of the top 3 hardcoded IDs capturing spillovers. From the 4th direct onwards, leaders trigger 5% to 10% Dynamic Infinity Overrides routed to the Master Admin Wallet.";
+      } else {
+        const matchedPreset = PRESETS.find((p) =>
+          lower.includes(p.q.toLowerCase().slice(0, 10))
+        );
+        if (matchedPreset) {
+          const randAns = matchedPreset.answers[Math.floor(Math.random() * matchedPreset.answers.length)];
+          botResponse = randAns;
+        }
       }
 
-      const botReply = {
-        sender: "bot",
-        text: replyText
-      };
-      setMessages(prev => [...prev, botReply]);
-    }, randomDelay);
+      setMessages((prev) => [...prev, { sender: "bot", text: botResponse }]);
+      setLoading(false);
+    }, 600);
   };
 
   return (
-    <div className="cb-chatbot-wrapper">
-      {/* Floating Chat Bubble Button */}
+    <div className="chatbot-wrapper">
       {!isOpen && (
-        <button className="cb-bubble-btn" onClick={() => setIsOpen(true)}>
-          <Bot size={24} />
-          <span className="cb-pulse-dot"></span>
+        <button className="chatbot-launcher-btn" onClick={() => setIsOpen(true)}>
+          <Bot size={22} className="bot-icon" />
+          <span className="btn-label">Sovereign AI Guide</span>
+          <span className="pulse-indicator"></span>
         </button>
       )}
 
-      {/* Chat Window Panel */}
       {isOpen && (
-        <div className="cb-chat-window">
-          {/* Header */}
-          <div className="cb-chat-header">
-            <div className="cb-header-title">
-              <Bot size={20} className="cb-bot-logo" />
+        <div className="chatbot-card glass-panel">
+          <div className="chatbot-header">
+            <div className="header-meta">
+              <div className="avatar-box">
+                <Bot size={20} className="gold" />
+              </div>
               <div>
-                <h4>BTC3.O Assistant</h4>
-                <span className="cb-status">Active Online</span>
+                <h4>Sovereign Protocol v3.3 AI</h4>
+                <span className="online-status">● Live Blockchain Assistant</span>
               </div>
             </div>
-            <button className="cb-close-btn" onClick={() => setIsOpen(false)}>
-              <X size={16} />
+            <button className="close-btn" onClick={() => setIsOpen(false)}>
+              <X size={18} />
             </button>
           </div>
 
-          {/* Quick Info Bar showing public images as a slide banner */}
-          <div className="cb-promo-banner">
-            <img src="/img1.jpeg" alt="promo1" className="cb-promo-img" />
-            <img src="/img2.jpeg" alt="promo2" className="cb-promo-img" />
-            <img src="/img3.jpeg" alt="promo3" className="cb-promo-img" />
-            <div className="cb-banner-overlay-text">
-              AI EARN BTC3.0 · Daily ROI up to 1%
+          <div className="chatbot-presets">
+            <span className="presets-title"><HelpCircle size={12} /> Popular Protocol Queries:</span>
+            <div className="preset-scroll">
+              {PRESETS.slice(0, 6).map((preset, idx) => (
+                <button
+                  key={idx}
+                  className="preset-chip"
+                  onClick={() => handleSend(preset.q)}
+                >
+                  {preset.q}
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Messages Area */}
-          <div className="cb-messages-area">
-            {messages.map((msg, idx) => (
-              <div className={`cb-msg-row ${msg.sender}`} key={idx}>
-                <div className="cb-avatar-circle">
-                  {msg.sender === "bot" ? <Bot size={14} /> : <User size={14} />}
+          <div className="chatbot-messages">
+            {messages.map((msg, index) => (
+              <div key={index} className={`chat-bubble-row ${msg.sender}`}>
+                {msg.sender === "bot" && (
+                  <div className="bubble-avatar bot">
+                    <Bot size={14} />
+                  </div>
+                )}
+                <div className={`chat-bubble ${msg.sender}`}>
+                  <p>{msg.text}</p>
                 </div>
-                <div className="cb-msg-text-bubble">
-                  {msg.text}
-                </div>
+                {msg.sender === "user" && (
+                  <div className="bubble-avatar user">
+                    <User size={14} />
+                  </div>
+                )}
               </div>
             ))}
-
-            {isThinking && (
-              <div className="cb-msg-row bot">
-                <div className="cb-avatar-circle">
+            {loading && (
+              <div className="chat-bubble-row bot">
+                <div className="bubble-avatar bot">
                   <Bot size={14} />
                 </div>
-                <div className="cb-msg-text-bubble cb-thinking-bubble">
-                  <Loader2 size={12} className="animate-spin inline mr-1" />
-                  Thinking...
+                <div className="chat-bubble bot typing">
+                  <Loader2 size={16} className="animate-spin cyan" />
+                  <span>Analyzing protocol rules...</span>
                 </div>
               </div>
             )}
-            <div ref={chatEndRef}></div>
+            <div ref={messagesEndRef} />
           </div>
 
-          {/* Preset Questions Dropdown Selector (Main Footer) */}
-          <div className="cb-chat-footer cb-presets-footer">
-            <div className="cb-presets-label">
-              <HelpCircle size={12} />
-              <span>Ask a Platform Question:</span>
-            </div>
-
-            <div className="cb-custom-select-wrapper">
-              <button 
-                className="cb-custom-select-trigger"
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              >
-                <span>-- Select a Question --</span>
-                {isDropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </button>
-
-              {isDropdownOpen && (
-                <div className="cb-custom-options-list">
-                  {PRESETS.map((item, idx) => (
-                    <div 
-                      className="cb-custom-option-item" 
-                      key={idx}
-                      onClick={() => {
-                        handleSendQuestion(item.q);
-                        setIsDropdownOpen(false);
-                      }}
-                    >
-                      {item.q}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+          <form
+            className="chatbot-input-bar"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Ask about pools, 3X cap, ROI, Ghost position..."
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+            />
+            <button type="submit" disabled={!input.trim() || loading}>
+              <Send size={16} />
+            </button>
+          </form>
         </div>
       )}
     </div>
   );
 }
-
-export default Chatbot;

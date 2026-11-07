@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --host",
     "build": "node scripts/generate-pwa-icons.mjs && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --host --port 5180"
   },
   "devDependencies": {
     "@types/react": "^19.2.17",

@@ -11,37 +11,30 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#030712" />
     <meta name="format-detection" content="telephone=no" />
-    <title>Altruva | 100% Community Distribution Model</title>
-    <meta name="description" content="Altruva: Decentralized 100% Community Distribution Model in pure USDT. Community Powered · Performance Driven · Transparent Distribution." />
+    <title>Sovereign Global Protocol v3.3 | Master Final Architecture</title>
+    <meta name="description" content="Sovereign Global Protocol v3.3: 100% P2P Instant Split Protocol on BNB Chain in pure USDT (BEP-20). Master Final Architecture & 10X Viral Edition." />
   </head>
-  <body>
+  <body style="background-color: #030712; color: #f8fafc; margin: 0; padding: 0;">
     <div id="root">
-      <div id="app-boot" style="display:flex;align-items:center;justify-content:center;min-height:100dvh;min-height:-webkit-fill-available;background:#030712;color:#00e5ff;font-family:system-ui,-apple-system,sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:1px">
-        ▲ Loading Altruva Ecosystem…
+      <div id="app-boot" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;background:#030712;color:#00e5ff;font-family:system-ui,-apple-system,sans-serif;font-size:1.1rem;font-weight:700;letter-spacing:1px;text-align:center;padding:20px;">
+        <div style="font-size:2rem;margin-bottom:12px;">🌐</div>
+        <div>▲ Loading Sovereign Global Protocol v3.3…</div>
+        <div style="font-size:0.8rem;color:#94a3b8;margin-top:8px;font-weight:400;">100% P2P Live Split Ecosystem on BSC</div>
       </div>
     </div>
-    <script type="module" src="/src/main.jsx"></script>
     <script>
-      (function () {
-        var timeout = 15000;
-        setTimeout(function () {
-          if (!document.getElementById("app-boot")) return;
-          if (!("serviceWorker" in navigator)) return;
-          navigator.serviceWorker.getRegistrations().then(function (regs) {
-            return Promise.all(regs.map(function (r) { return r.unregister(); }));
-          }).then(function () {
-            if ("caches" in window) {
-              return caches.keys().then(function (keys) {
-                return Promise.all(keys.map(function (k) { return caches.delete(k); }));
-              });
-            }
-          }).then(function () {
-            window.location.reload();
-          }).catch(function () {
-            window.location.reload();
-          });
-        }, timeout);
-      })();
+      window.addEventListener('error', function (e) {
+        console.error('[Global Error]', e);
+        var el = document.getElementById('debug-err') || document.createElement('div');
+        el.id = 'debug-err';
+        el.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#dc2626;color:#fff;padding:12px;z-index:999999;font-size:12px;font-family:monospace;word-break:break-all;';
+        el.innerHTML += '<b>[JS Error]:</b> ' + e.message + '<br/><small>' + e.filename + ':' + e.lineno + '</small><br/>';
+        document.body.appendChild(el);
+      });
+      window.addEventListener('unhandledrejection', function (e) {
+        console.error('[Unhandled Rejection]', e);
+      });
     </script>
+    <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

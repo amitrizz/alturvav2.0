@@ -12,12 +12,11 @@ import { http } from "wagmi";
 import { bscTestnet, bsc } from "wagmi/chains";
 
 const PLACEHOLDER_PROJECT_IDS = new Set([
-  "88c9df409ffc9779df52c80333333333",
   "your_walletconnect_cloud_project_id",
 ]);
 
 const envProjectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID?.trim();
-export const walletConnectProjectId = envProjectId || "88c9df409ffc9779df52c80333333333";
+export const walletConnectProjectId = envProjectId || "3a8170812b534d0ff9d794f19a901d64";
 
 export const isWalletConnectConfigured = Boolean(
   envProjectId && !PLACEHOLDER_PROJECT_IDS.has(envProjectId)
